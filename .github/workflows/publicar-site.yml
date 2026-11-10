@@ -20,7 +20,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx vite build --base=./
         env:
-          VITE_ESTELA_URL: ${{ vars.VITE_ESTELA_URL }}
+          VITE_ESTELA_URL: ${{ vars.VITE_ESTELA_URL || secrets.VITE_ESTELA_URL }}
       - name: Enviar para o ramo gh-pages
         run: |
           touch dist/.nojekyll
