@@ -1,0 +1,33 @@
+# Publica o MyRoça no GitHub Pages (ramo "gh-pages") a cada atualização.
+name: Publicar site
+on:
+  push:
+    branches: [i18n-textos-fixos, main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: publicar-site
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx vite build --base=./
+        env:
+          VITE_ESTELA_URL: ${{ vars.VITE_ESTELA_URL }}
+      - name: Enviar para o ramo gh-pages
+        run: |
+          touch dist/.nojekyll
+          cd dist
+          git init -q -b gh-pages
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Publicação automática de ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
