@@ -25,6 +25,8 @@ import {
 } from '../avatar/avatar';
 import { openAvatarCreator } from '../avatar/avatarCreator';
 import { rt } from '../i18n/rotationText';
+import { wt } from '../i18n/weatherText';
+import { WeatherState, Condition, resolveWeather, setOverride, clearOverride, getOverride, estimateWeather } from '../utils/weather';
 
 export interface FarmGameViewCallbacks {
   onTalhaoSelect: (talhao: Talhao) => void;
@@ -108,7 +110,12 @@ export class FarmGameView {
   // Weather effects state
   private clouds: WeatherCloud[] = [];
   private rainDrops: RainParticle[] = [];
-  private isRaining = true; // Based on sample weather: "Pancadas à Tarde"
+  private isRaining = false;
+  private rainIntensity = 0;            // 0 a 3
+  private cloudLevel = 0.5;             // 0 (céu limpo) a 1.2 (tempestade)
+  private skyDim = 0;                   // escurecimento do céu, 0 a 0.35
+  private weather: WeatherState | null = null;
+  private weatherTimer: number | null = null;
 
   // Collapsible UI state
   private isLeftPanelCollapsed = false;
@@ -179,6 +186,9 @@ export class FarmGameView {
     this.bindEvents();
     this.initAvatar();
     this.preloadNasaForAll();
+    this.applyWeather(getOverride() || estimateWeather(this.farmData.referenceDate || new Date().toISOString().slice(0, 10)));
+    void this.refreshWeather();
+    this.weatherTimer = window.setInterval(() => void this.refreshWeather(), 30 * 60 * 1000);
     this.startAnimationLoop();
     onLanguageChange(() => this.updateLanguage());
   }
@@ -195,7 +205,7 @@ export class FarmGameView {
 
     // Light rain particles
     this.rainDrops = [];
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 180; i++) {
       this.rainDrops.push({
         x: Math.random() * 2000 - 500,
         y: Math.random() * 1400 - 200,
@@ -229,15 +239,14 @@ export class FarmGameView {
             <!-- Weather Card -->
             <div class="game-weather-compact">
               <div class="weather-temp-row">
-                <span class="weather-art-icon">⛅🌧️</span>
-                <span class="weather-temp">29°C</span>
-                <div class="weather-desc" id="game-weather-desc">${t('weatherDesc')}</div>
+                <span class="weather-art-icon" id="game-weather-icon">⛅</span>
+                <span class="weather-temp" id="game-weather-temp">--°C</span>
+                <div class="weather-desc" id="game-weather-desc"></div>
+                <button type="button" class="weather-fix-btn" id="btn-weather-fix" title="${wt('fix')}">✏️</button>
               </div>
-              <div class="weather-metrics-row" id="game-weather-metrics">
-                <span>${t('rain')}: <strong>14 mm</strong></span> • 
-                <span>${t('humidity')}: <strong>68%</strong></span> • 
-                <span>${t('wind')}: <strong>12 km/h</strong></span>
-              </div>
+              <div class="weather-metrics-row" id="game-weather-metrics"></div>
+              <div class="weather-src" id="game-weather-src"></div>
+              <div class="weather-fix-pop" id="game-weather-fix" style="display:none"></div>
             </div>
 
             <!-- Mini Legend -->
@@ -940,6 +949,8 @@ export class FarmGameView {
       this.resetCameraView();
     });
 
+    document.getElementById('btn-weather-fix')?.addEventListener('click', (e) => { e.stopPropagation(); this.openWeatherFix(); });
+
     document.getElementById('btn-sheet-rotation')?.addEventListener('click', () => {
       if (this.sheetTalhaoId) this.callbacks.onOpenRotation?.(this.sheetTalhaoId);
     });
@@ -1340,9 +1351,12 @@ export class FarmGameView {
     // Falling rain
     if (this.isRaining) {
       const h = this.canvas ? this.canvas.clientHeight : 800;
-      for (const drop of this.rainDrops) {
-        drop.y += drop.speed;
-        drop.x -= drop.speed * 0.28; // slight wind slant
+      const slant = this.weather?.windKmh ? Math.min(0.6, 0.15 + this.weather.windKmh / 80) : 0.28;
+      const active = Math.floor(this.rainDrops.length * [0, 0.3, 0.65, 1][this.rainIntensity]);
+      for (let i = 0; i < active; i++) {
+        const drop = this.rainDrops[i];
+        drop.y += drop.speed * (this.rainIntensity === 3 ? 1.25 : 1);
+        drop.x -= drop.speed * slant; // inclinação pelo vento
         if (drop.y > h + 50) {
           drop.y = -drop.length - 20;
           drop.x = Math.random() * (w + 400) - 200;
@@ -2216,35 +2230,120 @@ export class FarmGameView {
   private renderWeather(w: number, h: number): void {
     const ctx = this.ctx;
 
-    // Drifting translucent fluffy clouds
-    for (const cloud of this.clouds) {
+    // Céu mais escuro quando nublado, chuvoso ou com tempestade
+    if (this.skyDim > 0) {
       ctx.save();
-      ctx.fillStyle = `rgba(255, 255, 255, ${cloud.opacity})`;
-      ctx.beginPath();
-      const cx = cloud.x;
-      const cy = cloud.y;
-      const s = cloud.size;
-      ctx.arc(cx, cy, s * 0.28, 0, Math.PI * 2);
-      ctx.arc(cx + s * 0.22, cy - s * 0.08, s * 0.32, 0, Math.PI * 2);
-      ctx.arc(cx + s * 0.45, cy, s * 0.24, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.fill();
+      ctx.fillStyle = `rgba(15, 23, 42, ${this.skyDim})`;
+      ctx.fillRect(0, 0, w, h);
       ctx.restore();
     }
 
-    // Light falling rain
+    // Nuvens: quantidade e densidade seguem a condição do tempo
+    if (this.cloudLevel > 0) {
+      const visible = Math.max(1, Math.round(this.clouds.length * Math.min(1, this.cloudLevel)));
+      for (let i = 0; i < visible; i++) {
+        const cloud = this.clouds[i];
+        ctx.save();
+        const gray = this.cloudLevel > 1 ? 150 : this.cloudLevel > 0.9 ? 215 : 255;
+        ctx.fillStyle = `rgba(${gray}, ${gray}, ${gray}, ${Math.min(0.75, cloud.opacity * (0.6 + this.cloudLevel))})`;
+        ctx.beginPath();
+        const cx = cloud.x;
+        const cy = cloud.y;
+        const s = cloud.size;
+        ctx.arc(cx, cy, s * 0.28, 0, Math.PI * 2);
+        ctx.arc(cx + s * 0.22, cy - s * 0.08, s * 0.32, 0, Math.PI * 2);
+        ctx.arc(cx + s * 0.45, cy, s * 0.24, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Chuva: intensidade fraca, moderada ou forte
     if (this.isRaining) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(186, 230, 253, 0.35)';
-      ctx.lineWidth = 1.2;
-      for (const drop of this.rainDrops) {
+      const alpha = [0, 0.28, 0.38, 0.5][this.rainIntensity];
+      ctx.strokeStyle = `rgba(186, 230, 253, ${alpha})`;
+      ctx.lineWidth = this.rainIntensity === 3 ? 1.6 : 1.2;
+      const slant = this.weather?.windKmh ? Math.min(0.6, 0.15 + this.weather.windKmh / 80) : 0.28;
+      const active = Math.floor(this.rainDrops.length * [0, 0.3, 0.65, 1][this.rainIntensity]);
+      for (let i = 0; i < active; i++) {
+        const drop = this.rainDrops[i];
         ctx.beginPath();
         ctx.moveTo(drop.x, drop.y);
-        ctx.lineTo(drop.x - drop.length * 0.28, drop.y + drop.length);
+        ctx.lineTo(drop.x - drop.length * slant, drop.y + drop.length);
         ctx.stroke();
       }
       ctx.restore();
     }
+  }
+
+  // ========================================================
+  // CLIMA DO MOMENTO (real, com correção do produtor)
+  // ========================================================
+  private weatherLatLng(): { lat: number; lng: number } {
+    return { lat: this.centerLat, lng: this.centerLng };
+  }
+
+  /** Atualiza o clima: usa a melhor fonte disponível e redesenha a cena. */
+  public async refreshWeather(): Promise<void> {
+    const { lat, lng } = this.weatherLatLng();
+    const firstNasa = Object.values(this.nasaSeries)[0];
+    const w = await resolveWeather(lat, lng, firstNasa, this.farmData.referenceDate || new Date().toISOString().slice(0, 10));
+    this.applyWeather(w);
+  }
+
+  private applyWeather(w: WeatherState): void {
+    this.weather = w;
+    const c = w.cond;
+    this.isRaining = c === 'rain' || c === 'storm';
+    this.rainIntensity = this.isRaining ? Math.max(1, w.intensity) : 0;
+    this.cloudLevel = c === 'clear' ? 0.2 : c === 'partly' ? 0.5 : c === 'cloudy' ? 1 : c === 'rain' ? 1 : 1.2;
+    this.skyDim = c === 'clear' ? 0 : c === 'partly' ? 0.03 : c === 'cloudy' ? 0.12 : c === 'rain' ? 0.2 : 0.32;
+    this.renderWeatherPanel();
+    this.render();
+  }
+
+  private renderWeatherPanel(): void {
+    const w = this.weather;
+    if (!w) return;
+    const icon: Record<Condition, string> = { clear: '☀️', partly: '⛅', cloudy: '☁️', rain: '🌧️', storm: '⛈️' };
+    const setText = (id: string, v: string) => { const el = document.getElementById(id); if (el) el.innerText = v; };
+    setText('game-weather-icon', icon[w.cond]);
+    setText('game-weather-temp', w.tempC !== null ? `${Math.round(w.tempC)}°C` : '--°C');
+    const inten = w.cond === 'rain' || w.cond === 'storm' ? ` (${wt(['', 'light', 'moderate', 'heavy'][Math.max(1, w.intensity)])})` : '';
+    setText('game-weather-desc', wt(w.cond) + (w.cond === 'rain' ? inten : ''));
+    const dash = (v: number | null, unit: string) => (v === null ? '—' : `${Math.round(v * 10) / 10} ${unit}`);
+    const metrics = document.getElementById('game-weather-metrics');
+    if (metrics) {
+      metrics.innerHTML = `<span>${wt('rainLbl')}: <strong>${dash(w.rainMm, 'mm')}</strong></span> • <span>${wt('humLbl')}: <strong>${w.humidity === null ? '—' : Math.round(w.humidity) + '%'}</strong></span> • <span>${wt('windLbl')}: <strong>${dash(w.windKmh, 'km/h')}</strong></span>`;
+    }
+    const src = w.source === 'openmeteo' ? wt('srcOpenMeteo') : w.source === 'nasa' ? wt('srcNasa', { d: w.note || '' }) : w.source === 'manual' ? wt('srcManual') : wt('srcEstimate');
+    setText('game-weather-src', (w.source === 'nasa' ? '🛰️ ' : '') + src);
+    const fixBtn = document.getElementById('btn-weather-fix');
+    if (fixBtn) fixBtn.title = wt('fix');
+  }
+
+  private openWeatherFix(): void {
+    const pop = document.getElementById('game-weather-fix');
+    if (!pop) return;
+    if (pop.style.display !== 'none') { pop.style.display = 'none'; return; }
+    const opts: [Condition, string][] = [['clear', '☀️'], ['partly', '⛅'], ['cloudy', '☁️'], ['rain', '🌧️'], ['storm', '⛈️']];
+    pop.innerHTML = `<div class="wfix-title">${wt('fixTitle')}</div>
+      <div class="wfix-row">${opts.map(([c, i]) => `<button type="button" data-wx="${c}" title="${wt(c)}">${i}<span>${wt(c)}</span></button>`).join('')}</div>
+      <button type="button" class="wfix-auto" data-wx="auto">↺ ${wt('auto')}</button>`;
+    pop.style.display = 'block';
+    pop.querySelectorAll<HTMLButtonElement>('[data-wx]').forEach((b) => {
+      b.onclick = () => {
+        const v = b.dataset.wx!;
+        if (v === 'auto') { clearOverride(); void this.refreshWeather(); }
+        else {
+          setOverride(v as Condition);
+          this.applyWeather({ cond: v as Condition, intensity: v === 'storm' ? 3 : v === 'rain' ? 2 : 0, tempC: null, humidity: null, windKmh: null, rainMm: null, source: 'manual', at: Date.now() });
+        }
+        pop.style.display = 'none';
+      };
+    });
   }
 
   // ========================================================
@@ -2836,14 +2935,8 @@ export class FarmGameView {
     if (panelTitle) panelTitle.innerText = t('weatherAndLegend');
     if (badgeExemplo) badgeExemplo.innerText = t('exampleBadge');
     if (btnToggle) btnToggle.title = t('collapseExpand');
-    if (weatherDesc) weatherDesc.innerText = t('weatherDesc');
-    if (weatherMetrics) {
-      weatherMetrics.innerHTML = `
-        <span>${t('rain')}: <strong>14 mm</strong></span> • 
-        <span>${t('humidity')}: <strong>68%</strong></span> • 
-        <span>${t('wind')}: <strong>12 km/h</strong></span>
-      `;
-    }
+    void weatherDesc; void weatherMetrics;
+    this.renderWeatherPanel();
 
     if (legendCompact) {
       legendCompact.innerHTML = `
