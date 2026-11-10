@@ -51,6 +51,22 @@ export interface NextCropPlan {
   notes?: string;
 }
 
+export interface RotationSlot {
+  crop: string;   // soja | milho | sorgo | feijao | algodao | trigo | cana | pasto | cobertura | pousio
+  cycle: number;  // dias
+}
+export interface RotationStrategyData {
+  id: string;
+  name: string;
+  kind: 'current' | 'suggested' | 'custom';
+  summer: RotationSlot;
+  second: RotationSlot;
+}
+export interface RotationPlan {
+  summerSow?: string; // YYYY-MM-DD
+  strategies: RotationStrategyData[];
+}
+
 export type DiaryEntryType =
   | 'plantio'
   | 'adubacao'
@@ -84,6 +100,7 @@ export interface Talhao {
   harvestHistory?: HarvestHistoryItem[]; // Histórico de safras anteriores
   diary?: DiaryEntry[];                 // Diário de safra (registros de campo)
   nextCropPlan?: NextCropPlan;          // Próxima safra planejada
+  rotationPlan?: RotationPlan;          // Estratégias de rotação em comparação
   areaHectares: number;
   perimeterKm: number;
   coordinates: [number, number][]; // [latitude, longitude]

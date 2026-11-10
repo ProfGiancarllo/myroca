@@ -6,6 +6,8 @@ import { CoordinateRow, parseCoordinatePair, parsePastedCoordinateText, validate
 import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, addDaysToDate, calculateTalhaoCropStatus, calculateExpectedHarvestDate, checkCropDatesOverlap, getCropColor, DEFAULT_CROP_CYCLES } from './utils/cropCalendar';
 import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
+import { RotationPlanner } from './components/RotationPlanner';
+import { rt } from './i18n/rotationText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
 import {
@@ -28,6 +30,7 @@ import {
 class AgroApp {
   private farmData: FarmData;
   private mapManager!: MapManager;
+  private rotationPlanner!: RotationPlanner;
 
   // View mode & Agricultural calendar
   private referenceDate = DEFAULT_REFERENCE_DATE;
@@ -56,6 +59,17 @@ class AgroApp {
     this.referenceDate = this.farmData.referenceDate || DEFAULT_REFERENCE_DATE;
     this.activeViewMode = this.farmData.activeViewMode || 'mapa';
 
+    this.rotationPlanner = new RotationPlanner({
+      getFarm: () => this.farmData,
+      getRefDate: () => this.referenceDate,
+      onChange: (talhao, adopted) => {
+        saveFarmData(this.farmData);
+        if (adopted) {
+          this.updateUI();
+          this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
+        }
+      },
+    });
     this.renderDOM();
     this.initMap();
     this.initGameMode();
@@ -180,6 +194,9 @@ class AgroApp {
               </div>
             </div>
 
+            <button class="btn btn-outline btn-rotation-open" id="btn-rotation" title="${rt('title')}">
+              <span>🔄</span> <span class="btn-text">${rt('open')}</span>
+            </button>
             <button class="btn btn-outline btn-logout-user" id="btn-logout" title="${at('logout')}">
               <span>👤</span> <span class="btn-text">${(currentUser()?.id === 'guest' ? at('guestName') : (currentUser()?.name || '')).split(' ')[0].replace(/[&<>"']/g, '')}</span> <span>⎋</span>
             </button>
@@ -981,6 +998,7 @@ class AgroApp {
       onAvatarSaved: () => {
         this.showToast(`🧑‍🌾 ${t('avSaved')}`);
       },
+      onOpenRotation: (talhaoId: string) => this.rotationPlanner.open(talhaoId),
       onElementMoved: (elem: WaterPoint) => {
         const mine = this.farmData.waterPoints.find((x) => x.id === elem.id);
         if (mine && mine !== elem) mine.coordinates = [elem.coordinates[0], elem.coordinates[1]];
@@ -1423,6 +1441,7 @@ class AgroApp {
       });
     });
 
+    document.getElementById('btn-rotation')?.addEventListener('click', () => this.rotationPlanner.open());
     document.getElementById('btn-logout')?.addEventListener('click', () => {
       logout();
       window.location.reload();

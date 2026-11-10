@@ -24,6 +24,7 @@ import {
   markAvatarPrompted,
 } from '../avatar/avatar';
 import { openAvatarCreator } from '../avatar/avatarCreator';
+import { rt } from '../i18n/rotationText';
 
 export interface FarmGameViewCallbacks {
   onTalhaoSelect: (talhao: Talhao) => void;
@@ -34,6 +35,7 @@ export interface FarmGameViewCallbacks {
   onAvatarSaved?: () => void;
   onTalhaoUpdated?: (talhao: Talhao) => void;
   onElementMoved?: (elem: WaterPoint) => void;
+  onOpenRotation?: (talhaoId: string) => void;
 }
 
 export interface FarmGameViewOptions {
@@ -48,6 +50,7 @@ export interface FarmGameViewOptions {
   onAvatarSaved?: () => void;
   onTalhaoUpdated?: (talhao: Talhao) => void;
   onElementMoved?: (elem: WaterPoint) => void;
+  onOpenRotation?: (talhaoId: string) => void;
 }
 
 interface WeatherCloud {
@@ -164,6 +167,7 @@ export class FarmGameView {
         onAvatarSaved: containerOrOptions.onAvatarSaved,
         onTalhaoUpdated: containerOrOptions.onTalhaoUpdated,
         onElementMoved: containerOrOptions.onElementMoved,
+        onOpenRotation: containerOrOptions.onOpenRotation,
       };
     }
 
@@ -441,6 +445,7 @@ export class FarmGameView {
               <div class="sheet-tiago-box" id="sheet-tiago-box" style="display:none"></div>
 
               <div class="sheet-forecast-box" id="sheet-forecast-box" style="display:none"></div>
+              <button type="button" class="diary-btn-ghost" id="btn-sheet-rotation" style="margin-top:10px;width:100%">🔄 ${rt('open')}</button>
 
               <div class="sheet-diary-box" id="sheet-diary-box">
                 <div class="diary-head">
@@ -933,6 +938,10 @@ export class FarmGameView {
 
     document.getElementById('btn-game-reset-view')?.addEventListener('click', () => {
       this.resetCameraView();
+    });
+
+    document.getElementById('btn-sheet-rotation')?.addEventListener('click', () => {
+      if (this.sheetTalhaoId) this.callbacks.onOpenRotation?.(this.sheetTalhaoId);
     });
 
     document.getElementById('btn-game-move-mode')?.addEventListener('click', () => {

@@ -64,8 +64,10 @@ const CROP_FAMILIES: [string, string[]][] = [
   ['sorgo', ['sorgo', 'sorghum', 'sorgho', '高粱']],
   ['algodao', ['algodão', 'algodao', 'cotton', 'algodón', 'coton', 'baumwolle', '棉花']],
   ['trigo', ['trigo', 'wheat', 'weizen', 'blé', '小麦']],
+  ['cana', ['cana', 'sugarcane', 'caña', 'canne', 'zuckerrohr', '甘蔗']],
+  ['pasto', ['pasto', 'pastagem', 'pasture', 'pastura', 'dauerweide', 'braqui', '牧草']],
 ];
-const cropKey = (c?: string): string => {
+export const cropKey = (c?: string): string => {
   const n = (c || '').trim().toLowerCase();
   for (const [family, words] of CROP_FAMILIES) {
     if (words.some((w) => n.includes(w))) return family;
