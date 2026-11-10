@@ -2962,3 +2962,15 @@ body {
 .nasa-chart { width: 100%; height: 70px; display: block; }
 .nasa-source { font-size: 11px; color: #64748b; margin-top: 8px; line-height: 1.4; }
 @media (max-width: 520px) { .nasa-tiles { grid-template-columns: repeat(2, 1fr); } }
+
+/* ===== Recomendação do Eng. Tiago ===== */
+.sheet-tiago-box { background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; }
+.tiago-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.tiago-badge { font-size: 12px; font-weight: 800; border-radius: 999px; padding: 5px 12px; color: #fff; }
+.tiago-low { background: #15803d; }
+.tiago-medium { background: #b45309; }
+.tiago-high { background: #b91c1c; }
+.tiago-advice { color: #f1f5f9; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.tiago-factors { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tiago-factors li { color: #cbd5e1; font-size: 13px; line-height: 1.4; }
+.tiago-alert { background: rgba(185, 28, 28, 0.15); border: 1px solid rgba(248, 113, 113, 0.4); color: #fecaca; border-radius: 8px; padding: 8px 10px; font-size: 13px; font-weight: 600; margin-bottom: 6px; }

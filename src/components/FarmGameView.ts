@@ -12,6 +12,7 @@ import {
   onLanguageChange,
 } from '../i18n';
 import type { TranslationDictionary } from '../i18n';
+import { assessPlanting, assessCrop, RiskLevel, Severity } from '../utils/agronomyRules';
 import { fetchNasaSeries, summarizeNasa, polygonCentroid, NasaSeries } from '../utils/nasaPower';
 import {
   AvatarConfig,
@@ -162,6 +163,7 @@ export class FarmGameView {
     this.resetCameraView();
     this.bindEvents();
     this.initAvatar();
+    this.preloadNasaForAll();
     this.startAnimationLoop();
     onLanguageChange(() => this.updateLanguage());
   }
@@ -424,6 +426,8 @@ export class FarmGameView {
                 <div id="sheet-nasa-body"></div>
               </div>
 
+              <div class="sheet-tiago-box" id="sheet-tiago-box" style="display:none"></div>
+
               <div class="sheet-diary-box" id="sheet-diary-box">
                 <div class="diary-head">
                   <div class="history-title" id="lbl-sheet-diary-title" style="margin:0">📒 ${t('diaryTitle')}</div>
@@ -479,6 +483,7 @@ export class FarmGameView {
     }
     this.computeFarmBounds();
     this.updateTopBar();
+    this.preloadNasaForAll();
     this.updateAgronomistSpeech();
     this.render();
   }
@@ -520,6 +525,24 @@ export class FarmGameView {
     // Generate speech options derived directly from the real status of the talhões
     const speeches: string[] = [];
 
+    // Falas com dados reais da NASA (quando já carregados)
+    statuses.forEach(({ talhao, status }) => {
+      const series = this.nasaSeries[talhao.id];
+      if (!series) return;
+      const alerts = assessCrop(series, status.phase.key, talhao.diary, refDate);
+      alerts.forEach((al) => {
+        speeches.push(
+          t('agSpeechCrop', { name: talhao.name, alert: t(al.key as keyof TranslationDictionary, al.params) })
+        );
+      });
+      if (!status.isPasture && (!talhao.plantingDate || status.phase.key === 'preparo')) {
+        const a = assessPlanting(series, refDate, talhao.diary);
+        speeches.push(
+          t('agSpeechPlanting', { name: talhao.name, risk: this.riskLevelLabel(a.level), mm: a.rain15 })
+        );
+      }
+    });
+
     // Critical phase 1: Floração
     const flowering = statuses.find((s) => s.status.phase.key === 'floracao');
     if (flowering) {
@@ -549,8 +572,8 @@ export class FarmGameView {
         t('agronomistSpeechGrowth', {
           name: growth.talhao.name,
           crop: translateCropName(growth.talhao.crop),
-          daysPassed: formatNumber(growth.status.daysPassed, 0),
-          cycleDays: formatNumber(growth.talhao.cycleDays || 115, 0),
+          days: formatNumber(growth.status.daysPassed, 0),
+          totalDays: formatNumber(growth.talhao.cycleDays || 115, 0),
         })
       );
     }
@@ -2291,6 +2314,8 @@ export class FarmGameView {
     const token = ++this.nasaToken;
     refreshBtn.onclick = () => this.loadNasaPanel(talhao, true);
     periodEl.textContent = '';
+    const tiagoBox = document.getElementById('sheet-tiago-box');
+    if (tiagoBox) tiagoBox.style.display = 'none';
     body.innerHTML = `<div class="nasa-msg">⏳ ${t('nasaLoading')}</div>`;
 
     const c = polygonCentroid(talhao.coordinates);
@@ -2300,6 +2325,8 @@ export class FarmGameView {
         if (token !== this.nasaToken) return;
         this.nasaSeries[talhao.id] = series;
         this.renderNasaPanel(series);
+        this.renderTiagoBox(talhao);
+        this.updateAgronomistSpeech();
       })
       .catch(() => {
         if (token !== this.nasaToken) return;
@@ -2308,6 +2335,60 @@ export class FarmGameView {
           <button type="button" class="diary-btn-ghost" id="btn-nasa-retry">${t('nasaRetry')}</button>`;
         (document.getElementById('btn-nasa-retry') as HTMLElement).onclick = () => this.loadNasaPanel(talhao, true);
       });
+  }
+
+  private riskLevelLabel(l: RiskLevel): string {
+    return t(l === 'low' ? 'agLevelLow' : l === 'medium' ? 'agLevelMedium' : 'agLevelHigh');
+  }
+
+  /** Recomendação do Eng. Tiago no talhão: risco de plantio (7 dias) e alertas da lavoura. */
+  private renderTiagoBox(talhao: Talhao): void {
+    const box = document.getElementById('sheet-tiago-box');
+    const series = this.nasaSeries[talhao.id];
+    if (!box) return;
+    if (!series || calculateTalhaoCropStatus(talhao, this.farmData.referenceDate || '2026-11-09').isPasture) {
+      box.style.display = 'none';
+      return;
+    }
+    const ref = this.farmData.referenceDate || '2026-11-09';
+    const phase = calculateTalhaoCropStatus(talhao, ref).phase.key;
+    const inCycle = !!talhao.plantingDate && phase !== 'preparo';
+    const a = assessPlanting(series, ref, talhao.diary, inCycle);
+    const alerts = assessCrop(series, phase, talhao.diary, ref);
+    const icon = (s: Severity) => (s === 0 ? '✅' : s === 1 ? '⚠️' : '⛔');
+    const adviceKey = inCycle
+      ? a.level === 'low' ? 'agCropAdviceLow' : a.level === 'medium' ? 'agCropAdviceMedium' : 'agCropAdviceHigh'
+      : a.level === 'low' ? 'agAdviceLow' : a.level === 'medium' ? 'agAdviceMedium' : 'agAdviceHigh';
+    const tk = (k: string, p?: Record<string, string | number>) => t(k as keyof TranslationDictionary, p);
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div class="tiago-head">
+        <div class="history-title" style="margin:0">🧑‍🌾 ${t(inCycle ? 'agTitleCrop' : 'agTitle')}</div>
+        <span class="tiago-badge tiago-${a.level}">${this.riskLevelLabel(a.level)}</span>
+      </div>
+      <div class="tiago-advice">${t(adviceKey)}</div>
+      <ul class="tiago-factors">
+        ${a.factors.map((f) => `<li>${icon(f.severity)} ${tk(f.key, f.params)}</li>`).join('')}
+      </ul>
+      ${alerts.map((al) => `<div class="tiago-alert">🚨 ${tk(al.key, al.params)}</div>`).join('')}
+      <div class="nasa-source">${t('agBasis')}</div>`;
+  }
+
+  /** Carrega em segundo plano a série NASA de todos os talhões (para as falas do agrônomo). */
+  private preloadNasaForAll(): void {
+    const ref = this.farmData.referenceDate || '2026-11-09';
+    this.farmData.talhoes.forEach((tl) => {
+      if (this.nasaSeries[tl.id] || !tl.coordinates || tl.coordinates.length < 3) return;
+      const c = polygonCentroid(tl.coordinates);
+      fetchNasaSeries(c.lat, c.lng, ref, 30)
+        .then((s) => {
+          this.nasaSeries[tl.id] = s;
+          this.updateAgronomistSpeech();
+        })
+        .catch(() => {
+          /* sem internet: o agrônomo segue com as falas padrão */
+        });
+    });
   }
 
   private renderNasaPanel(series: NasaSeries): void {
