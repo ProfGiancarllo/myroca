@@ -281,6 +281,20 @@ export class FarmGameView {
           </div>
         </div>
 
+        <!-- WEATHER CHIP (sempre visível) -->
+        <div class="weather-chip-wrap" id="weather-chip-wrap">
+          <button type="button" class="weather-chip" id="weather-chip" title="${wt('fix')}">
+            <span id="chip-weather-icon">⛅</span>
+            <strong id="chip-weather-temp">--°C</strong>
+            <span id="chip-weather-desc"></span>
+          </button>
+          <div class="weather-chip-pop" id="weather-chip-pop" style="display:none">
+            <div class="weather-metrics-row" id="chip-weather-metrics"></div>
+            <div class="weather-src" id="chip-weather-src"></div>
+            <div id="chip-weather-fix"></div>
+          </div>
+        </div>
+
         <!-- RIGHT FLOATING CONTROLS: Zoom & Center Farm -->
         <div class="game-floating-right-controls">
           <button class="btn-game-hud-control" id="btn-game-zoom-in" title="${t('zoomIn')}">+</button>
@@ -955,6 +969,7 @@ export class FarmGameView {
       if (this.sheetTalhaoId) this.callbacks.onOpenRotation?.(this.sheetTalhaoId);
     });
 
+    document.getElementById('weather-chip')?.addEventListener('click', () => this.toggleWeatherChip());
     document.getElementById('btn-game-move-mode')?.addEventListener('click', () => {
       this.setMoveMode(!this.moveMode);
     });
@@ -2322,10 +2337,31 @@ export class FarmGameView {
     setText('game-weather-src', (w.source === 'nasa' ? '🛰️ ' : '') + src);
     const fixBtn = document.getElementById('btn-weather-fix');
     if (fixBtn) fixBtn.title = wt('fix');
+    // chip sempre visível
+    setText('chip-weather-icon', icon[w.cond]);
+    setText('chip-weather-temp', w.tempC !== null ? `${Math.round(w.tempC)}°C` : '--°C');
+    setText('chip-weather-desc', wt(w.cond));
+    const cm = document.getElementById('chip-weather-metrics');
+    if (cm && metrics) cm.innerHTML = metrics.innerHTML;
+    setText('chip-weather-src', (w.source === 'nasa' ? '🛰️ ' : '') + src);
   }
 
-  private openWeatherFix(): void {
-    const pop = document.getElementById('game-weather-fix');
+  private toggleWeatherChip(): void {
+    const pop = document.getElementById('weather-chip-pop');
+    if (!pop) return;
+    const open = pop.style.display === 'none';
+    pop.style.display = open ? 'block' : 'none';
+    if (open) {
+      const fx = document.getElementById('chip-weather-fix');
+      if (fx) {
+        fx.innerHTML = '<div class="weather-fix-pop" id="chip-fix-inner" style="display:none;position:static;box-shadow:none;margin-top:6px"></div><button type="button" class="wfix-open" id="chip-fix-open">✏️ ' + wt('fix') + '</button>';
+        document.getElementById('chip-fix-open')?.addEventListener('click', () => this.openWeatherFix('chip-fix-inner'));
+      }
+    }
+  }
+
+  private openWeatherFix(popId = 'game-weather-fix'): void {
+    const pop = document.getElementById(popId);
     if (!pop) return;
     if (pop.style.display !== 'none') { pop.style.display = 'none'; return; }
     const opts: [Condition, string][] = [['clear', '☀️'], ['partly', '⛅'], ['cloudy', '☁️'], ['rain', '🌧️'], ['storm', '⛈️']];

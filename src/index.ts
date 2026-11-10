@@ -7,6 +7,7 @@ import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, add
 import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
 import { RotationPlanner } from './components/RotationPlanner';
+import { EstelaChat } from './estela/EstelaChat';
 import { rt } from './i18n/rotationText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
@@ -31,6 +32,7 @@ class AgroApp {
   private farmData: FarmData;
   private mapManager!: MapManager;
   private rotationPlanner!: RotationPlanner;
+  private estela!: EstelaChat;
 
   // View mode & Agricultural calendar
   private referenceDate = DEFAULT_REFERENCE_DATE;
@@ -75,6 +77,17 @@ class AgroApp {
     this.initGameMode();
     this.bindEvents();
     this.updateUI();
+    this.estela = new EstelaChat({
+      getFarm: () => this.farmData,
+      getRefDate: () => this.referenceDate,
+      openRotation: (id) => this.rotationPlanner.open(id),
+      onDiaryAdded: () => {
+        saveFarmData(this.farmData);
+        this.updateUI();
+        this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
+        this.showToast(`📒 ${t('diarySaved')}`);
+      },
+    });
 
     window.addEventListener('resize', () => {
       if (this.activeViewMode === 'fazenda') {
