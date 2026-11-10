@@ -12,6 +12,7 @@ import {
   onLanguageChange,
 } from '../i18n';
 import type { TranslationDictionary } from '../i18n';
+import { currentForecast, compareResults, fetchModelForecast } from '../utils/forecast';
 import { assessPlanting, assessCrop, RiskLevel, Severity } from '../utils/agronomyRules';
 import { fetchNasaSeries, summarizeNasa, polygonCentroid, NasaSeries } from '../utils/nasaPower';
 import {
@@ -117,6 +118,7 @@ export class FarmGameView {
   private avatarAway = false;
   private avatarWalking = false;
   private nasaToken = 0;
+  private modelForecast: Record<string, number> = {};
   private nasaSeries: Record<string, NasaSeries> = {};
 
   // Diário de safra (ficha do talhão)
@@ -427,6 +429,8 @@ export class FarmGameView {
               </div>
 
               <div class="sheet-tiago-box" id="sheet-tiago-box" style="display:none"></div>
+
+              <div class="sheet-forecast-box" id="sheet-forecast-box" style="display:none"></div>
 
               <div class="sheet-diary-box" id="sheet-diary-box">
                 <div class="diary-head">
@@ -2327,6 +2331,12 @@ export class FarmGameView {
         this.renderNasaPanel(series);
         this.renderTiagoBox(talhao);
         this.updateAgronomistSpeech();
+        fetchModelForecast(talhao, summarizeNasa(series)).then((v) => {
+          if (v !== null && token === this.nasaToken) {
+            this.modelForecast[talhao.id] = v;
+            this.renderForecastBox(talhao);
+          }
+        });
       })
       .catch(() => {
         if (token !== this.nasaToken) return;
@@ -2335,6 +2345,58 @@ export class FarmGameView {
           <button type="button" class="diary-btn-ghost" id="btn-nasa-retry">${t('nasaRetry')}</button>`;
         (document.getElementById('btn-nasa-retry') as HTMLElement).onclick = () => this.loadNasaPanel(talhao, true);
       });
+  }
+
+  /** Previsão de produtividade e comparação com as colheitas registradas no diário. */
+  private renderForecastBox(talhao: Talhao): void {
+    const box = document.getElementById('sheet-forecast-box');
+    if (!box) return;
+    const ref = this.farmData.referenceDate || '2026-11-09';
+    if (calculateTalhaoCropStatus(talhao, ref).isPasture) {
+      box.style.display = 'none';
+      return;
+    }
+    const f = currentForecast(talhao, this.modelForecast[talhao.id] ?? null);
+    const results = compareResults(talhao);
+    const tk = (k: string, p?: Record<string, string | number>) => t(k as keyof TranslationDictionary, p);
+
+    const forecastHtml =
+      f.value === null
+        ? `<div class="nasa-msg">${t('fcNoBase')}</div>`
+        : `<div class="fc-main">
+             <div class="fc-value">${formatNumber(f.value, 1)} <span class="fc-unit">sc/ha</span></div>
+             <div class="fc-total">${t('fcTotal', { sacks: formatNumber(f.totalSacks || 0, 0), ha: formatHectaresI18n(talhao.areaHectares) })}</div>
+           </div>
+           <div class="fc-source">${f.source === 'model' ? t('fcSourceModel') : t('fcSourceBaseline', { n: f.basedOn })}</div>`;
+
+    const resultsHtml =
+      results.length === 0
+        ? `<div class="nasa-msg">${t('fcNoResult')}</div>`
+        : [...results]
+            .reverse()
+            .map((r) => {
+              const err =
+                r.errorPct === null
+                  ? `<span class="fc-err">${t('fcNoCompare')}</span>`
+                  : `<span class="fc-err ${r.errorPct >= 0 ? 'fc-up' : 'fc-down'}">${tk(r.errorPct >= 0 ? 'fcErrorUp' : 'fcErrorDown', { pct: formatNumber(Math.abs(r.errorPct), 1) })}</span>`;
+              const learned =
+                r.forecastBefore !== null
+                  ? `<div class="fc-learned">🔁 ${t('fcLearned', { from: formatNumber(r.forecastBefore, 1), to: formatNumber(r.baselineAfter, 1) })}</div>`
+                  : '';
+              return `<div class="fc-row">
+                <div class="fc-row-top"><strong>${formatDateI18n(r.point.date)}</strong> • ${t('fcActual')}: <strong>${formatNumber(r.point.value, 1)} sc/ha</strong>${r.forecastBefore !== null ? ` • ${t('fcPredicted')}: ${formatNumber(r.forecastBefore, 1)} sc/ha` : ''}</div>
+                ${err}${learned}
+              </div>`;
+            })
+            .join('');
+
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div class="history-title">🎯 ${t('fcTitle')}</div>
+      <div class="diary-field-label" style="margin-top:0">${t('fcForecast')}</div>
+      ${forecastHtml}
+      <div class="diary-field-label">${t('fcResults')}</div>
+      ${resultsHtml}`;
   }
 
   private riskLevelLabel(l: RiskLevel): string {
@@ -2469,6 +2531,8 @@ export class FarmGameView {
     const formEl = document.getElementById('sheet-diary-form');
     const addBtn = document.getElementById('btn-diary-add');
     if (!talhao || !listEl || !formEl || !addBtn) return;
+
+    this.renderForecastBox(talhao);
 
     addBtn.onclick = () => {
       this.diaryFormOpen = !this.diaryFormOpen;
