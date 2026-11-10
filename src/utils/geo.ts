@@ -1,0 +1,662 @@
+import { FarmData, Talhao, WaterPoint, WaterPointType, TALHAO_COLORS } from '../types';
+import { getCropColor } from './cropCalendar';
+
+/**
+ * Radius of the Earth in meters according to WGS84
+ */
+const EARTH_RADIUS = 6378137;
+
+/**
+ * Calculates the geodesic area of a polygon in hectares using the spherical excess formula.
+ * @param coords Array of [lat, lng] coordinates
+ * @returns Area in hectares (ha), formatted to 2 decimal places
+ */
+export function calculatePolygonAreaHectares(coords: [number, number][]): number {
+  if (coords.length < 3) return 0;
+
+  let total = 0;
+  const len = coords.length;
+
+  for (let i = 0; i < len; i++) {
+    const p1 = coords[i];
+    const p2 = coords[(i + 1) % len];
+
+    const lat1 = (p1[0] * Math.PI) / 180;
+    const lat2 = (p2[0] * Math.PI) / 180;
+    const dLng = ((p2[1] - p1[1]) * Math.PI) / 180;
+
+    total += dLng * (2 + Math.sin(lat1) + Math.sin(lat2));
+  }
+
+  const areaSqMeters = Math.abs((total * EARTH_RADIUS * EARTH_RADIUS) / 2);
+  const hectares = areaSqMeters / 10000;
+  return Number(hectares.toFixed(2));
+}
+
+/**
+ * Calculates the perimeter of a polygon in kilometers using Haversine formula.
+ */
+export function calculatePerimeterKm(coords: [number, number][]): number {
+  if (coords.length < 2) return 0;
+
+  let totalMeters = 0;
+  const len = coords.length;
+
+  for (let i = 0; i < len; i++) {
+    const p1 = coords[i];
+    const p2 = coords[(i + 1) % len];
+    totalMeters += haversineDistanceMeters(p1, p2);
+  }
+
+  return Number((totalMeters / 1000).toFixed(2));
+}
+
+/**
+ * Haversine distance between two points in meters
+ */
+function haversineDistanceMeters(p1: [number, number], p2: [number, number]): number {
+  const lat1 = (p1[0] * Math.PI) / 180;
+  const lat2 = (p2[0] * Math.PI) / 180;
+  const dLat = lat2 - lat1;
+  const dLng = ((p2[1] - p1[1]) * Math.PI) / 180;
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return EARTH_RADIUS * c;
+}
+
+/**
+ * Formats a number to Brazilian hectare string representation
+ * Example: 145.2 -> "145,20 ha"
+ */
+import { formatHectaresI18n } from '../i18n';
+
+export function formatHectares(ha: number): string {
+  return formatHectaresI18n(ha);
+}
+
+/**
+ * Computes the center [lat, lng] of a polygon
+ */
+export function calculatePolygonCenter(coords: [number, number][]): [number, number] {
+  if (coords.length === 0) return [-17.7924, -50.9192];
+
+  let latSum = 0;
+  let lngSum = 0;
+  coords.forEach(([lat, lng]) => {
+    latSum += lat;
+    lngSum += lng;
+  });
+
+  return [latSum / coords.length, lngSum / coords.length];
+}
+
+/**
+ * Pick a color from predefined list based on index
+ */
+export function getPaletteColor(index: number): string {
+  return TALHAO_COLORS[index % TALHAO_COLORS.length].hex;
+}
+
+/**
+ * Parses GeoJSON text and extracts talhões and water points
+ */
+export function parseGeoJSON(content: string): { talhoes: Talhao[]; waterPoints: WaterPoint[] } {
+  const data = JSON.parse(content);
+  const talhoes: Talhao[] = [];
+  const waterPoints: WaterPoint[] = [];
+
+  const features = data.type === 'FeatureCollection'
+    ? data.features
+    : data.type === 'Feature'
+    ? [data]
+    : [];
+
+  let colorIdx = 0;
+
+  for (const feature of features) {
+    if (!feature || !feature.geometry) continue;
+
+    const geom = feature.geometry;
+    const props = feature.properties || {};
+    const name = props.name || props.NOME || props.title || props.id || `Talhão Importado ${talhoes.length + 1}`;
+
+    if (geom.type === 'Polygon') {
+      const ring = geom.coordinates[0]; // exterior ring
+      if (Array.isArray(ring) && ring.length >= 3) {
+        // GeoJSON is [lng, lat] -> convert to [lat, lng]
+        const coords: [number, number][] = ring.map((pt: number[]) => [pt[1], pt[0]]);
+        const areaHectares = calculatePolygonAreaHectares(coords);
+        const perimeterKm = calculatePerimeterKm(coords);
+
+        const crop = props.crop || props.cultura || '';
+        talhoes.push({
+          id: `talhao_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: String(name),
+          color: getCropColor(crop),
+          crop,
+          areaHectares,
+          perimeterKm,
+          coordinates: coords,
+          createdAt: new Date().toISOString(),
+          notes: props.notes || props.observacao || 'Importado via GeoJSON',
+        });
+      }
+    } else if (geom.type === 'MultiPolygon') {
+      for (let pIdx = 0; pIdx < geom.coordinates.length; pIdx++) {
+        const ring = geom.coordinates[pIdx][0];
+        if (Array.isArray(ring) && ring.length >= 3) {
+          const coords: [number, number][] = ring.map((pt: number[]) => [pt[1], pt[0]]);
+          const areaHectares = calculatePolygonAreaHectares(coords);
+          const perimeterKm = calculatePerimeterKm(coords);
+          const crop = props.crop || props.cultura || '';
+
+          talhoes.push({
+            id: `talhao_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            name: `${name} (Parte ${pIdx + 1})`,
+            color: getCropColor(crop),
+            crop,
+            areaHectares,
+            perimeterKm,
+            coordinates: coords,
+            createdAt: new Date().toISOString(),
+            notes: props.notes || props.observacao || 'Importado via GeoJSON',
+          });
+        }
+      }
+    } else if (geom.type === 'Point') {
+      const [lng, lat] = geom.coordinates;
+      let type: WaterPointType = 'nascente';
+      const typeStr = (props.type || props.tipo || name || '').toLowerCase();
+      if (typeStr.includes('acude') || typeStr.includes('açude') || typeStr.includes('represa')) {
+        type = 'acude';
+      } else if (typeStr.includes('poco') || typeStr.includes('poço')) {
+        type = 'poco';
+      } else if (typeStr.includes('rio') || typeStr.includes('corrego') || typeStr.includes('córrego')) {
+        type = 'rio';
+      }
+
+      waterPoints.push({
+        id: `water_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        name: String(name),
+        type,
+        coordinates: [lat, lng],
+        createdAt: new Date().toISOString(),
+        notes: props.notes || props.observacao || 'Importado via GeoJSON',
+      });
+    }
+  }
+
+  return { talhoes, waterPoints };
+}
+
+/**
+ * Parses KML text (XML) and extracts talhões and water points
+ */
+export function parseKML(content: string): { talhoes: Talhao[]; waterPoints: WaterPoint[] } {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(content, 'text/xml');
+  const talhoes: Talhao[] = [];
+  const waterPoints: WaterPoint[] = [];
+
+  const placemarks = xmlDoc.getElementsByTagName('Placemark');
+  let colorIdx = 0;
+
+  for (let i = 0; i < placemarks.length; i++) {
+    const pm = placemarks[i];
+    const nameEl = pm.getElementsByTagName('name')[0];
+    const descEl = pm.getElementsByTagName('description')[0];
+    const name = nameEl ? nameEl.textContent?.trim() : `Talhão KML ${talhoes.length + 1}`;
+    const desc = descEl ? descEl.textContent?.trim() : '';
+
+    // Check for Polygon
+    const polygons = pm.getElementsByTagName('Polygon');
+    if (polygons.length > 0) {
+      for (let j = 0; j < polygons.length; j++) {
+        const poly = polygons[j];
+        const coordEls = poly.getElementsByTagName('coordinates');
+        if (coordEls.length > 0) {
+          const rawText = coordEls[0].textContent || '';
+          const coords = parseKMLCoordinateString(rawText);
+          if (coords.length >= 3) {
+            const areaHectares = calculatePolygonAreaHectares(coords);
+            const perimeterKm = calculatePerimeterKm(coords);
+
+            talhoes.push({
+              id: `talhao_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              name: String(name || `Talhão ${talhoes.length + 1}`),
+              color: getCropColor(''),
+              crop: '',
+              areaHectares,
+              perimeterKm,
+              coordinates: coords,
+              createdAt: new Date().toISOString(),
+              notes: desc || 'Importado via KML',
+            });
+          }
+        }
+      }
+    } else {
+      // Check for Point
+      const points = pm.getElementsByTagName('Point');
+      if (points.length > 0) {
+        const coordEls = points[0].getElementsByTagName('coordinates');
+        if (coordEls.length > 0) {
+          const rawText = coordEls[0].textContent || '';
+          const coords = parseKMLCoordinateString(rawText);
+          if (coords.length > 0) {
+            const [lat, lng] = coords[0];
+            let type: WaterPointType = 'nascente';
+            const nameLower = (name || '').toLowerCase();
+            if (nameLower.includes('acude') || nameLower.includes('açude') || nameLower.includes('represa')) {
+              type = 'acude';
+            } else if (nameLower.includes('poco') || nameLower.includes('poço')) {
+              type = 'poco';
+            } else if (nameLower.includes('rio') || nameLower.includes('corrego') || nameLower.includes('córrego')) {
+              type = 'rio';
+            }
+
+            waterPoints.push({
+              id: `water_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              name: String(name || 'Ponto de Água'),
+              type,
+              coordinates: [lat, lng],
+              createdAt: new Date().toISOString(),
+              notes: desc || 'Importado via KML',
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return { talhoes, waterPoints };
+}
+
+/**
+ * Parses KML coordinate string format: "lng,lat,alt lng,lat,alt ..."
+ * Returns array of [lat, lng]
+ */
+function parseKMLCoordinateString(coordStr: string): [number, number][] {
+  const result: [number, number][] = [];
+  const tuples = coordStr.trim().split(/\s+/);
+
+  for (const tuple of tuples) {
+    if (!tuple) continue;
+    const parts = tuple.split(',');
+    if (parts.length >= 2) {
+      const lng = parseFloat(parts[0]);
+      const lat = parseFloat(parts[1]);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        result.push([lat, lng]);
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Exports farm data to GeoJSON
+ */
+export function exportToGeoJSON(farmData: FarmData): string {
+  const features = [];
+
+  for (const t of farmData.talhoes) {
+    // GeoJSON coordinates are [lng, lat]
+    const closedCoords = [...t.coordinates];
+    if (
+      closedCoords.length > 0 &&
+      (closedCoords[0][0] !== closedCoords[closedCoords.length - 1][0] ||
+        closedCoords[0][1] !== closedCoords[closedCoords.length - 1][1])
+    ) {
+      closedCoords.push(closedCoords[0]);
+    }
+
+    features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [closedCoords.map(([lat, lng]) => [lng, lat])],
+      },
+      properties: {
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        crop: t.crop,
+        areaHectares: t.areaHectares,
+        perimeterKm: t.perimeterKm,
+        notes: t.notes,
+        createdAt: t.createdAt,
+      },
+    });
+  }
+
+  for (const wp of farmData.waterPoints) {
+    features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: [wp.coordinates[1], wp.coordinates[0]],
+      },
+      properties: {
+        id: wp.id,
+        name: wp.name,
+        type: wp.type,
+        notes: wp.notes,
+        createdAt: wp.createdAt,
+      },
+    });
+  }
+
+  const geoJson = {
+    type: 'FeatureCollection',
+    name: farmData.farmName || 'Fazenda Rio Verde',
+    features,
+  };
+
+  return JSON.stringify(geoJson, null, 2);
+}
+
+/**
+ * Exports farm data to KML
+ */
+export function exportToKML(farmData: FarmData): string {
+  const safeName = (farmData.farmName || 'Fazenda Rio Verde').replace(/[<>&]/g, '');
+
+  let placemarks = '';
+
+  for (const t of farmData.talhoes) {
+    const kmlCoords = t.coordinates.map(([lat, lng]) => `${lng},${lat},0`).join(' ');
+    placemarks += `
+    <Placemark>
+      <name>${t.name.replace(/[<>&]/g, '')}</name>
+      <description>Área: ${t.areaHectares} ha | Cultura: ${t.crop || 'Não informada'}</description>
+      <Polygon>
+        <extrude>1</extrude>
+        <altitudeMode>clampToGround</altitudeMode>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>${kmlCoords}</coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>`;
+  }
+
+  for (const wp of farmData.waterPoints) {
+    placemarks += `
+    <Placemark>
+      <name>${wp.name.replace(/[<>&]/g, '')} (${wp.type.toUpperCase()})</name>
+      <description>Tipo: ${wp.type}</description>
+      <Point>
+        <coordinates>${wp.coordinates[1]},${wp.coordinates[0]},0</coordinates>
+      </Point>
+    </Placemark>`;
+  }
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${safeName}</name>
+    ${placemarks}
+  </Document>
+</kml>`;
+}
+
+/**
+ * Realistic initial demo farm in Rio Verde, Goiás
+ * Rio Verde is a major agricultural hub in Brazil renowned for soybean, corn and cattle farming.
+ */
+export function getRioVerdeDemoFarm(): FarmData {
+  const talhao1Coords: [number, number][] = [
+    [-17.7980, -51.0980],
+    [-17.7940, -51.0810],
+    [-17.8070, -51.0770],
+    [-17.8110, -51.0940],
+  ];
+
+  const talhao2Coords: [number, number][] = [
+    [-17.7935, -51.0790],
+    [-17.7900, -51.0620],
+    [-17.8020, -51.0590],
+    [-17.8055, -51.0760],
+  ];
+
+  const talhao3Coords: [number, number][] = [
+    [-17.8120, -51.0930],
+    [-17.8080, -51.0760],
+    [-17.8190, -51.0780],
+    [-17.8230, -51.0950],
+  ];
+
+  return {
+    farmName: 'Fazenda MyRoça - Rio Verde (GO)',
+    referenceDate: '2026-11-09',
+    activeViewMode: 'mapa',
+    talhoes: [
+      {
+        id: 'talhao_demo_01',
+        name: 'Talhão 01 [Exemplo]',
+        color: '#16a34a', // Verde Soja
+        crop: 'Soja',
+        cultivar: 'Brasmax Bônus IPRO',
+        plantingDate: '2026-10-10',
+        cycleDays: 115,
+        harvestDateExpected: '2027-02-02',
+        isExample: true,
+        healthStatus: 'verde',
+        harvestHistory: [
+          {
+            id: 'h1_1',
+            season: 'Safra 2025/26',
+            crop: 'Soja',
+            harvestDate: 'Fevereiro de 2026',
+            yieldText: '72 sc/ha',
+            notes: 'Soja safra 2025/26 com ótima produtividade.',
+          },
+          {
+            id: 'h1_2',
+            season: 'Safrinha 2026',
+            crop: 'Milho safrinha',
+            harvestDate: 'Julho de 2026',
+            yieldText: '118 sc/ha',
+            notes: 'Milho safrinha colhido em julho de 2026 com sucesso.',
+          },
+        ],
+        nextCropPlan: {
+          crop: 'Milho safrinha',
+          plannedPlanting: '2027-02-15',
+          plannedHarvest: '2027-06-30',
+          cycleDays: 135,
+          notes: 'Milho safrinha planejado para fevereiro de 2027 logo após a colheita da soja.',
+        },
+        areaHectares: calculatePolygonAreaHectares(talhao1Coords),
+        perimeterKm: calculatePerimeterKm(talhao1Coords),
+        coordinates: talhao1Coords,
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Soja plantada em 10/10/2026 com ciclo de 115 dias. Histórico de soja 2025/26 e milho safrinha colhido em julho de 2026. Próxima safra: milho safrinha planejado para fevereiro de 2027.',
+      },
+      {
+        id: 'talhao_demo_02',
+        name: 'Talhão 02 [Exemplo]',
+        color: '#eab308', // Amarelo Dourado
+        crop: 'Soja precoce',
+        cultivar: 'DM 54i52 RSF',
+        plantingDate: '2026-09-20',
+        cycleDays: 105,
+        harvestDateExpected: '2027-01-03',
+        isExample: true,
+        healthStatus: 'verde',
+        harvestHistory: [
+          {
+            id: 'h2_1',
+            season: 'Safra 2025/26',
+            crop: 'Soja',
+            harvestDate: 'Fevereiro de 2026',
+            yieldText: '70 sc/ha',
+            notes: 'Mesmo histórico de soja safra 2025/26.',
+          },
+          {
+            id: 'h2_2',
+            season: 'Safrinha 2026',
+            crop: 'Milho safrinha',
+            harvestDate: 'Julho de 2026',
+            yieldText: '114 sc/ha',
+            notes: 'Milho safrinha colhido em julho de 2026.',
+          },
+        ],
+        nextCropPlan: {
+          crop: 'Milho safrinha',
+          plannedPlanting: '2027-01-15',
+          plannedHarvest: '2027-05-30',
+          cycleDays: 135,
+          notes: 'Milho safrinha planejado para janeiro de 2027 antecipando a semeadura.',
+        },
+        areaHectares: calculatePolygonAreaHectares(talhao2Coords),
+        perimeterKm: calculatePerimeterKm(talhao2Coords),
+        coordinates: talhao2Coords,
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Soja precoce plantada em 20/09/2026 com ciclo de 105 dias. Mesmo histórico de safra anterior. Próxima safra: milho safrinha planejado para janeiro de 2027.',
+      },
+      {
+        id: 'talhao_demo_03',
+        name: 'Talhão 03 [Exemplo]',
+        color: '#059669', // Esmeralda Pastagem
+        crop: 'Pastagem de braquiária',
+        cultivar: 'Brachiaria brizantha (Marandu / Piatã)',
+        plantingDate: '',
+        cycleDays: 0,
+        isExample: true,
+        healthStatus: 'verde',
+        harvestHistory: [
+          {
+            id: 'h3_1',
+            season: 'Safra 2024/25',
+            crop: 'Pastagem perene',
+            harvestDate: 'Pastejo contínuo',
+            yieldText: '3,2 UA/ha',
+            notes: 'Área com manejo rotacionado e piquetes bem estabelecidos.',
+          },
+        ],
+        nextCropPlan: {
+          crop: 'Pastagem perene / Manutenção',
+          plannedPlanting: 'Contínua',
+          notes: 'Sem plantio recente; manutenção com roçagem e adubação nitrogenada.',
+        },
+        areaHectares: calculatePolygonAreaHectares(talhao3Coords),
+        perimeterKm: calculatePerimeterKm(talhao3Coords),
+        coordinates: talhao3Coords,
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Pastagem de braquiária perene sem plantio recente, mantida para pastejo rotacionado.',
+      },
+    ],
+    waterPoints: [
+      // Estruturas e Infraestrutura da Fazenda
+      {
+        id: 'elem_demo_sede',
+        name: 'Sede da Fazenda [Exemplo]',
+        type: 'sede',
+        coordinates: [-17.8025, -51.0745],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Casa principal, alojamento e escritório de gestão rural.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_silo',
+        name: 'Silos de Grãos e Moega [Exemplo]',
+        type: 'silo',
+        coordinates: [-17.8065, -51.0690],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Capacidade estática de 120.000 sacas com secador a lenha.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_curral',
+        name: 'Curral de Manejo [Exemplo]',
+        type: 'curral',
+        coordinates: [-17.8130, -51.0760],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Brete com balança eletrônica e tronco de contenção.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_pivo',
+        name: 'Pivô Central 01 [Exemplo]',
+        type: 'pivo',
+        coordinates: [-17.7940, -51.0660],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Pivô de 85 hectares com captação autorizada.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_estacao',
+        name: 'Estação Meteorológica [Exemplo]',
+        type: 'estacao_meteo',
+        coordinates: [-17.7985, -51.0820],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Monitoramento em tempo real de chuva, vento e umidade.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_estrada',
+        name: 'Estrada Interna Principal [Exemplo]',
+        type: 'estrada',
+        coordinates: [-17.8055, -51.0775],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Via cascalhada para escoamento de carretas bitrem e colheitadeiras.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_reserva',
+        name: 'Reserva Legal e Mata Ciliar [Exemplo]',
+        type: 'reserva',
+        coordinates: [-17.8160, -51.0880],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Área de Preservação Permanente (APP) averbada no CAR.',
+        isExample: true,
+      },
+
+      // Recursos Hídricos
+      {
+        id: 'elem_demo_acude',
+        name: 'Açude Principal da Sede [Exemplo]',
+        type: 'acude',
+        coordinates: [-17.8005, -51.0705],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Reservatório com lâmina de água de 3,2 ha. Outorga SECIMA.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_nascente',
+        name: 'Nascente da Mata das Araras [Exemplo]',
+        type: 'nascente',
+        coordinates: [-17.8185, -51.0855],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Mina protegida com raio de 50 metros preservado.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_poco',
+        name: 'Poço Artesiano Sede [Exemplo]',
+        type: 'poco',
+        coordinates: [-17.8040, -51.0780],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Profundidade 140 m, vazão 25.000 L/h para uso da sede.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_rio',
+        name: 'Ribeirão dos Patos [Exemplo]',
+        type: 'rio',
+        coordinates: [-17.8220, -51.0810],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Corpo hídrico na divisa sul da propriedade rural.',
+        isExample: true,
+      },
+    ],
+  };
+}
