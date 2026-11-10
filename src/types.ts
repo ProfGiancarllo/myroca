@@ -121,6 +121,7 @@ export interface WaterPoint {
 export interface FarmData {
   farmName: string;
   referenceDate?: string; // Data de referência 'Hoje', default '2026-11-09'
+  simulateTime?: boolean; // true = produtor avançou o calendário (simulação); false/ausente = segue o relógio real
   activeViewMode?: 'mapa' | 'fazenda'; // Modo atual: 'mapa' ou 'fazenda'
   talhoes: Talhao[];
   waterPoints: WaterPoint[];

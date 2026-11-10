@@ -58,7 +58,8 @@ class AgroApp {
 
   constructor() {
     this.farmData = loadFarmData();
-    this.referenceDate = this.farmData.referenceDate || DEFAULT_REFERENCE_DATE;
+    this.referenceDate = this.farmData.simulateTime ? (this.farmData.referenceDate || DEFAULT_REFERENCE_DATE) : this.todayIso();
+    this.farmData.referenceDate = this.referenceDate;
     this.activeViewMode = this.farmData.activeViewMode || 'mapa';
 
     this.rotationPlanner = new RotationPlanner({
@@ -77,6 +78,8 @@ class AgroApp {
     this.initGameMode();
     this.bindEvents();
     this.updateUI();
+    window.setInterval(() => this.syncRealDate(), 60000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.syncRealDate(); });
     this.estela = new EstelaChat({
       getFarm: () => this.farmData,
       getRefDate: () => this.referenceDate,
@@ -85,6 +88,8 @@ class AgroApp {
         saveFarmData(this.farmData);
         this.updateUI();
         this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
+        this.mapManager.renderTalhoes(this.farmData.talhoes, this.referenceDate);
+        this.estela?.refreshBadge();
         this.showToast(`📒 ${t('diarySaved')}`);
       },
     });
@@ -1063,7 +1068,29 @@ class AgroApp {
     }
   }
 
+  private todayIso(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  /** Enquanto o produtor não simula o tempo, o calendário acompanha o dia real. */
+  private syncRealDate(): void {
+    if (this.farmData.simulateTime) return;
+    const today = this.todayIso();
+    if (today === this.referenceDate) return;
+    this.referenceDate = today;
+    this.farmData.referenceDate = today;
+    saveFarmData(this.farmData);
+    const el = document.getElementById('calendar-today-display');
+    if (el) el.innerText = formatBrDateWithWeekday(today);
+    this.mapManager.renderTalhoes(this.farmData.talhoes, this.referenceDate);
+    this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
+    this.renderDrawerLists();
+    this.estela?.refreshBadge();
+  }
+
   public advanceTime(days: number): void {
+    this.farmData.simulateTime = true;
     this.referenceDate = addDaysToDate(this.referenceDate, days);
     this.farmData.referenceDate = this.referenceDate;
     saveFarmData(this.farmData);
@@ -1094,7 +1121,8 @@ class AgroApp {
   }
 
   public resetReferenceDate(): void {
-    this.referenceDate = DEFAULT_REFERENCE_DATE;
+    this.farmData.simulateTime = false;
+    this.referenceDate = this.todayIso();
     this.farmData.referenceDate = this.referenceDate;
     saveFarmData(this.farmData);
 

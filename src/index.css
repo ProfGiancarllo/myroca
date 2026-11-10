@@ -3129,3 +3129,6 @@ body {
 .estela-mic.on{background:#dc2626;animation:estelaPulse 1s infinite}
 @keyframes estelaPulse{50%{opacity:.6}}
 @media(max-width:640px){.estela-panel{left:7px;bottom:7px;width:calc(100vw - 14px);height:70vh}.estela-fab{bottom:84px}}
+
+.estela-badge{position:absolute;top:-6px;right:-4px;min-width:20px;height:20px;border-radius:999px;background:#dc2626;color:#fff;font-size:12px;font-weight:800;align-items:center;justify-content:center;padding:0 5px;border:2px solid #0f172a}
+.estela-fab{position:fixed}
