@@ -11,6 +11,15 @@ import {
   formatDateI18n,
   onLanguageChange,
 } from '../i18n';
+import {
+  AvatarConfig,
+  loadAvatar,
+  saveAvatar,
+  drawAvatar,
+  wasAvatarPrompted,
+  markAvatarPrompted,
+} from '../avatar/avatar';
+import { openAvatarCreator } from '../avatar/avatarCreator';
 
 export interface FarmGameViewCallbacks {
   onTalhaoSelect: (talhao: Talhao) => void;
@@ -18,6 +27,7 @@ export interface FarmGameViewCallbacks {
   onSwitchToRealMap: () => void;
   onAdvanceTime: (days: number) => void;
   onOpenCalendarModal?: (talhao: Talhao) => void;
+  onAvatarSaved?: () => void;
 }
 
 export interface FarmGameViewOptions {
@@ -29,6 +39,7 @@ export interface FarmGameViewOptions {
   onSwitchToRealMap?: () => void;
   onAdvanceTime?: (days: number) => void;
   onOpenCalendarModal?: (talhaoId: string) => void;
+  onAvatarSaved?: () => void;
 }
 
 interface WeatherCloud {
@@ -93,6 +104,14 @@ export class FarmGameView {
   private isAgronomistCollapsed = false;
   private currentSpeechIndex = 0;
 
+  // Avatar do produtor
+  private avatarCfg: AvatarConfig | null = null;
+  private avatarPos: { lat: number; lng: number } | null = null;
+  private avatarTarget: { lat: number; lng: number } | null = null;
+  private avatarArrival: (() => void) | null = null;
+  private avatarAway = false;
+  private avatarWalking = false;
+
   constructor(
     containerOrOptions: HTMLElement | FarmGameViewOptions,
     farmData?: FarmData,
@@ -121,6 +140,7 @@ export class FarmGameView {
         onOpenCalendarModal: containerOrOptions.onOpenCalendarModal
           ? (t: Talhao) => containerOrOptions.onOpenCalendarModal!(t.id)
           : undefined,
+        onAvatarSaved: containerOrOptions.onAvatarSaved,
       };
     }
 
@@ -130,6 +150,7 @@ export class FarmGameView {
     this.computeFarmBounds();
     this.resetCameraView();
     this.bindEvents();
+    this.initAvatar();
     this.startAnimationLoop();
     onLanguageChange(() => this.updateLanguage());
   }
@@ -228,6 +249,7 @@ export class FarmGameView {
           <button class="btn-game-hud-control" id="btn-game-zoom-in" title="${t('zoomIn')}">+</button>
           <button class="btn-game-hud-control" id="btn-game-zoom-out" title="${t('zoomOut')}">&minus;</button>
           <button class="btn-game-hud-control" id="btn-game-reset-view" title="${t('centerFarm')}">🎯</button>
+          <button class="btn-game-hud-control" id="btn-game-avatar" title="${t('avBtn')}">🧑‍🌾</button>
         </div>
 
         <!-- BOTTOM-RIGHT FLOATING AGRONOMIST CARD (Eng. Tiago) -->
@@ -944,7 +966,7 @@ export class FarmGameView {
     for (const wp of this.farmData.waterPoints) {
       const sp = this.worldToScreen(wp.coordinates[0], wp.coordinates[1]);
       if (Math.hypot(mx - sp.x, my - sp.y) <= 28) {
-        this.callbacks.onElementSelect(wp);
+        this.walkAvatarTo(wp.coordinates[0], wp.coordinates[1], () => this.callbacks.onElementSelect(wp));
         return;
       }
     }
@@ -954,10 +976,122 @@ export class FarmGameView {
     const clickedPt: [number, number] = [geo.lng, geo.lat];
     for (const t of this.farmData.talhoes) {
       if (this.pointInPolygon(clickedPt, t.coordinates)) {
-        this.callbacks.onTalhaoSelect(t);
-        this.openTalhaoSheet(t);
+        this.walkAvatarTo(geo.lat, geo.lng, () => {
+          this.callbacks.onTalhaoSelect(t);
+          this.openTalhaoSheet(t);
+        });
         return;
       }
+    }
+
+    // Chão livre: apenas caminha
+    this.walkAvatarTo(geo.lat, geo.lng, null);
+  }
+
+  // ========================================================
+  // AVATAR DO PRODUTOR
+  // ========================================================
+  private initAvatar(): void {
+    this.avatarCfg = loadAvatar();
+    const sede = this.farmData.waterPoints.find((w) => w.type === 'sede');
+    this.avatarPos = sede
+      ? { lat: sede.coordinates[0] - 0.0003, lng: sede.coordinates[1] }
+      : { lat: this.centerLat, lng: this.centerLng };
+    document.getElementById('btn-game-avatar')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openAvatarEditor();
+    });
+    this.refreshAvatarButton();
+  }
+
+  private refreshAvatarButton(): void {
+    document.getElementById('btn-game-avatar')?.classList.toggle('av-pulse', !this.avatarCfg);
+  }
+
+  public openAvatarEditor(): void {
+    markAvatarPrompted();
+    openAvatarCreator({
+      initial: this.avatarCfg,
+      onSave: (cfg) => {
+        this.avatarCfg = cfg;
+        saveAvatar(cfg);
+        this.refreshAvatarButton();
+        this.callbacks.onAvatarSaved?.();
+      },
+    });
+  }
+
+  /** Chamado quando a visão "Minha Fazenda" é exibida: oferece criar o avatar uma única vez. */
+  public promptAvatarIfNeeded(): void {
+    if (this.avatarCfg || wasAvatarPrompted()) return;
+    this.openAvatarEditor();
+  }
+
+  private walkAvatarTo(lat: number, lng: number, onArrive: (() => void) | null): void {
+    if (!this.avatarCfg || !this.avatarPos) {
+      // sem avatar: comportamento direto (abre a ficha na hora)
+      onArrive?.();
+      return;
+    }
+    this.avatarTarget = { lat, lng };
+    this.avatarArrival = onArrive;
+  }
+
+  private updateAvatar(): void {
+    this.avatarWalking = false;
+    if (!this.avatarCfg || !this.avatarPos || !this.avatarTarget) return;
+    const a = this.latLngToMeters(this.avatarPos.lat, this.avatarPos.lng);
+    const b = this.latLngToMeters(this.avatarTarget.lat, this.avatarTarget.lng);
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const dist = Math.hypot(dx, dy);
+    // velocidade de jogo: ~9 m por quadro (≈ 540 m/s), um pouco mais rápido em trajetos longos
+    const step = Math.max(9, dist / 220);
+    if (dist <= step) {
+      this.avatarPos = { lat: this.avatarTarget.lat, lng: this.avatarTarget.lng };
+      this.avatarTarget = null;
+      const done = this.avatarArrival;
+      this.avatarArrival = null;
+      done?.();
+      return;
+    }
+    const nx = a.x + (dx / dist) * step;
+    const ny = a.y + (dy / dist) * step;
+    const R = 6378137;
+    const latRad = (this.centerLat * Math.PI) / 180;
+    this.avatarPos = {
+      lat: this.centerLat + ny / ((Math.PI / 180) * R),
+      lng: this.centerLng + nx / ((Math.PI / 180) * R * Math.cos(latRad)),
+    };
+    this.avatarWalking = true;
+    // norte (dy > 0) aparece "para cima" na tela: mostra de costas
+    this.avatarAway = dy > 0 && Math.abs(dy) > Math.abs(dx) * 0.4;
+  }
+
+  private renderAvatar(): void {
+    if (!this.avatarCfg || !this.avatarPos) return;
+    const ctx = this.ctx;
+    const p = this.worldToScreen(this.avatarPos.lat, this.avatarPos.lng);
+    const px = 64 * Math.min(1.9, Math.max(0.75, this.scale));
+    drawAvatar(ctx, this.avatarCfg, p.x, p.y, px, {
+      walking: this.avatarWalking,
+      tick: this.animTick,
+      away: this.avatarWalking ? this.avatarAway : false,
+    });
+    if (this.avatarCfg.name) {
+      ctx.save();
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const w = ctx.measureText(this.avatarCfg.name).width + 14;
+      const y = p.y - px * 1.18;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      ctx.beginPath();
+      ctx.roundRect(p.x - w / 2, y - 9, w, 18, 9);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(this.avatarCfg.name, p.x, y);
+      ctx.restore();
     }
   }
 
@@ -967,6 +1101,7 @@ export class FarmGameView {
   private startAnimationLoop(): void {
     const loop = () => {
       this.animTick++;
+      this.updateAvatar();
       this.updateWeatherAnimation();
       this.render();
       this.animationFrameId = requestAnimationFrame(loop);
@@ -1025,6 +1160,9 @@ export class FarmGameView {
 
     // 6. 2.5D Isometric Vector Structures (Sede, Silos, Curral, Estação, Poço, Mata)
     this.renderStructures();
+
+    // 6b. Avatar do produtor
+    this.renderAvatar();
 
     // 7. Ambient Weather Effects (Gentle Drifting Clouds & Light Rain)
     this.renderWeather(width, height);

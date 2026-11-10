@@ -965,6 +965,9 @@ class AgroApp {
       onOpenCalendarModal: (talhaoId: string) => {
         this.openCropCalendarModal(talhaoId);
       },
+      onAvatarSaved: () => {
+        this.showToast(`🧑‍🌾 ${t('avSaved')}`);
+      },
     });
   }
 
@@ -996,6 +999,7 @@ class AgroApp {
       }, 60);
 
       this.showToast(`🚜 ${t('toastModeMyFarm')}`);
+      setTimeout(() => this.farmGameView?.promptAvatarIfNeeded(), 700);
     } else {
       btnFazenda?.classList.remove('active');
       btnMapa?.classList.add('active');
