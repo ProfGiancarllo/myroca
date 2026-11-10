@@ -974,6 +974,11 @@ class AgroApp {
       onAvatarSaved: () => {
         this.showToast(`🧑‍🌾 ${t('avSaved')}`);
       },
+      onElementMoved: (elem: WaterPoint) => {
+        const mine = this.farmData.waterPoints.find((x) => x.id === elem.id);
+        if (mine && mine !== elem) mine.coordinates = [elem.coordinates[0], elem.coordinates[1]];
+        saveFarmData(this.farmData);
+      },
     });
   }
 

@@ -134,7 +134,7 @@ export interface TranslationDictionary {
   btnZoomOut: string;
   btnResetView: string;
 
-  // Agronomist (Eng. Tiago)
+  // Agronomist (Engª. Estela)
   agronomistTitle: string;
   agronomistSpeechAllHealthy: string;
   agronomistSpeechFlowering: string; // params: {talhao, crop}
@@ -372,6 +372,13 @@ export interface TranslationDictionary {
   diaryTypeColheita: string;
   diaryTypeObservacao: string;
   avBtn: string;
+  moveModeBtn: string;
+  moveModeOn: string;
+  moveModeOff: string;
+  elemMoved: string;
+  elemMove: string;
+  elemClose: string;
+  elemGoThere: string;
   avTitle: string;
   avSubtitle: string;
   avName: string;

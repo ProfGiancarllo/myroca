@@ -1,5 +1,5 @@
 /**
- * Regras agronômicas do Eng. Tiago (motor determinístico, sem IA generativa).
+ * Regras agronômicas do Engª. Estela (motor determinístico, sem IA generativa).
  *
  * Todos os limiares ficam em RULES para que o agrônomo da equipe possa ajustá-los
  * sem mexer na lógica. Valores iniciais para soja no Cerrado (Rio Verde-GO).

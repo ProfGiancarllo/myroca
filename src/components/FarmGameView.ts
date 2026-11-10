@@ -33,6 +33,7 @@ export interface FarmGameViewCallbacks {
   onOpenCalendarModal?: (talhao: Talhao) => void;
   onAvatarSaved?: () => void;
   onTalhaoUpdated?: (talhao: Talhao) => void;
+  onElementMoved?: (elem: WaterPoint) => void;
 }
 
 export interface FarmGameViewOptions {
@@ -46,6 +47,7 @@ export interface FarmGameViewOptions {
   onOpenCalendarModal?: (talhaoId: string) => void;
   onAvatarSaved?: () => void;
   onTalhaoUpdated?: (talhao: Talhao) => void;
+  onElementMoved?: (elem: WaterPoint) => void;
 }
 
 interface WeatherCloud {
@@ -121,6 +123,12 @@ export class FarmGameView {
   private modelForecast: Record<string, number> = {};
   private nasaSeries: Record<string, NasaSeries> = {};
 
+  // Mover componentes (silos, nascentes...)
+  private moveMode = false;
+  private draggingElement: WaterPoint | null = null;
+  private draggingMoved = false;
+  private elementCard: HTMLElement | null = null;
+
   // Diário de safra (ficha do talhão)
   private sheetTalhaoId = '';
   private diaryFormOpen = false;
@@ -155,6 +163,7 @@ export class FarmGameView {
           : undefined,
         onAvatarSaved: containerOrOptions.onAvatarSaved,
         onTalhaoUpdated: containerOrOptions.onTalhaoUpdated,
+        onElementMoved: containerOrOptions.onElementMoved,
       };
     }
 
@@ -264,10 +273,11 @@ export class FarmGameView {
           <button class="btn-game-hud-control" id="btn-game-zoom-in" title="${t('zoomIn')}">+</button>
           <button class="btn-game-hud-control" id="btn-game-zoom-out" title="${t('zoomOut')}">&minus;</button>
           <button class="btn-game-hud-control" id="btn-game-reset-view" title="${t('centerFarm')}">🎯</button>
+          <button class="btn-game-hud-control" id="btn-game-move-mode" title="${t('moveModeBtn')}">✋</button>
           <button class="btn-game-hud-control" id="btn-game-avatar" title="${t('avBtn')}">🧑‍🌾</button>
         </div>
 
-        <!-- BOTTOM-RIGHT FLOATING AGRONOMIST CARD (Eng. Tiago) -->
+        <!-- BOTTOM-RIGHT FLOATING AGRONOMIST CARD (Engª. Estela) -->
         <div class="game-agronomist-floating-wrapper" id="game-agronomist-card">
           <div class="agronomist-speech-bubble" id="agronomist-speech-bubble">
             <div class="bubble-header">
@@ -789,10 +799,16 @@ export class FarmGameView {
       this.hasMovedWhileDragging = false;
       this.dragStartX = e.clientX;
       this.dragStartY = e.clientY;
+      this.tryStartElementDrag(e.clientX, e.clientY);
     });
 
     window.addEventListener('mousemove', (e) => {
-      if (this.isDragging) {
+      if (this.draggingElement) {
+        if (Math.hypot(e.clientX - this.dragStartX, e.clientY - this.dragStartY) > 3) {
+          this.hasMovedWhileDragging = true;
+        }
+        this.dragElementTo(e.clientX, e.clientY);
+      } else if (this.isDragging) {
         const dx = e.clientX - this.dragStartX;
         const dy = e.clientY - this.dragStartY;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
@@ -814,6 +830,11 @@ export class FarmGameView {
     });
 
     window.addEventListener('mouseup', (e) => {
+      if (this.draggingElement) {
+        this.finishElementDrag();
+        this.isDragging = false;
+        return;
+      }
       if (this.isDragging && !this.hasMovedWhileDragging) {
         this.handleCanvasClick(e.clientX, e.clientY);
       }
@@ -840,8 +861,10 @@ export class FarmGameView {
           this.hasMovedWhileDragging = false;
           this.dragStartX = e.touches[0].clientX;
           this.dragStartY = e.touches[0].clientY;
+          this.tryStartElementDrag(e.touches[0].clientX, e.touches[0].clientY);
         } else if (e.touches.length === 2) {
           this.isDragging = false;
+          this.draggingElement = null;
           touchStartDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
             e.touches[0].clientY - e.touches[1].clientY
@@ -854,7 +877,12 @@ export class FarmGameView {
     this.canvas.addEventListener(
       'touchmove',
       (e) => {
-        if (e.touches.length === 1 && this.isDragging) {
+        if (e.touches.length === 1 && this.draggingElement) {
+          if (Math.hypot(e.touches[0].clientX - this.dragStartX, e.touches[0].clientY - this.dragStartY) > 4) {
+            this.hasMovedWhileDragging = true;
+          }
+          this.dragElementTo(e.touches[0].clientX, e.touches[0].clientY);
+        } else if (e.touches.length === 1 && this.isDragging) {
           const dx = e.touches[0].clientX - this.dragStartX;
           const dy = e.touches[0].clientY - this.dragStartY;
           if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
@@ -880,6 +908,12 @@ export class FarmGameView {
     );
 
     this.canvas.addEventListener('touchend', (e) => {
+      if (this.draggingElement) {
+        this.finishElementDrag();
+        this.isDragging = false;
+        touchStartDist = 0;
+        return;
+      }
       if (!this.hasMovedWhileDragging && e.changedTouches.length === 1) {
         const touch = e.changedTouches[0];
         this.handleCanvasClick(touch.clientX, touch.clientY);
@@ -899,6 +933,10 @@ export class FarmGameView {
 
     document.getElementById('btn-game-reset-view')?.addEventListener('click', () => {
       this.resetCameraView();
+    });
+
+    document.getElementById('btn-game-move-mode')?.addEventListener('click', () => {
+      this.setMoveMode(!this.moveMode);
     });
 
     document.getElementById('btn-game-advance-week')?.addEventListener('click', () => {
@@ -1012,7 +1050,9 @@ export class FarmGameView {
       this.hoveredTalhao = null;
     }
 
-    this.canvas.style.cursor = this.hoveredElement || this.hoveredTalhao ? 'pointer' : 'grab';
+    this.canvas.style.cursor = this.moveMode
+      ? this.hoveredElement || this.draggingElement ? 'grabbing' : 'move'
+      : this.hoveredElement || this.hoveredTalhao ? 'pointer' : 'grab';
   }
 
   private handleCanvasClick(clientX: number, clientY: number): void {
@@ -1020,30 +1060,141 @@ export class FarmGameView {
     const mx = clientX - rect.left;
     const my = clientY - rect.top;
 
-    // Structure click
-    for (const wp of this.farmData.waterPoints) {
-      const sp = this.worldToScreen(wp.coordinates[0], wp.coordinates[1]);
-      if (Math.hypot(mx - sp.x, my - sp.y) <= 28) {
-        this.walkAvatarTo(wp.coordinates[0], wp.coordinates[1], () => this.callbacks.onElementSelect(wp));
-        return;
-      }
+    // Componente (silo, nascente...): abre o cartão na hora, sem o avatar andar
+    const hit = this.hitStructure(mx, my, 28);
+    if (hit) {
+      this.callbacks.onElementSelect(hit);
+      this.openElementCard(hit);
+      return;
     }
+    this.closeElementCard();
 
-    // Talhão click
+    // Talhão: abre a ficha na hora
     const geo = this.screenToLatLng(mx, my);
     const clickedPt: [number, number] = [geo.lng, geo.lat];
     for (const t of this.farmData.talhoes) {
       if (this.pointInPolygon(clickedPt, t.coordinates)) {
-        this.walkAvatarTo(geo.lat, geo.lng, () => {
-          this.callbacks.onTalhaoSelect(t);
-          this.openTalhaoSheet(t);
-        });
+        this.callbacks.onTalhaoSelect(t);
+        this.openTalhaoSheet(t);
         return;
       }
     }
 
-    // Chão livre: apenas caminha
+    // Chão livre: o avatar caminha até o ponto
     this.walkAvatarTo(geo.lat, geo.lng, null);
+  }
+
+  // ========================================================
+  // COMPONENTES: cartão de informações e modo "mover"
+  // ========================================================
+  private hitStructure(mx: number, my: number, radius: number): WaterPoint | null {
+    let best: WaterPoint | null = null;
+    let bestDist = radius;
+    for (const wp of this.farmData.waterPoints) {
+      const sp = this.worldToScreen(wp.coordinates[0], wp.coordinates[1]);
+      const d = Math.hypot(mx - sp.x, my - sp.y);
+      if (d <= bestDist) {
+        best = wp;
+        bestDist = d;
+      }
+    }
+    return best;
+  }
+
+  private setMoveMode(on: boolean): void {
+    this.moveMode = on;
+    document.getElementById('btn-game-move-mode')?.classList.toggle('active', on);
+    this.canvas.style.cursor = on ? 'move' : 'grab';
+    this.showHint(on ? t('moveModeOn') : t('moveModeOff'));
+  }
+
+  private showHint(text: string): void {
+    let el = this.container.querySelector<HTMLElement>('.game-move-hint');
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'game-move-hint';
+      this.container.appendChild(el);
+    }
+    el.textContent = text;
+    el.classList.add('show');
+    window.setTimeout(() => el!.classList.remove('show'), 2600);
+  }
+
+  private tryStartElementDrag(clientX: number, clientY: number): void {
+    if (!this.moveMode) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const hit = this.hitStructure(clientX - rect.left, clientY - rect.top, 32);
+    if (hit) {
+      this.draggingElement = hit;
+      this.draggingMoved = false;
+    }
+  }
+
+  private dragElementTo(clientX: number, clientY: number): void {
+    if (!this.draggingElement) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const geo = this.screenToLatLng(clientX - rect.left, clientY - rect.top);
+    this.draggingElement.coordinates = [geo.lat, geo.lng];
+    this.draggingMoved = true;
+    this.canvas.style.cursor = 'grabbing';
+  }
+
+  private finishElementDrag(): void {
+    const el = this.draggingElement;
+    this.draggingElement = null;
+    if (!el) return;
+    if (this.draggingMoved) {
+      this.callbacks.onElementMoved?.(el);
+      this.showHint(`✅ ${t('elemMoved')}`);
+    } else {
+      // toque sem arrastar no modo mover: abre o cartão
+      this.callbacks.onElementSelect(el);
+      this.openElementCard(el);
+    }
+    this.draggingMoved = false;
+    this.canvas.style.cursor = this.moveMode ? 'move' : 'grab';
+  }
+
+  private openElementCard(wp: WaterPoint): void {
+    const meta = FARM_ELEMENT_META[wp.type];
+    if (!this.elementCard) {
+      this.elementCard = document.createElement('div');
+      this.elementCard.className = 'game-element-card';
+      this.container.appendChild(this.elementCard);
+    }
+    const card = this.elementCard;
+    const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+    card.innerHTML = `
+      <div class="elem-card-head">
+        <span class="elem-card-icon">${meta?.icon || '📍'}</span>
+        <div class="elem-card-titles">
+          <strong>${esc(wp.name)}</strong>
+          <small>${esc(meta?.label || wp.type)}</small>
+        </div>
+        <button class="elem-card-x" data-act="close" aria-label="${t('elemClose')}">&times;</button>
+      </div>
+      ${meta?.description ? `<p class="elem-card-desc">${esc(meta.description)}</p>` : ''}
+      ${wp.notes ? `<p class="elem-card-notes">${esc(wp.notes)}</p>` : ''}
+      <div class="elem-card-actions">
+        <button data-act="move">✋ ${t('elemMove')}</button>
+        <button data-act="walk">🚶 ${t('elemGoThere')}</button>
+      </div>`;
+    card.style.display = 'block';
+    card.onclick = (ev) => {
+      const act = (ev.target as HTMLElement).closest('button')?.getAttribute('data-act');
+      if (act === 'close') this.closeElementCard();
+      else if (act === 'move') {
+        this.closeElementCard();
+        if (!this.moveMode) this.setMoveMode(true);
+      } else if (act === 'walk') {
+        this.closeElementCard();
+        this.walkAvatarTo(wp.coordinates[0], wp.coordinates[1], null);
+      }
+    };
+  }
+
+  private closeElementCard(): void {
+    if (this.elementCard) this.elementCard.style.display = 'none';
   }
 
   // ========================================================
@@ -2329,7 +2480,7 @@ export class FarmGameView {
         if (token !== this.nasaToken) return;
         this.nasaSeries[talhao.id] = series;
         this.renderNasaPanel(series);
-        this.renderTiagoBox(talhao);
+        this.renderEstelaBox(talhao);
         this.updateAgronomistSpeech();
         fetchModelForecast(talhao, summarizeNasa(series)).then((v) => {
           if (v !== null && token === this.nasaToken) {
@@ -2403,8 +2554,8 @@ export class FarmGameView {
     return t(l === 'low' ? 'agLevelLow' : l === 'medium' ? 'agLevelMedium' : 'agLevelHigh');
   }
 
-  /** Recomendação do Eng. Tiago no talhão: risco de plantio (7 dias) e alertas da lavoura. */
-  private renderTiagoBox(talhao: Talhao): void {
+  /** Recomendação do Engª. Estela no talhão: risco de plantio (7 dias) e alertas da lavoura. */
+  private renderEstelaBox(talhao: Talhao): void {
     const box = document.getElementById('sheet-tiago-box');
     const series = this.nasaSeries[talhao.id];
     if (!box) return;
@@ -2725,6 +2876,8 @@ export class FarmGameView {
     if (btnZoomIn) btnZoomIn.title = t('zoomIn');
     if (btnZoomOut) btnZoomOut.title = t('zoomOut');
     if (btnResetView) btnResetView.title = t('centerFarm');
+    const btnMove = document.getElementById('btn-game-move-mode');
+    if (btnMove) btnMove.title = t('moveModeBtn');
 
     // 3. Agronomist Card
     const speakerTitle = document.getElementById('game-agronomist-speaker-title');
