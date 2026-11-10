@@ -12,6 +12,7 @@ import {
   onLanguageChange,
 } from '../i18n';
 import type { TranslationDictionary } from '../i18n';
+import { fetchNasaSeries, summarizeNasa, polygonCentroid, NasaSeries } from '../utils/nasaPower';
 import {
   AvatarConfig,
   loadAvatar,
@@ -114,6 +115,8 @@ export class FarmGameView {
   private avatarArrival: (() => void) | null = null;
   private avatarAway = false;
   private avatarWalking = false;
+  private nasaToken = 0;
+  private nasaSeries: Record<string, NasaSeries> = {};
 
   // Diário de safra (ficha do talhão)
   private sheetTalhaoId = '';
@@ -408,6 +411,17 @@ export class FarmGameView {
               <div class="sheet-history-box" id="sheet-history-box">
                 <div class="history-title" id="lbl-sheet-history-title">📜 ${t('harvestHistoryTitle')}</div>
                 <div id="sheet-history-list" class="history-items-list"></div>
+              </div>
+
+              <div class="sheet-nasa-box" id="sheet-nasa-box">
+                <div class="diary-head">
+                  <div>
+                    <div class="history-title" id="lbl-sheet-nasa-title" style="margin:0">🛰️ ${t('nasaTitle')}</div>
+                    <div class="nasa-period" id="sheet-nasa-period"></div>
+                  </div>
+                  <button type="button" class="nasa-refresh-btn" id="btn-nasa-refresh">⟳ ${t('nasaRefresh')}</button>
+                </div>
+                <div id="sheet-nasa-body"></div>
               </div>
 
               <div class="sheet-diary-box" id="sheet-diary-box">
@@ -2215,6 +2229,7 @@ export class FarmGameView {
     this.sheetTalhaoId = talhao.id;
     this.diaryFormOpen = false;
     this.renderDiary();
+    this.loadNasaPanel(talhao, false);
 
     // Notice
     const noticeEl = document.getElementById('sheet-simple-notice');
@@ -2258,6 +2273,86 @@ export class FarmGameView {
     });
 
     sheet.style.display = 'flex';
+  }
+
+  // ========================================================
+  // DADOS DA NASA (POWER)
+  // ========================================================
+  /** Série NASA já carregada para o talhão (usada pelo agrônomo e pela previsão). */
+  public getNasaSeries(talhaoId: string): NasaSeries | undefined {
+    return this.nasaSeries[talhaoId];
+  }
+
+  private loadNasaPanel(talhao: Talhao, force: boolean): void {
+    const body = document.getElementById('sheet-nasa-body');
+    const periodEl = document.getElementById('sheet-nasa-period');
+    const refreshBtn = document.getElementById('btn-nasa-refresh');
+    if (!body || !periodEl || !refreshBtn) return;
+    const token = ++this.nasaToken;
+    refreshBtn.onclick = () => this.loadNasaPanel(talhao, true);
+    periodEl.textContent = '';
+    body.innerHTML = `<div class="nasa-msg">⏳ ${t('nasaLoading')}</div>`;
+
+    const c = polygonCentroid(talhao.coordinates);
+    const ref = this.farmData.referenceDate || '2026-11-09';
+    fetchNasaSeries(c.lat, c.lng, ref, 30, force)
+      .then((series) => {
+        if (token !== this.nasaToken) return;
+        this.nasaSeries[talhao.id] = series;
+        this.renderNasaPanel(series);
+      })
+      .catch(() => {
+        if (token !== this.nasaToken) return;
+        body.innerHTML = `
+          <div class="nasa-msg nasa-msg-error">${t('nasaError')}</div>
+          <button type="button" class="diary-btn-ghost" id="btn-nasa-retry">${t('nasaRetry')}</button>`;
+        (document.getElementById('btn-nasa-retry') as HTMLElement).onclick = () => this.loadNasaPanel(talhao, true);
+      });
+  }
+
+  private renderNasaPanel(series: NasaSeries): void {
+    const body = document.getElementById('sheet-nasa-body');
+    const periodEl = document.getElementById('sheet-nasa-period');
+    if (!body || !periodEl) return;
+    periodEl.textContent = t('nasaPeriod', { end: formatDateI18n(series.end) });
+    const s = summarizeNasa(series);
+    if (s.daysWithData === 0) {
+      body.innerHTML = `<div class="nasa-msg">${t('nasaNoData')}</div>`;
+      return;
+    }
+    const f1 = (v: number | null, suffix: string) => (v === null ? '—' : `${formatNumber(v, 1)}${suffix}`);
+    const tile = (label: string, value: string) =>
+      `<div class="nasa-tile"><span class="nasa-tile-label">${label}</span><strong class="nasa-tile-val">${value}</strong></div>`;
+
+    // Gráfico de barras: chuva diária
+    const days = series.days;
+    const maxRain = Math.max(10, ...days.map((d) => d.rain ?? 0));
+    const W = 300;
+    const H = 70;
+    const bw = W / days.length;
+    const bars = days
+      .map((d, i) => {
+        const h = d.rain === null ? 0 : Math.max(d.rain > 0 ? 1.5 : 0, (d.rain / maxRain) * (H - 6));
+        const label = `${formatDateI18n(d.date)}: ${d.rain === null ? '—' : formatNumber(d.rain, 1) + ' mm'}`;
+        return `<rect x="${(i * bw + 0.6).toFixed(2)}" y="${(H - h).toFixed(2)}" width="${Math.max(1, bw - 1.2).toFixed(2)}" height="${h.toFixed(2)}" rx="1" fill="${d.rain === null ? '#475569' : '#38bdf8'}"><title>${label}</title></rect>`;
+      })
+      .join('');
+
+    body.innerHTML = `
+      <div class="nasa-tiles">
+        ${tile(t('nasaRain30'), f1(s.rainTotal, ' mm'))}
+        ${tile(t('nasaRain7'), f1(s.rainLast7, ' mm'))}
+        ${tile(t('nasaDryDays'), `${formatNumber(s.dryDays, 0)}`)}
+        ${tile(t('nasaTempAvg'), f1(s.tavg, ' °C'))}
+        ${tile(t('nasaTempRange'), `${f1(s.tminLow, '')} – ${f1(s.tmaxPeak, ' °C')}`)}
+        ${tile(t('nasaRadiation'), f1(s.radAvg, ' MJ/m²'))}
+      </div>
+      <div class="nasa-chart-title">${t('nasaChartTitle')} • ${t('nasaDaysOfData', { n: formatNumber(s.daysWithData, 0) })}</div>
+      <svg class="nasa-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${this.escapeHtmlText(t('nasaChartTitle'))}">
+        <line x1="0" y1="${H - 0.5}" x2="${W}" y2="${H - 0.5}" stroke="#334155" stroke-width="1"/>
+        ${bars}
+      </svg>
+      <div class="nasa-source">${t('nasaSource')}</div>`;
   }
 
   // ========================================================
