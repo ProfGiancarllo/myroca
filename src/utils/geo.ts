@@ -1,6 +1,6 @@
 import { FarmData, Talhao, WaterPoint, WaterPointType, TALHAO_COLORS } from '../types';
 import { getCropColor } from './cropCalendar';
-import { t, TranslationDictionary } from '../i18n';
+import { t, translateCropName, TranslationDictionary } from '../i18n';
 
 /**
  * Radius of the Earth in meters according to WGS84
@@ -434,7 +434,7 @@ export function getRioVerdeDemoFarm(): FarmData {
     [-17.8230, -51.0950],
   ];
 
-  return {
+  const demoFarm: FarmData = {
     farmName: 'Fazenda MyRoça - Rio Verde (GO)',
     referenceDate: '2026-11-09',
     activeViewMode: 'mapa',
@@ -660,8 +660,9 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
     ],
   };
+  localizeExampleNames(demoFarm);
+  return demoFarm;
 }
-
 
 /**
  * Chaves de tradução dos nomes dos itens de exemplo (fazenda modelo), por id.
@@ -698,7 +699,60 @@ export function localizeExampleNames(farm: FarmData): boolean {
       changed = true;
     }
   };
+  const setIf = <T extends object, K extends keyof T>(obj: T | undefined, field: K, value: string) => {
+    if (obj && obj[field] !== value) {
+      (obj[field] as unknown as string) = value;
+      changed = true;
+    }
+  };
+
   farm.talhoes.forEach(apply);
   farm.waterPoints.forEach(apply);
+
+  // Notas dos itens de exemplo
+  const noteKeys: Record<string, keyof TranslationDictionary> = {
+    talhao_demo_01: 'demoNoteTalhao01', talhao_demo_02: 'demoNoteTalhao02', talhao_demo_03: 'demoNoteTalhao03',
+    elem_demo_sede: 'demoNoteSede', elem_demo_silo: 'demoNoteSilo', elem_demo_curral: 'demoNoteCurral',
+    elem_demo_pivo: 'demoNotePivo', elem_demo_estacao: 'demoNoteEstacao', elem_demo_estrada: 'demoNoteEstrada',
+    elem_demo_reserva: 'demoNoteReserva', elem_demo_acude: 'demoNoteAcude', elem_demo_nascente: 'demoNoteNascente',
+    elem_demo_poco: 'demoNotePoco', elem_demo_rio: 'demoNoteRio',
+  };
+  [...farm.talhoes, ...farm.waterPoints].forEach((item) => {
+    const key = noteKeys[item.id];
+    if (item.isExample && key) setIf(item, 'notes', t(key));
+  });
+
+  // Histórico de safras e plano da próxima safra dos talhões de exemplo
+  const hist: Record<string, { season: keyof TranslationDictionary; crop: () => string; date: keyof TranslationDictionary; note: keyof TranslationDictionary }> = {
+    h1_1: { season: 'demoSeason2526', crop: () => translateCropName('Soja'), date: 'demoDateFeb2026', note: 'demoHistNote11' },
+    h1_2: { season: 'demoSeasonSafrinha', crop: () => t('demoCropMilhoSafrinha'), date: 'demoDateJul2026', note: 'demoHistNote12' },
+    h2_1: { season: 'demoSeason2526', crop: () => translateCropName('Soja'), date: 'demoDateFeb2026', note: 'demoHistNote21' },
+    h2_2: { season: 'demoSeasonSafrinha', crop: () => t('demoCropMilhoSafrinha'), date: 'demoDateJul2026', note: 'demoHistNote22' },
+    h3_1: { season: 'demoSeason2425', crop: () => t('phasePastagemPerene'), date: 'demoGrazingContinuous', note: 'demoHistNote31' },
+  };
+  const planNotes: Record<string, keyof TranslationDictionary> = {
+    talhao_demo_01: 'demoPlanNote1', talhao_demo_02: 'demoPlanNote2', talhao_demo_03: 'demoPlanNote3',
+  };
+  farm.talhoes.forEach((tl) => {
+    if (!tl.isExample || !planNotes[tl.id]) return;
+    (tl.harvestHistory || []).forEach((h) => {
+      const m = hist[h.id];
+      if (!m) return;
+      setIf(h, 'season', t(m.season));
+      setIf(h, 'crop', m.crop());
+      setIf(h, 'harvestDate', t(m.date));
+      setIf(h, 'notes', t(m.note));
+    });
+    const plan = tl.nextCropPlan;
+    if (plan) {
+      setIf(plan, 'notes', t(planNotes[tl.id]));
+      if (tl.id === 'talhao_demo_03') {
+        setIf(plan, 'crop', t('demoCropPastagemManut'));
+        setIf(plan, 'plannedPlanting', t('demoPlanContinuous'));
+      } else {
+        setIf(plan, 'crop', t('demoCropMilhoSafrinha'));
+      }
+    }
+  });
   return changed;
 }

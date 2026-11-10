@@ -371,7 +371,7 @@ export class FarmGameView {
                 </div>
                 <div class="detail-cell">
                   <span class="detail-label" id="lbl-sheet-next">${t('nextCrop')}:</span>
-                  <strong class="detail-val" id="sheet-next-crop">Milho safrinha (Fev/2027)</strong>
+                  <strong class="detail-val" id="sheet-next-crop"></strong>
                 </div>
               </div>
 
@@ -2031,7 +2031,7 @@ export class FarmGameView {
     if (nextEl) {
       if (talhao.nextCropPlan) {
         const nextCropTranslated = translateCropName(talhao.nextCropPlan.crop);
-        nextEl.innerText = `${nextCropTranslated} (${talhao.nextCropPlan.plannedPlanting})`;
+        nextEl.innerText = `${nextCropTranslated} (${formatDateI18n(talhao.nextCropPlan.plannedPlanting)})`;
       } else {
         nextEl.innerText = t('toPlan');
       }

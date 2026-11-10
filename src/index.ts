@@ -471,7 +471,7 @@ class AgroApp {
 
               <div class="form-group">
                 <label class="form-label" id="lbl-talhao-cultivar-label">${t('cultivarVariety')}</label>
-                <input type="text" class="form-input" id="input-talhao-cultivar" placeholder="Ex: Brasmax Bônus, DM 54i52" />
+                <input type="text" class="form-input" id="input-talhao-cultivar" placeholder="${t('exPrefix')} Brasmax Bônus, DM 54i52" />
               </div>
             </div>
 
@@ -483,7 +483,7 @@ class AgroApp {
 
               <div class="form-group">
                 <label class="form-label" id="lbl-talhao-cycle-label">${t('cropCycleDays')}</label>
-                <input type="number" class="form-input" id="input-talhao-cycle-days" placeholder="Ex: 115 ou 120" min="0" max="400" />
+                <input type="number" class="form-input" id="input-talhao-cycle-days" placeholder="${t('exPrefix')} 115 ${t('orWord')} 120" min="0" max="400" />
                 <span id="cycle-days-hint" style="font-size: 11px; color: #94a3b8; margin-top: 3px; display: block;">${t('cycleAutoFilled')}</span>
               </div>
             </div>
@@ -540,11 +540,11 @@ class AgroApp {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
                   <label class="form-label" id="lbl-cal-crop-input">${t('currentCrop')}</label>
-                  <input type="text" class="form-input" id="cal-crop-input" placeholder="Ex: Soja" />
+                  <input type="text" class="form-input" id="cal-crop-input" placeholder="${t('exPrefix')} ${translateCropName('Soja')}" />
                 </div>
                 <div class="form-group">
                   <label class="form-label" id="lbl-cal-cultivar-input">${t('cultivarVariety')}</label>
-                  <input type="text" class="form-input" id="cal-cultivar-input" placeholder="Ex: Brasmax Bônus IPRO" />
+                  <input type="text" class="form-input" id="cal-cultivar-input" placeholder="${t('exPrefix')} Brasmax Bônus IPRO" />
                 </div>
               </div>
 
@@ -570,7 +570,7 @@ class AgroApp {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
                   <label class="form-label" id="lbl-cal-next-crop">${t('plannedCrop')}</label>
-                  <input type="text" class="form-input" id="cal-next-crop-input" placeholder="Ex: Milho safrinha" />
+                  <input type="text" class="form-input" id="cal-next-crop-input" placeholder="${t('exPrefix')} ${t('demoCropMilhoSafrinha')}" />
                 </div>
                 <div class="form-group">
                   <label class="form-label" id="lbl-cal-next-planting">${t('plannedPlantingDate')}</label>
@@ -707,7 +707,7 @@ class AgroApp {
 
             <div class="form-group">
               <label class="form-label" id="lbl-water-name-label">${t('elementName')} *</label>
-              <input type="text" class="form-input" id="input-water-name" placeholder="Ex: Sede Principal, Açude do Pivô" />
+              <input type="text" class="form-input" id="input-water-name" placeholder="${t('exPrefix')} ${t('phWaterNameEx')}" />
             </div>
 
             <!-- Coordenadas Geográficas -->
@@ -720,11 +720,11 @@ class AgroApp {
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
                   <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;" id="lbl-water-lat">${t('latitude')}</label>
-                  <input type="text" class="coord-input" id="input-water-lat" placeholder="Ex: -17.8050 ou 17°48'18&quot;S" />
+                  <input type="text" class="coord-input" id="input-water-lat" placeholder="${t('exPrefix')} -17.8050 ${t('orWord')} 17°48'18&quot;S" />
                 </div>
                 <div>
                   <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;" id="lbl-water-lng">${t('longitude')}</label>
-                  <input type="text" class="coord-input" id="input-water-lng" placeholder="Ex: -51.0850 ou 51°05'06&quot;W" />
+                  <input type="text" class="coord-input" id="input-water-lng" placeholder="${t('exPrefix')} -51.0850 ${t('orWord')} 51°05'06&quot;W" />
                 </div>
               </div>
 
@@ -898,7 +898,7 @@ class AgroApp {
         this.selectedTalhaoColor = getPaletteColor(this.farmData.talhoes.length);
 
         this.openTalhaoModal(
-          `Talhão ${this.farmData.talhoes.length + 1}`,
+          t('defaultTalhaoName', { n: this.farmData.talhoes.length + 1 }),
           '',
           this.selectedTalhaoColor,
           areaHa,
@@ -1190,11 +1190,11 @@ class AgroApp {
         (item, idx) => `
         <div class="history-item-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: center; background: rgba(15,23,42,0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
           <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-            <input type="text" class="form-input form-input-sm history-season" value="${item.season}" placeholder="Ex: 2025/26" />
-            <input type="text" class="form-input form-input-sm history-crop" value="${item.crop}" placeholder="Ex: Soja ou Milho" />
-            <input type="text" class="form-input form-input-sm history-date" value="${item.harvestDate || ''}" placeholder="Ex: Julho/2026" />
+            <input type="text" class="form-input form-input-sm history-season" value="${item.season}" placeholder="${t('exPrefix')} 2025/26" />
+            <input type="text" class="form-input form-input-sm history-crop" value="${item.crop}" placeholder="${t('exPrefix')} ${t('phHistCropEx')}" />
+            <input type="text" class="form-input form-input-sm history-date" value="${item.harvestDate || ''}" placeholder="${t('exPrefix')} ${t('phHistDateEx')}" />
           </div>
-          <button type="button" class="btn-remove-row btn-remove-history" data-index="${idx}" title="Excluir este item" style="padding: 4px 8px;">
+          <button type="button" class="btn-remove-row btn-remove-history" data-index="${idx}" title="${t('tipRemoveItem')}" style="padding: 4px 8px;">
             🗑️
           </button>
         </div>
@@ -1607,9 +1607,9 @@ class AgroApp {
         }
         if (cycleHint) {
           if (defaultCycle === null) {
-            cycleHint.textContent = 'Pastagem perene (sem ciclo de colheita anual).';
+            cycleHint.textContent = t('cycleHintPasture');
           } else {
-            cycleHint.textContent = `Ciclo padrão para ${selected}: ${defaultCycle} dias (editável).`;
+            cycleHint.textContent = t('cycleHintDefault', { crop: translateCropName(selected), days: defaultCycle });
           }
         }
       }
@@ -1786,7 +1786,7 @@ class AgroApp {
     const meta = WATER_POINT_META[type];
 
     if (iconEl) iconEl.innerText = meta.icon;
-    if (textEl) textEl.innerText = `Marcando ${meta.label}`;
+    if (textEl) textEl.innerText = t('hudMarking', { label: translateStructureType(type) });
     if (hud) hud.style.display = 'flex';
 
     this.mapManager.startPlacingWaterPoint(type);
@@ -1827,9 +1827,9 @@ class AgroApp {
 
     if (titleEl) {
       if (this.importedTalhoesQueue.length > 0) {
-        titleEl.innerHTML = `<span>📂</span> Configurar Talhão Importado (${this.importedTalhoesQueue.length} restante${this.importedTalhoesQueue.length > 1 ? 's' : ''})`;
+        titleEl.innerHTML = `<span>📂</span> ${t('modalTitleImported', { n: this.importedTalhoesQueue.length })}`;
       } else {
-        titleEl.innerHTML = this.editingTalhaoId ? '<span>✏️</span> Editar Talhão' : '<span>🌾</span> Salvar Novo Talhão';
+        titleEl.innerHTML = this.editingTalhaoId ? `<span>✏️</span> ${t('modalTitleEdit')}` : `<span>🌾</span> ${t('modalTitleNew')}`;
       }
     }
 
@@ -1949,7 +1949,7 @@ class AgroApp {
     const cycleInput = document.getElementById('input-talhao-cycle-days') as HTMLInputElement | null;
     const notesInput = document.getElementById('input-talhao-notes') as HTMLTextAreaElement | null;
 
-    const name = nameInput?.value.trim() || `Talhão ${this.farmData.talhoes.length + 1}`;
+    const name = nameInput?.value.trim() || t('defaultTalhaoName', { n: this.farmData.talhoes.length + 1 });
 
     let crop = cropSelect?.value || '';
     if (crop === 'Outra') {
@@ -2105,14 +2105,14 @@ class AgroApp {
   private getCoordRowStatusHtml(row: CoordinateRow): string {
     if (row.isValid && row.parsedLat !== undefined && row.parsedLng !== undefined) {
       if (row.isBrazilMissingNegative) {
-        return `<span class="coord-status-tag warning" title="No Brasil este valor costuma ser negativo (-)">⚠️ Sem sinal (-)</span>`;
+        return `<span class="coord-status-tag warning" title="${t('coordNoSignTip')}">⚠️ ${t('coordNoSign')}</span>`;
       }
       return `<span class="coord-status-tag valid">✓ ${row.parsedLat.toFixed(4)}, ${row.parsedLng.toFixed(4)}</span>`;
     }
     if (row.error && (row.latStr.trim() || row.lngStr.trim())) {
       return `<span class="coord-status-tag invalid" title="${row.error}">✕ ${row.error}</span>`;
     }
-    return `<span style="font-size: 11px; color: #64748b;">Aguardando digitação</span>`;
+    return `<span style="font-size: 11px; color: #64748b;">${t('coordWaiting')}</span>`;
   }
 
   private updateCoordRowFromInput(rowId: string): void {
@@ -2183,17 +2183,17 @@ class AgroApp {
       if (livePerimEl) livePerimEl.innerText = `${perimKm.toFixed(2)} km`;
       if (proceedBtn) {
         proceedBtn.disabled = false;
-        proceedBtn.title = 'Avançar para dar nome e cor ao talhão';
+        proceedBtn.title = t('tipProceedNaming');
       }
 
       // Live satellite map preview!
       this.mapManager.previewTypedCoordinates(validCoords);
     } else {
-      if (liveAreaEl) liveAreaEl.innerText = '0,00 ha (mínimo 3 pontos)';
+      if (liveAreaEl) liveAreaEl.innerText = t('liveAreaMin', { area: formatHectaresI18n(0) });
       if (livePerimEl) livePerimEl.innerText = '0,00 km';
       if (proceedBtn) {
         proceedBtn.disabled = true;
-        proceedBtn.title = 'Adicione pelo menos 3 pontos válidos para formar o talhão';
+        proceedBtn.title = t('tipNeedThreePoints');
       }
 
       if (validCoords.length > 0) {
@@ -2226,7 +2226,7 @@ class AgroApp {
             type="text"
             class="coord-input coord-input-lat ${row.error && !row.parsedLat ? 'input-error' : ''}"
             value="${row.latStr}"
-            placeholder="Ex: -17,7924 ou 17°47'32&quot;S"
+            placeholder="${t('exPrefix')} -17,7924 ${t('orWord')} 17°47'32&quot;S"
             data-id="${row.id}"
           />
         </td>
@@ -2235,13 +2235,13 @@ class AgroApp {
             type="text"
             class="coord-input coord-input-lng ${row.error && !row.parsedLng ? 'input-error' : ''}"
             value="${row.lngStr}"
-            placeholder="Ex: -50,9192 ou 50°55'09&quot;W"
+            placeholder="${t('exPrefix')} -50,9192 ${t('orWord')} 50°55'09&quot;W"
             data-id="${row.id}"
           />
         </td>
         <td class="coord-status-cell">${statusHtml}</td>
         <td style="text-align: center;">
-          <button type="button" class="btn-remove-row" data-id="${row.id}" title="Remover este ponto">
+          <button type="button" class="btn-remove-row" data-id="${row.id}" title="${t('tipRemovePoint')}">
             🗑️
           </button>
         </td>
@@ -2351,12 +2351,12 @@ class AgroApp {
 
     // Open Step 2: Name, crop, and block color selection
     this.openTalhaoModal(
-      `Talhão ${this.farmData.talhoes.length + 1}`,
+      t('defaultTalhaoName', { n: this.farmData.talhoes.length + 1 }),
       '',
       this.selectedTalhaoColor,
       areaHa,
       perimeterKm,
-      `Criado por digitação de ${validCoords.length} coordenadas geográficas.`
+      t('noteCreatedByCoords', { count: validCoords.length })
     );
   }
 
@@ -2441,7 +2441,7 @@ class AgroApp {
     if (parsed.isValid && parsed.parsedLat !== undefined && parsed.parsedLng !== undefined) {
       this.pendingWaterCoords = [parsed.parsedLat, parsed.parsedLng];
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: #4ade80; font-weight: 600;">✓ Coordenadas válidas: ${parsed.parsedLat.toFixed(5)}, ${parsed.parsedLng.toFixed(5)}</span>`;
+        statusEl.innerHTML = `<span style="color: #4ade80; font-weight: 600;">✓ ${t('coordValid')}: ${parsed.parsedLat.toFixed(5)}, ${parsed.parsedLng.toFixed(5)}</span>`;
       }
       // Live map preview for the water point!
       this.mapManager.previewTypedWaterPoint(parsed.parsedLat, parsed.parsedLng, this.selectedWaterType);
@@ -2503,7 +2503,7 @@ class AgroApp {
 
   private deleteTalhao(talhaoId: string): void {
     const talhao = this.farmData.talhoes.find((t) => t.id === talhaoId);
-    const name = talhao ? talhao.name : 'Talhão';
+    const name = talhao ? talhao.name : t('fallbackTalhao');
 
     if (confirm(t('confirmDeleteTalhao', { name }))) {
       this.farmData.talhoes = this.farmData.talhoes.filter((t) => t.id !== talhaoId);
@@ -2518,7 +2518,7 @@ class AgroApp {
 
   private deleteWaterPoint(waterPointId: string): void {
     const wp = this.farmData.waterPoints.find((w) => w.id === waterPointId);
-    const name = wp ? wp.name : 'Ponto de água';
+    const name = wp ? wp.name : t('fallbackWaterPoint');
 
     if (confirm(t('confirmDeleteWater', { name }))) {
       this.farmData.waterPoints = this.farmData.waterPoints.filter((w) => w.id !== waterPointId);
@@ -2684,6 +2684,7 @@ class AgroApp {
 
   private renderDrawerLists(): void {
     const exampleTag = t('exampleBadge').toLowerCase();
+    const nextCropText = (crop: string, date: string) => t('nextCropShort', { crop, date });
     // 1. Talhões
     const talhoesContent = document.getElementById('drawer-content-talhoes');
     if (talhoesContent) {
@@ -2718,10 +2719,10 @@ class AgroApp {
               <div class="drawer-card-ha">${formatHectares(t.areaHectares)}</div>
             </div>
             <div class="drawer-card-meta">
-              <span>🌾 ${t.crop || 'Sem cultura'} ${t.cultivar ? `(${t.cultivar})` : ''}</span>
+              <span>🌾 ${translateCropName(t.crop)} ${t.cultivar ? `(${t.cultivar})` : ''}</span>
               <span>📏 ${t.perimeterKm.toFixed(2)} km</span>
             </div>
-            ${t.nextCropPlan ? `<div style="font-size: 11px; color: #38bdf8; margin: 4px 0;">🔜 Próxima: ${t.nextCropPlan.crop} (${t.nextCropPlan.plannedPlanting})</div>` : ''}
+            ${t.nextCropPlan ? `<div style="font-size: 11px; color: #38bdf8; margin: 4px 0;">🔜 ${nextCropText(t.nextCropPlan.crop, t.nextCropPlan.plannedPlanting)}</div>` : ''}
             <div class="drawer-card-actions">
               <button class="drawer-btn btn-calendar" data-id="${t.id}" style="color: #38bdf8; font-weight: 700;">📅 Calendário</button>
               <button class="drawer-btn btn-focus" data-id="${t.id}">🎯 Focar</button>
@@ -2832,11 +2833,11 @@ class AgroApp {
                 <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">
                   ${wp.coordinates[0].toFixed(4)}, ${wp.coordinates[1].toFixed(4)}
                 </span>
-                ${wp.notes ? `<span title="${wp.notes}">📝 Nota</span>` : ''}
+                ${wp.notes ? `<span title="${wp.notes}">📝 ${t('drawerNote')}</span>` : ''}
               </div>
               <div class="drawer-card-actions">
-                <button class="drawer-btn btn-focus-water" data-id="${wp.id}">🎯 Localizar</button>
-                <button class="drawer-btn btn-delete-water" data-id="${wp.id}" style="color: #f87171;">🗑️ Excluir</button>
+                <button class="drawer-btn btn-focus-water" data-id="${wp.id}">🎯 ${t('drawerLocate')}</button>
+                <button class="drawer-btn btn-delete-water" data-id="${wp.id}" style="color: #f87171;">🗑️ ${t('drawerDelete')}</button>
               </div>
             </div>
           `;

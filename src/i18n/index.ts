@@ -221,6 +221,7 @@ export function translateCropName(cropName: string | undefined): string {
 
   const normalized = cropName.trim().toLowerCase();
   if (normalized === 'soja precoce') return t('cropSojaPrecoce');
+  if (normalized === 'milho safrinha') return t('demoCropMilhoSafrinha');
   if (normalized === 'pastagem de braquiária' || normalized === 'pastagem de braquiaria') return t('cropPastagemBraquiaria');
   if (normalized === 'soja' || normalized === 'soybean' || normalized === '大豆') return t('cropSoja');
   if (normalized === 'milho' || normalized === 'corn' || normalized === 'maíz' || normalized === 'mais' || normalized === '玉米') return t('cropMilho');

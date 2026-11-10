@@ -54,7 +54,7 @@ export class MapManager {
       'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       {
         maxZoom: 19,
-        attribution: 'Tiles &copy; Esri &mdash; Imagem de Satélite',
+        attribution: `Tiles &copy; Esri &mdash; ${t('attribSatellite')}`,
       }
     );
 
@@ -78,12 +78,12 @@ export class MapManager {
     esriLabels.addTo(this.map);
 
     const baseMaps = {
-      'Satélite Puro (Esri)': esriSatellite,
-      'Mapa Rodoviário (OSM)': osmLayer,
+      [t('layerSatellite')]: esriSatellite,
+      [t('layerRoads')]: osmLayer,
     };
 
     const overlayMaps = {
-      'Rótulos e Estradas': esriLabels,
+      [t('layerLabels')]: esriLabels,
     };
 
     L.control.layers(baseMaps, overlayMaps, { position: 'topright' }).addTo(this.map);
@@ -534,7 +534,7 @@ export class MapManager {
     });
 
     if (isFirstPoint) {
-      vertexMarker.bindTooltip('Clique aqui para fechar o talhão', {
+      vertexMarker.bindTooltip(t('tipCloseTalhao'), {
         permanent: false,
         direction: 'top',
         className: 'first-vertex-tooltip',
