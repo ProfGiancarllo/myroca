@@ -90,6 +90,7 @@ export const DEFAULT_AVATAR: AvatarConfig = {
   accessory: 'none',
 };
 
+import { scopedKey } from '../auth/auth';
 const STORAGE_KEY = 'myroca_avatar_v1';
 const PROMPTED_KEY = 'myroca_avatar_prompted_v1';
 
@@ -107,7 +108,7 @@ function isValid(cfg: unknown): cfg is AvatarConfig {
 
 export function loadAvatar(): AvatarConfig | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(scopedKey(STORAGE_KEY));
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (isValid(parsed)) return { ...DEFAULT_AVATAR, ...parsed };
@@ -119,7 +120,7 @@ export function loadAvatar(): AvatarConfig | null {
 
 export function saveAvatar(cfg: AvatarConfig): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    localStorage.setItem(scopedKey(STORAGE_KEY), JSON.stringify(cfg));
   } catch {
     // ignora
   }
@@ -127,7 +128,7 @@ export function saveAvatar(cfg: AvatarConfig): void {
 
 export function wasAvatarPrompted(): boolean {
   try {
-    return localStorage.getItem(PROMPTED_KEY) === '1';
+    return localStorage.getItem(scopedKey(PROMPTED_KEY)) === '1';
   } catch {
     return true;
   }
@@ -135,7 +136,7 @@ export function wasAvatarPrompted(): boolean {
 
 export function markAvatarPrompted(): void {
   try {
-    localStorage.setItem(PROMPTED_KEY, '1');
+    localStorage.setItem(scopedKey(PROMPTED_KEY), '1');
   } catch {
     // ignora
   }

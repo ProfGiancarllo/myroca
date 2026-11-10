@@ -5,6 +5,9 @@ import { MapManager } from './components/MapManager';
 import { CoordinateRow, parseCoordinatePair, parsePastedCoordinateText, validateCoordinate } from './utils/coordinateParser';
 import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, addDaysToDate, calculateTalhaoCropStatus, calculateExpectedHarvestDate, checkCropDatesOverlap, getCropColor, DEFAULT_CROP_CYCLES } from './utils/cropCalendar';
 import { FarmGameView } from './components/FarmGameView';
+import { requireAuth } from './auth/loginScreen';
+import { currentUser, logout } from './auth/auth';
+import { at } from './auth/authText';
 import {
   getCurrentLanguage,
   setLanguage,
@@ -176,6 +179,10 @@ class AgroApp {
                 </button>
               </div>
             </div>
+
+            <button class="btn btn-outline btn-logout-user" id="btn-logout" title="${at('logout')}">
+              <span>👤</span> <span class="btn-text">${(currentUser()?.id === 'guest' ? at('guestName') : (currentUser()?.name || '')).split(' ')[0].replace(/[&<>"']/g, '')}</span> <span>⎋</span>
+            </button>
 
             <!-- Language Selector Dropdown -->
             <div class="dropdown-container">
@@ -1414,6 +1421,11 @@ class AgroApp {
       document.getElementById(id)?.addEventListener('change', () => {
         this.checkCalendarOverlapLive();
       });
+    });
+
+    document.getElementById('btn-logout')?.addEventListener('click', () => {
+      logout();
+      window.location.reload();
     });
 
     // Language selector: grava o idioma e recarrega a página (os dados da fazenda ficam no localStorage)
@@ -2904,5 +2916,5 @@ class AgroApp {
 
 // Initialise application on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-  new AgroApp();
+  requireAuth().then(() => new AgroApp());
 });

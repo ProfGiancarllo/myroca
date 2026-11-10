@@ -1,11 +1,12 @@
 import { FarmData } from '../types';
 import { getRioVerdeDemoFarm, localizeExampleNames } from './geo';
+import { scopedKey } from '../auth/auth';
 
-const STORAGE_KEY = 'myroca_farm_data_rio_verde_rural_v3';
+const BASE_KEY = 'myroca_farm_data_rio_verde_rural_v3';
 
 export function loadFarmData(): FarmData {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(scopedKey(BASE_KEY));
     if (raw) {
       const parsed = JSON.parse(raw) as FarmData;
       if (parsed && Array.isArray(parsed.talhoes)) {
@@ -25,7 +26,7 @@ export function loadFarmData(): FarmData {
 
 export function saveFarmData(data: FarmData): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(scopedKey(BASE_KEY), JSON.stringify(data));
   } catch (err) {
     console.error('Falha ao salvar dados no localStorage:', err);
   }
