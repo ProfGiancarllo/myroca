@@ -2922,3 +2922,27 @@ body {
   0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
   50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
 }
+
+/* ===== Diário de safra (ficha do talhão) ===== */
+.sheet-diary-box { background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; }
+.diary-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.diary-add-btn { background: #16a34a; color: #fff; border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 800; font-size: 13px; cursor: pointer; min-height: 36px; }
+.diary-add-btn:hover { background: #15803d; }
+.diary-form { background: rgba(2, 6, 23, 0.55); border: 1px solid #334155; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+.diary-field-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #94a3b8; margin: 8px 0 4px; }
+.diary-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.diary-chip { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 999px; padding: 7px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.diary-chip.active { background: #16a34a; border-color: #22c55e; color: #fff; }
+.diary-inline { display: flex; gap: 10px; flex-wrap: wrap; }
+.diary-col { flex: 1 1 140px; }
+.diary-input { width: 100%; box-sizing: border-box; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #fff; padding: 9px 10px; font-size: 14px; color-scheme: dark; }
+.diary-input:focus { outline: 2px solid #22c55e; outline-offset: 1px; }
+.diary-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.diary-btn-ghost { background: transparent; color: #cbd5e1; border: 1px solid #475569; border-radius: 8px; padding: 9px 14px; font-weight: 700; cursor: pointer; }
+.diary-btn-save { background: #16a34a; color: #fff; border: 0; border-radius: 8px; padding: 9px 14px; font-weight: 800; cursor: pointer; }
+.diary-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; border-left: 3px solid #38bdf8; padding-left: 10px; }
+.diary-row-title { font-weight: 700; color: #fff; font-size: 14px; }
+.diary-row-date { color: #94a3b8; font-size: 12px; }
+.diary-note { color: #cbd5e1; font-size: 12px; margin-top: 2px; word-break: break-word; }
+.diary-del-btn { background: transparent; border: 0; color: #94a3b8; cursor: pointer; font-size: 15px; padding: 6px; border-radius: 6px; min-width: 32px; }
+.diary-del-btn.armed { background: #b91c1c; color: #fff; font-size: 12px; font-weight: 800; padding: 6px 8px; }

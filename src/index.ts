@@ -965,6 +965,12 @@ class AgroApp {
       onOpenCalendarModal: (talhaoId: string) => {
         this.openCropCalendarModal(talhaoId);
       },
+      onTalhaoUpdated: (talhao: Talhao) => {
+        const mine = this.farmData.talhoes.find((x) => x.id === talhao.id);
+        if (mine && mine !== talhao) mine.diary = talhao.diary;
+        saveFarmData(this.farmData);
+        this.showToast(`📒 ${t('diarySaved')}`);
+      },
       onAvatarSaved: () => {
         this.showToast(`🧑‍🌾 ${t('avSaved')}`);
       },

@@ -1,4 +1,4 @@
-import { FarmData, Talhao, WaterPoint, FARM_ELEMENT_META } from '../types';
+import { FarmData, Talhao, WaterPoint, FARM_ELEMENT_META, DiaryEntry, DiaryEntryType } from '../types';
 import { calculateTalhaoCropStatus } from '../utils/cropCalendar';
 import { formatHectares } from '../utils/geo';
 import {
@@ -11,6 +11,7 @@ import {
   formatDateI18n,
   onLanguageChange,
 } from '../i18n';
+import type { TranslationDictionary } from '../i18n';
 import {
   AvatarConfig,
   loadAvatar,
@@ -28,6 +29,7 @@ export interface FarmGameViewCallbacks {
   onAdvanceTime: (days: number) => void;
   onOpenCalendarModal?: (talhao: Talhao) => void;
   onAvatarSaved?: () => void;
+  onTalhaoUpdated?: (talhao: Talhao) => void;
 }
 
 export interface FarmGameViewOptions {
@@ -40,6 +42,7 @@ export interface FarmGameViewOptions {
   onAdvanceTime?: (days: number) => void;
   onOpenCalendarModal?: (talhaoId: string) => void;
   onAvatarSaved?: () => void;
+  onTalhaoUpdated?: (talhao: Talhao) => void;
 }
 
 interface WeatherCloud {
@@ -112,6 +115,10 @@ export class FarmGameView {
   private avatarAway = false;
   private avatarWalking = false;
 
+  // Diário de safra (ficha do talhão)
+  private sheetTalhaoId = '';
+  private diaryFormOpen = false;
+
   constructor(
     containerOrOptions: HTMLElement | FarmGameViewOptions,
     farmData?: FarmData,
@@ -141,6 +148,7 @@ export class FarmGameView {
           ? (t: Talhao) => containerOrOptions.onOpenCalendarModal!(t.id)
           : undefined,
         onAvatarSaved: containerOrOptions.onAvatarSaved,
+        onTalhaoUpdated: containerOrOptions.onTalhaoUpdated,
       };
     }
 
@@ -400,6 +408,15 @@ export class FarmGameView {
               <div class="sheet-history-box" id="sheet-history-box">
                 <div class="history-title" id="lbl-sheet-history-title">📜 ${t('harvestHistoryTitle')}</div>
                 <div id="sheet-history-list" class="history-items-list"></div>
+              </div>
+
+              <div class="sheet-diary-box" id="sheet-diary-box">
+                <div class="diary-head">
+                  <div class="history-title" id="lbl-sheet-diary-title" style="margin:0">📒 ${t('diaryTitle')}</div>
+                  <button type="button" class="diary-add-btn" id="btn-diary-add">＋ ${t('diaryAdd')}</button>
+                </div>
+                <div id="sheet-diary-form" class="diary-form" style="display:none"></div>
+                <div id="sheet-diary-list" class="history-items-list"></div>
               </div>
 
               <div class="sheet-simple-notice" id="sheet-simple-notice"></div>
@@ -2195,6 +2212,10 @@ export class FarmGameView {
       }
     }
 
+    this.sheetTalhaoId = talhao.id;
+    this.diaryFormOpen = false;
+    this.renderDiary();
+
     // Notice
     const noticeEl = document.getElementById('sheet-simple-notice');
     if (noticeEl) {
@@ -2237,6 +2258,164 @@ export class FarmGameView {
     });
 
     sheet.style.display = 'flex';
+  }
+
+  // ========================================================
+  // DIÁRIO DE SAFRA
+  // ========================================================
+  private static readonly DIARY_TYPES: { key: DiaryEntryType; icon: string; unit?: string }[] = [
+    { key: 'plantio', icon: '🌱' },
+    { key: 'adubacao', icon: '🧪', unit: 'kg/ha' },
+    { key: 'aplicacao', icon: '💧', unit: 'L/ha' },
+    { key: 'irrigacao', icon: '🚿', unit: 'mm' },
+    { key: 'chuva', icon: '🌧️', unit: 'mm' },
+    { key: 'monitoramento', icon: '🔍' },
+    { key: 'colheita', icon: '🚜', unit: 'sc/ha' },
+    { key: 'observacao', icon: '📝' },
+  ];
+
+  private diaryTypeLabel(key: DiaryEntryType): string {
+    const cap = key.charAt(0).toUpperCase() + key.slice(1);
+    return t(('diaryType' + cap) as keyof TranslationDictionary);
+  }
+
+  private escapeHtmlText(s: string): string {
+    return s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  }
+
+  private getSheetTalhao(): Talhao | undefined {
+    return this.farmData.talhoes.find((x) => x.id === this.sheetTalhaoId);
+  }
+
+  private renderDiary(): void {
+    const talhao = this.getSheetTalhao();
+    const listEl = document.getElementById('sheet-diary-list');
+    const formEl = document.getElementById('sheet-diary-form');
+    const addBtn = document.getElementById('btn-diary-add');
+    if (!talhao || !listEl || !formEl || !addBtn) return;
+
+    addBtn.onclick = () => {
+      this.diaryFormOpen = !this.diaryFormOpen;
+      this.renderDiary();
+    };
+
+    // Lista (mais recente primeiro)
+    const entries = [...(talhao.diary || [])].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    if (entries.length === 0) {
+      listEl.innerHTML = `<div style="color:#94a3b8;font-size:13px;">${t('diaryEmpty')}</div>`;
+    } else {
+      listEl.innerHTML = entries
+        .map((e) => {
+          const meta = FarmGameView.DIARY_TYPES.find((x) => x.key === e.type);
+          const amount =
+            e.amount !== undefined && meta?.unit ? ` • <strong>${formatNumber(e.amount, 1)} ${meta.unit}</strong>` : '';
+          const note = e.note ? `<div class="diary-note">${this.escapeHtmlText(e.note)}</div>` : '';
+          return `
+          <div class="diary-row">
+            <div class="diary-row-main">
+              <div class="diary-row-title">${meta?.icon || '📝'} ${this.diaryTypeLabel(e.type)}${amount}</div>
+              <div class="diary-row-date">${formatDateI18n(e.date)}</div>
+              ${note}
+            </div>
+            <button type="button" class="diary-del-btn" data-diary-del="${e.id}" title="${this.escapeHtmlText(t('diaryDelete'))}">🗑️</button>
+          </div>`;
+        })
+        .join('');
+    }
+
+    listEl.querySelectorAll<HTMLButtonElement>('[data-diary-del]').forEach((btn) => {
+      btn.onclick = () => {
+        if (btn.dataset.armed !== '1') {
+          btn.dataset.armed = '1';
+          btn.classList.add('armed');
+          btn.textContent = t('diaryDeleteSure');
+          setTimeout(() => {
+            if (btn.isConnected) {
+              btn.dataset.armed = '';
+              btn.classList.remove('armed');
+              btn.textContent = '🗑️';
+            }
+          }, 3000);
+          return;
+        }
+        talhao.diary = (talhao.diary || []).filter((x) => x.id !== btn.dataset.diaryDel);
+        this.callbacks.onTalhaoUpdated?.(talhao);
+        this.renderDiary();
+      };
+    });
+
+    // Formulário
+    if (!this.diaryFormOpen) {
+      formEl.style.display = 'none';
+      formEl.innerHTML = '';
+      return;
+    }
+    const today = this.farmData.referenceDate || '2026-11-09';
+    formEl.style.display = 'block';
+    formEl.innerHTML = `
+      <div class="diary-field-label">${t('diaryType')}</div>
+      <div class="diary-chips">
+        ${FarmGameView.DIARY_TYPES.map(
+          (x, i) =>
+            `<button type="button" class="diary-chip${i === 0 ? ' active' : ''}" data-diary-type="${x.key}">${x.icon} ${this.diaryTypeLabel(x.key)}</button>`
+        ).join('')}
+      </div>
+      <div class="diary-inline">
+        <div class="diary-col">
+          <label class="diary-field-label" for="diary-date">${t('diaryDate')}</label>
+          <input id="diary-date" class="diary-input" type="date" value="${today}" />
+        </div>
+        <div class="diary-col" id="diary-amount-col" style="display:none">
+          <label class="diary-field-label" for="diary-amount">${t('diaryAmount')} <span id="diary-unit"></span></label>
+          <input id="diary-amount" class="diary-input" type="number" inputmode="decimal" min="0" step="any" />
+        </div>
+      </div>
+      <label class="diary-field-label" for="diary-note">${t('diaryNote')}</label>
+      <input id="diary-note" class="diary-input" type="text" maxlength="160" placeholder="${this.escapeHtmlText(t('diaryNotePh'))}" />
+      <div class="diary-actions">
+        <button type="button" class="diary-btn-ghost" id="diary-cancel">${t('diaryCancel')}</button>
+        <button type="button" class="diary-btn-save" id="diary-save">✅ ${t('diarySave')}</button>
+      </div>`;
+
+    let selected: DiaryEntryType = 'plantio';
+    const amountCol = formEl.querySelector('#diary-amount-col') as HTMLElement;
+    const unitEl = formEl.querySelector('#diary-unit') as HTMLElement;
+    const syncType = () => {
+      const meta = FarmGameView.DIARY_TYPES.find((x) => x.key === selected);
+      formEl.querySelectorAll<HTMLElement>('.diary-chip').forEach((c) => c.classList.toggle('active', c.dataset.diaryType === selected));
+      amountCol.style.display = meta?.unit ? 'block' : 'none';
+      unitEl.textContent = meta?.unit ? `(${meta.unit})` : '';
+    };
+    formEl.querySelectorAll<HTMLButtonElement>('.diary-chip').forEach((c) => {
+      c.onclick = () => {
+        selected = c.dataset.diaryType as DiaryEntryType;
+        syncType();
+      };
+    });
+    syncType();
+
+    (formEl.querySelector('#diary-cancel') as HTMLElement).onclick = () => {
+      this.diaryFormOpen = false;
+      this.renderDiary();
+    };
+    (formEl.querySelector('#diary-save') as HTMLElement).onclick = () => {
+      const date = (formEl.querySelector('#diary-date') as HTMLInputElement).value || today;
+      const rawAmount = (formEl.querySelector('#diary-amount') as HTMLInputElement).value;
+      const meta = FarmGameView.DIARY_TYPES.find((x) => x.key === selected);
+      const amount = meta?.unit && rawAmount !== '' && isFinite(Number(rawAmount)) ? Number(rawAmount) : undefined;
+      const note = (formEl.querySelector('#diary-note') as HTMLInputElement).value.trim();
+      const entry: DiaryEntry = {
+        id: 'diary_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        date,
+        type: selected,
+      };
+      if (amount !== undefined) entry.amount = amount;
+      if (note) entry.note = note;
+      talhao.diary = [...(talhao.diary || []), entry];
+      this.diaryFormOpen = false;
+      this.callbacks.onTalhaoUpdated?.(talhao);
+      this.renderDiary();
+    };
   }
 
   public closeTalhaoSheet(): void {

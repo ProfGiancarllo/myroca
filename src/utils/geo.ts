@@ -449,6 +449,12 @@ export function getRioVerdeDemoFarm(): FarmData {
         cycleDays: 115,
         harvestDateExpected: '2027-02-02',
         isExample: true,
+        diary: [
+          { id: 'talhao_demo_01_d1', date: '2026-10-10', type: 'plantio' },
+          { id: 'talhao_demo_01_d2', date: '2026-10-28', type: 'adubacao', amount: 250 },
+          { id: 'talhao_demo_01_d3', date: '2026-11-04', type: 'chuva', amount: 22 },
+          { id: 'talhao_demo_01_d4', date: '2026-11-07', type: 'monitoramento' },
+        ],
         healthStatus: 'verde',
         harvestHistory: [
           {
@@ -491,6 +497,12 @@ export function getRioVerdeDemoFarm(): FarmData {
         cycleDays: 105,
         harvestDateExpected: '2027-01-03',
         isExample: true,
+        diary: [
+          { id: 'talhao_demo_02_d1', date: '2026-09-20', type: 'plantio' },
+          { id: 'talhao_demo_02_d2', date: '2026-10-25', type: 'adubacao', amount: 300 },
+          { id: 'talhao_demo_02_d3', date: '2026-11-02', type: 'aplicacao', amount: 0.8 },
+          { id: 'talhao_demo_02_d4', date: '2026-11-06', type: 'chuva', amount: 14 },
+        ],
         healthStatus: 'verde',
         harvestHistory: [
           {

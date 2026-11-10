@@ -51,6 +51,25 @@ export interface NextCropPlan {
   notes?: string;
 }
 
+export type DiaryEntryType =
+  | 'plantio'
+  | 'adubacao'
+  | 'aplicacao'
+  | 'irrigacao'
+  | 'chuva'
+  | 'monitoramento'
+  | 'colheita'
+  | 'observacao';
+
+/** Registro do diário de safra de um talhão. */
+export interface DiaryEntry {
+  id: string;
+  date: string;          // YYYY-MM-DD
+  type: DiaryEntryType;
+  amount?: number;       // kg/ha (adubação), L/ha (aplicação), mm (irrigação/chuva), sc/ha (colheita)
+  note?: string;
+}
+
 export interface Talhao {
   id: string;
   name: string;
@@ -63,6 +82,7 @@ export interface Talhao {
   isExample?: boolean;        // Rótulo de exemplo
   healthStatus?: 'verde' | 'amarelo' | 'vermelho'; // Estado da lavoura para a borda
   harvestHistory?: HarvestHistoryItem[]; // Histórico de safras anteriores
+  diary?: DiaryEntry[];                 // Diário de safra (registros de campo)
   nextCropPlan?: NextCropPlan;          // Próxima safra planejada
   areaHectares: number;
   perimeterKm: number;
