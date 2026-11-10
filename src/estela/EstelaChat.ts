@@ -292,6 +292,17 @@ export class EstelaChat {
         this.opts.openRotation(tl?.id);
         return;
       }
+      // 4b) Data de hoje
+      if (/que dia|data de hoje|what day|what is the date|que fecha|welcher tag|quel jour|今天/.test(n)) {
+        const d = new Date();
+        const lang = LANG_TAG[getCurrentLanguage()] || 'pt-BR';
+        const real = d.toLocaleDateString(lang, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const cal = this.ref();
+        const calTxt = `${cal.slice(8, 10)}/${cal.slice(5, 7)}/${cal.slice(0, 4)}`;
+        const realIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        this.say(esc(real) + (cal !== realIso ? '<br><span class="estela-src">' + esc(et('calNote', { d: calTxt })) + '</span>' : ''), undefined, real);
+        return;
+      }
       // 5) Clima
       if (/clima|tempo agora|weather|temps|wetter|天气|chover|chuva hoje|llover/.test(n)) return this.weatherInfo();
       // 6) Situação dos talhões
@@ -385,8 +396,12 @@ export class EstelaChat {
     if (!url) return void this.say(esc(et('fallbackLocal')));
     this.say(esc(et('thinking')));
     const farm = this.opts.getFarm();
+    const now = new Date();
+    const hoje = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const ctx = {
-      refDate: this.ref(),
+      dataDeHojeReal: hoje,
+      avisoDatas: 'dataDeHojeReal é a data de hoje de verdade. dataDoCalendarioDaFazenda é só a data simulada do calendário agrícola do app (pode estar diferente de hoje). Se perguntarem que dia é hoje, responda dataDeHojeReal.',
+      dataDoCalendarioDaFazenda: this.ref(),
       language: getCurrentLanguage(),
       fields: farm.talhoes.map((tl) => {
         const st = calculateTalhaoCropStatus(tl, this.ref());
