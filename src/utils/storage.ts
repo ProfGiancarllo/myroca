@@ -1,5 +1,5 @@
 import { FarmData } from '../types';
-import { getRioVerdeDemoFarm } from './geo';
+import { getRioVerdeDemoFarm, localizeExampleNames } from './geo';
 
 const STORAGE_KEY = 'myroca_farm_data_rio_verde_rural_v3';
 
@@ -9,6 +9,7 @@ export function loadFarmData(): FarmData {
     if (raw) {
       const parsed = JSON.parse(raw) as FarmData;
       if (parsed && Array.isArray(parsed.talhoes)) {
+        localizeExampleNames(parsed);
         return parsed;
       }
     }

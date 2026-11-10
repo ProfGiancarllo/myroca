@@ -234,7 +234,7 @@ export class FarmGameView {
         <div class="game-agronomist-floating-wrapper" id="game-agronomist-card">
           <div class="agronomist-speech-bubble" id="agronomist-speech-bubble">
             <div class="bubble-header">
-              <span class="bubble-speaker" id="game-agronomist-speaker-title">🌱 ${t('agronomistTitle')}</span>
+              <span class="bubble-speaker" id="game-agronomist-speaker-title">${t('agronomistTitle')}</span>
               <button class="btn-bubble-minimize" id="btn-minimize-agronomist" title="${t('minimize')}">✕</button>
             </div>
             <div class="bubble-text" id="agronomist-quote-text">
@@ -380,9 +380,7 @@ export class FarmGameView {
                 <div id="sheet-history-list" class="history-items-list"></div>
               </div>
 
-              <div class="sheet-simple-notice" id="sheet-simple-notice">
-                🌱 Lavoura bem formada e com boa palhada de plantio direto.
-              </div>
+              <div class="sheet-simple-notice" id="sheet-simple-notice"></div>
             </div>
 
             <div class="sheet-footer">
@@ -1411,36 +1409,36 @@ export class FarmGameView {
     ctx.translate(cX, cY - 32 + bob);
 
     const isPasture = cropStatus.isPasture || (talhao.crop || '').toLowerCase().includes('pasto');
-    const cropName = talhao.crop || 'Lavoura';
+    const cropName = talhao.crop ? translateCropName(talhao.crop) : t('cropFieldDefault');
 
     // Primary line: Real crop phase calculated from reference date and cycle
     let primaryText = '';
     if (isPasture) {
-      primaryText = `${cropName} • Perene`;
+      primaryText = `${cropName} • ${t('labelPerennial')}`;
     } else if (talhao.cycleDays && cropStatus.daysPassed > 0) {
-      primaryText = `${cropName} • ${cropStatus.phase.label} • dia ${cropStatus.daysPassed}/${talhao.cycleDays}`;
+      primaryText = `${cropName} • ${translateCropPhase(cropStatus.phase.key)} • ${t('labelDayOf', { day: cropStatus.daysPassed, cycle: talhao.cycleDays })}`;
     } else {
-      primaryText = `${cropName} • ${cropStatus.phase.label}`;
+      primaryText = `${cropName} • ${translateCropPhase(cropStatus.phase.key)}`;
     }
 
     // Secondary line: Next operation with representative icon
     let secondaryText = '';
     if (isPasture) {
-      secondaryText = '🐂 Pastejo rotacionado e manejo do gado';
+      secondaryText = `🐂 ${t('opNextPasture')}`;
     } else if (cropStatus.phase.key === 'colheita') {
-      secondaryText = '🌾 Operação de colheita e transporte';
+      secondaryText = `🌾 ${t('opNextHarvest')}`;
     } else if (cropStatus.phase.key === 'enchimento') {
-      secondaryText = '🚜 Monitoramento sanitário e maturação';
+      secondaryText = `🚜 ${t('opNextFilling')}`;
     } else if (cropStatus.phase.key === 'floracao') {
-      secondaryText = '🚜 Manejo preventivo e proteção de vagem';
+      secondaryText = `🚜 ${t('opNextFlowering')}`;
     } else if (cropStatus.phase.key === 'crescimento') {
-      secondaryText = '🚜 Adubação foliar e controle biológico';
+      secondaryText = `🚜 ${t('opNextGrowth')}`;
     } else if (cropStatus.phase.key === 'emergencia' || cropStatus.phase.key === 'plantio') {
-      secondaryText = '🚜 Monitoramento de estande e mudas';
+      secondaryText = `🚜 ${t('opNextEmergence')}`;
     } else if (cropStatus.phase.key === 'preparo') {
-      secondaryText = '🚜 Calagem, dessecação e plantio iminente';
+      secondaryText = `🚜 ${t('opNextPrep')}`;
     } else {
-      secondaryText = '🚜 Planejamento de safra safrinha';
+      secondaryText = `🚜 ${t('opNextPlanning')}`;
     }
 
     ctx.font = 'bold 12px sans-serif';
@@ -2071,7 +2069,7 @@ export class FarmGameView {
       if (cropStatus.isPasture) {
         progressTextEl.innerText = t('continuousPasture');
       } else if (talhao.cycleDays && cropStatus.daysPassed > 0) {
-        progressTextEl.innerText = `${t('day')} ${formatNumber(cropStatus.daysPassed, 0)} ${t('of')} ${formatNumber(talhao.cycleDays, 0)} (${formatNumber(cropStatus.progressPercent, 0)}%)`;
+        progressTextEl.innerText = `${t('dayProgress', { day: formatNumber(cropStatus.daysPassed, 0), total: formatNumber(talhao.cycleDays, 0) })} (${formatNumber(cropStatus.progressPercent, 0)}%)`;
       } else {
         progressTextEl.innerText = cropStatus.statusText;
       }
@@ -2175,7 +2173,7 @@ export class FarmGameView {
     const speakerTitle = document.getElementById('game-agronomist-speaker-title');
     const btnMinAgronomist = document.getElementById('btn-minimize-agronomist');
     const btnAvatar = document.getElementById('btn-agronomist-avatar');
-    if (speakerTitle) speakerTitle.innerText = `🌱 ${t('agronomistTitle')}`;
+    if (speakerTitle) speakerTitle.innerText = t('agronomistTitle');
     if (btnMinAgronomist) btnMinAgronomist.title = t('minimize');
     if (btnAvatar) btnAvatar.title = t('tapForMoreAdvice');
     this.updateAgronomistSpeech();

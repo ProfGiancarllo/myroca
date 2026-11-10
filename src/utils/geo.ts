@@ -1,5 +1,6 @@
 import { FarmData, Talhao, WaterPoint, WaterPointType, TALHAO_COLORS } from '../types';
 import { getCropColor } from './cropCalendar';
+import { t, TranslationDictionary } from '../i18n';
 
 /**
  * Radius of the Earth in meters according to WGS84
@@ -440,7 +441,7 @@ export function getRioVerdeDemoFarm(): FarmData {
     talhoes: [
       {
         id: 'talhao_demo_01',
-        name: 'Talhão 01 [Exemplo]',
+        name: t('demoNameTalhao01'),
         color: '#16a34a', // Verde Soja
         crop: 'Soja',
         cultivar: 'Brasmax Bônus IPRO',
@@ -482,7 +483,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'talhao_demo_02',
-        name: 'Talhão 02 [Exemplo]',
+        name: t('demoNameTalhao02'),
         color: '#eab308', // Amarelo Dourado
         crop: 'Soja precoce',
         cultivar: 'DM 54i52 RSF',
@@ -524,7 +525,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'talhao_demo_03',
-        name: 'Talhão 03 [Exemplo]',
+        name: t('demoNameTalhao03'),
         color: '#059669', // Esmeralda Pastagem
         crop: 'Pastagem de braquiária',
         cultivar: 'Brachiaria brizantha (Marandu / Piatã)',
@@ -558,7 +559,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       // Estruturas e Infraestrutura da Fazenda
       {
         id: 'elem_demo_sede',
-        name: 'Sede da Fazenda [Exemplo]',
+        name: t('demoNameSede'),
         type: 'sede',
         coordinates: [-17.8025, -51.0745],
         createdAt: new Date().toISOString(),
@@ -567,7 +568,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_silo',
-        name: 'Silos de Grãos e Moega [Exemplo]',
+        name: t('demoNameSilo'),
         type: 'silo',
         coordinates: [-17.8065, -51.0690],
         createdAt: new Date().toISOString(),
@@ -576,7 +577,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_curral',
-        name: 'Curral de Manejo [Exemplo]',
+        name: t('demoNameCurral'),
         type: 'curral',
         coordinates: [-17.8130, -51.0760],
         createdAt: new Date().toISOString(),
@@ -585,7 +586,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_pivo',
-        name: 'Pivô Central 01 [Exemplo]',
+        name: t('demoNamePivo'),
         type: 'pivo',
         coordinates: [-17.7940, -51.0660],
         createdAt: new Date().toISOString(),
@@ -594,7 +595,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_estacao',
-        name: 'Estação Meteorológica [Exemplo]',
+        name: t('demoNameEstacao'),
         type: 'estacao_meteo',
         coordinates: [-17.7985, -51.0820],
         createdAt: new Date().toISOString(),
@@ -603,7 +604,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_estrada',
-        name: 'Estrada Interna Principal [Exemplo]',
+        name: t('demoNameEstrada'),
         type: 'estrada',
         coordinates: [-17.8055, -51.0775],
         createdAt: new Date().toISOString(),
@@ -612,7 +613,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_reserva',
-        name: 'Reserva Legal e Mata Ciliar [Exemplo]',
+        name: t('demoNameReserva'),
         type: 'reserva',
         coordinates: [-17.8160, -51.0880],
         createdAt: new Date().toISOString(),
@@ -623,7 +624,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       // Recursos Hídricos
       {
         id: 'elem_demo_acude',
-        name: 'Açude Principal da Sede [Exemplo]',
+        name: t('demoNameAcude'),
         type: 'acude',
         coordinates: [-17.8005, -51.0705],
         createdAt: new Date().toISOString(),
@@ -632,7 +633,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_nascente',
-        name: 'Nascente da Mata das Araras [Exemplo]',
+        name: t('demoNameNascente'),
         type: 'nascente',
         coordinates: [-17.8185, -51.0855],
         createdAt: new Date().toISOString(),
@@ -641,7 +642,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_poco',
-        name: 'Poço Artesiano Sede [Exemplo]',
+        name: t('demoNamePoco'),
         type: 'poco',
         coordinates: [-17.8040, -51.0780],
         createdAt: new Date().toISOString(),
@@ -650,7 +651,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
       {
         id: 'elem_demo_rio',
-        name: 'Ribeirão dos Patos [Exemplo]',
+        name: t('demoNameRio'),
         type: 'rio',
         coordinates: [-17.8220, -51.0810],
         createdAt: new Date().toISOString(),
@@ -659,4 +660,45 @@ export function getRioVerdeDemoFarm(): FarmData {
       },
     ],
   };
+}
+
+
+/**
+ * Chaves de tradução dos nomes dos itens de exemplo (fazenda modelo), por id.
+ */
+const EXAMPLE_NAME_KEYS: Record<string, keyof TranslationDictionary> = {
+  talhao_demo_01: 'demoNameTalhao01',
+  talhao_demo_02: 'demoNameTalhao02',
+  talhao_demo_03: 'demoNameTalhao03',
+  elem_demo_sede: 'demoNameSede',
+  elem_demo_silo: 'demoNameSilo',
+  elem_demo_curral: 'demoNameCurral',
+  elem_demo_pivo: 'demoNamePivo',
+  elem_demo_estacao: 'demoNameEstacao',
+  elem_demo_estrada: 'demoNameEstrada',
+  elem_demo_reserva: 'demoNameReserva',
+  elem_demo_acude: 'demoNameAcude',
+  elem_demo_nascente: 'demoNameNascente',
+  elem_demo_poco: 'demoNamePoco',
+  elem_demo_rio: 'demoNameRio',
+};
+
+/**
+ * Reaplica o idioma atual aos nomes dos itens de exemplo (isExample) já salvos.
+ * Itens cadastrados pelo usuário não são alterados. Retorna true se algo mudou.
+ */
+export function localizeExampleNames(farm: FarmData): boolean {
+  let changed = false;
+  const apply = (item: { id: string; name: string; isExample?: boolean }) => {
+    const key = EXAMPLE_NAME_KEYS[item.id];
+    if (!item.isExample || !key) return;
+    const translated = t(key);
+    if (item.name !== translated) {
+      item.name = translated;
+      changed = true;
+    }
+  };
+  farm.talhoes.forEach(apply);
+  farm.waterPoints.forEach(apply);
+  return changed;
 }

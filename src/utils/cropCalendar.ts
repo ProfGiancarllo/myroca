@@ -83,7 +83,7 @@ export function getCropColor(cropName?: string): string {
  */
 export const DEFAULT_REFERENCE_DATE = '2026-11-09';
 
-import { formatDateWithWeekdayI18n, formatDateShortI18n } from '../i18n';
+import { formatDateWithWeekdayI18n, formatDateShortI18n, t, translateCropPhase } from '../i18n';
 
 /**
  * Formats a YYYY-MM-DD date into localized formatted string with weekday
@@ -176,10 +176,10 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       daysPassed: 0,
       daysRemaining: 0,
       progressPercent: 100,
-      expectedHarvest: 'Contínua / Pastejo rotacionado',
+      expectedHarvest: t('continuousPasture'),
       isPasture: true,
-      statusText: 'Pastagem perene formada (em pastejo)',
-      stageBadgeText: 'Pastagem Perene',
+      statusText: t('statusPasture'),
+      stageBadgeText: translateCropPhase('pastagem'),
     };
   }
 
@@ -190,10 +190,10 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       daysPassed: 0,
       daysRemaining: 0,
       progressPercent: 0,
-      expectedHarvest: 'Não definida',
+      expectedHarvest: t('notInformed'),
       isPasture: false,
-      statusText: 'Sem safra ativa cadastrada (em pousio)',
-      stageBadgeText: 'Em Pousio',
+      statusText: t('statusFallow'),
+      stageBadgeText: t('badgeFallow'),
     };
   }
 
@@ -215,8 +215,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
         progressPercent: 5,
         expectedHarvest: formatBrDateShort(expectedHarvest),
         isPasture: false,
-        statusText: `Preparo do solo (plantio previsto em ${daysUntilPlanting} dias)`,
-        stageBadgeText: `Preparo (${daysUntilPlanting}d para plantio)`,
+        statusText: t('statusPrep', { days: daysUntilPlanting }),
+        stageBadgeText: t('badgePrep', { days: daysUntilPlanting }),
       };
     } else {
       return {
@@ -226,8 +226,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
         progressPercent: 0,
         expectedHarvest: formatBrDateShort(expectedHarvest),
         isPasture: false,
-        statusText: `Planejamento de safra (${daysUntilPlanting} dias até o plantio)`,
-        stageBadgeText: 'Planejamento',
+        statusText: t('statusPlanning', { days: daysUntilPlanting }),
+        stageBadgeText: translateCropPhase('planejamento'),
       };
     }
   }
@@ -241,8 +241,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       progressPercent: Math.round((daysSincePlanting / cycleDays) * 100),
       expectedHarvest: formatBrDateShort(expectedHarvest),
       isPasture: false,
-      statusText: `Plantio recém-realizado (Dia ${daysSincePlanting} do ciclo)`,
-      stageBadgeText: `Plantio (Dia ${daysSincePlanting})`,
+      statusText: t('statusPlanted', { day: daysSincePlanting }),
+      stageBadgeText: t('badgePlanting', { day: daysSincePlanting }),
     };
   }
 
@@ -258,8 +258,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       progressPercent,
       expectedHarvest: formatBrDateShort(expectedHarvest),
       isPasture: false,
-      statusText: `Emergência e estabelecimento (${daysSincePlanting} dias de ${cycleDays} dias)`,
-      stageBadgeText: `Emergência (${progressPercent}%)`,
+      statusText: t('statusEmergence', { days: daysSincePlanting, cycle: cycleDays }),
+      stageBadgeText: `${translateCropPhase('emergencia')} (${progressPercent}%)`,
     };
   }
 
@@ -272,8 +272,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       progressPercent,
       expectedHarvest: formatBrDateShort(expectedHarvest),
       isPasture: false,
-      statusText: `Crescimento vegetativo vigoroso (${daysSincePlanting} dias de ${cycleDays} dias)`,
-      stageBadgeText: `Crescimento (${daysSincePlanting}d / ${progressPercent}%)`,
+      statusText: t('statusGrowth', { days: daysSincePlanting, cycle: cycleDays }),
+      stageBadgeText: `${translateCropPhase('crescimento')} (${daysSincePlanting}${t('unitDayShort')} / ${progressPercent}%)`,
     };
   }
 
@@ -286,8 +286,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       progressPercent,
       expectedHarvest: formatBrDateShort(expectedHarvest),
       isPasture: false,
-      statusText: `Floração e fixação de vagens (${daysSincePlanting} dias de ${cycleDays} dias)`,
-      stageBadgeText: `Floração (${daysSincePlanting}d / ${progressPercent}%)`,
+      statusText: t('statusFlowering', { days: daysSincePlanting, cycle: cycleDays }),
+      stageBadgeText: `${translateCropPhase('floracao')} (${daysSincePlanting}${t('unitDayShort')} / ${progressPercent}%)`,
     };
   }
 
@@ -300,8 +300,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       progressPercent,
       expectedHarvest: formatBrDateShort(expectedHarvest),
       isPasture: false,
-      statusText: `Enchimento e granação (${daysSincePlanting} dias de ${cycleDays} dias - colheita em ${daysUntilHarvest} dias)`,
-      stageBadgeText: `Enchimento (${daysUntilHarvest}d para colheita)`,
+      statusText: t('statusFilling', { days: daysSincePlanting, cycle: cycleDays, harvest: daysUntilHarvest }),
+      stageBadgeText: t('badgeFilling', { days: daysUntilHarvest }),
     };
   }
 
@@ -314,8 +314,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
       progressPercent: 100,
       expectedHarvest: formatBrDateShort(expectedHarvest),
       isPasture: false,
-      statusText: `Maturação / Ponto de colheita (${daysSincePlanting} dias de ${cycleDays} dias)`,
-      stageBadgeText: 'Ponto de Colheita 🌾',
+      statusText: t('statusMaturity', { days: daysSincePlanting, cycle: cycleDays }),
+      stageBadgeText: t('badgeHarvestPoint'),
     };
   }
 
@@ -328,8 +328,8 @@ export function calculateTalhaoCropStatus(talhao: Talhao, referenceDate: string)
     progressPercent: 100,
     expectedHarvest: formatBrDateShort(expectedHarvest),
     isPasture: false,
-    statusText: `Safra colhida há ${daysSinceHarvest} dias (Aguardando próxima safra)`,
-    stageBadgeText: 'Colhido / Entressafra',
+    statusText: t('statusHarvested', { days: daysSinceHarvest }),
+    stageBadgeText: t('badgeHarvested'),
   };
 }
 
@@ -356,7 +356,11 @@ export function checkCropDatesOverlap(
     const overlapDays = diff;
     return {
       hasOverlap: true,
-      message: `Atenção: A próxima safra está planejada para iniciar em ${formatBrDateShort(nextPlant)}, mas a colheita da safra atual só acontece em ${formatBrDateShort(currentHarvest)} (${overlapDays} dias de sobreposição). Não é permitido ter duas culturas simultâneas no mesmo talhão!`,
+      message: t('msgCropOverlap', {
+        next: formatBrDateShort(nextPlant),
+        harvest: formatBrDateShort(currentHarvest),
+        days: overlapDays,
+      }),
     };
   }
 

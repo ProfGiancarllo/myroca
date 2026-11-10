@@ -995,7 +995,7 @@ class AgroApp {
         this.farmGameView?.fitToBounds(0.08);
       }, 60);
 
-      this.showToast('🚜 Modo Minha Fazenda ativado! Visão isométrica 2.5D da fazenda.');
+      this.showToast(`🚜 ${t('toastModeMyFarm')}`);
     } else {
       btnFazenda?.classList.remove('active');
       btnMapa?.classList.add('active');
@@ -1006,7 +1006,7 @@ class AgroApp {
         this.mapManager.invalidateSize();
       }, 50);
 
-      this.showToast('🗺️ Modo Mapa real ativado! Imagem de satélite de Rio Verde.');
+      this.showToast(`🗺️ ${t('toastModeRealMap')}`);
     }
   }
 
@@ -1031,8 +1031,13 @@ class AgroApp {
     this.renderDrawerLists();
 
     const weeks = Math.abs(days / 7);
-    const direction = days >= 0 ? `+${days} dias (+${weeks} sem)` : `${days} dias (-${weeks} sem)`;
-    this.showToast(`📅 Data avançada para ${formatBrDateShort(this.referenceDate)} (${direction})! Fases das culturas atualizadas.`);
+    this.showToast(
+      `📅 ${t('toastDateAdvanced', {
+        date: formatBrDateShort(this.referenceDate),
+        days: days >= 0 ? `+${days}` : `${days}`,
+        weeks: days >= 0 ? `+${weeks}` : `-${weeks}`,
+      })}`
+    );
   }
 
   public resetReferenceDate(): void {
@@ -1049,7 +1054,7 @@ class AgroApp {
     this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
     this.renderDrawerLists();
 
-    this.showToast('📅 Data de referência redefinida para 09/11/2026!');
+    this.showToast(`📅 ${t('toastDateReset')}`);
   }
 
   // ==========================================
@@ -1072,7 +1077,7 @@ class AgroApp {
     const nextPlantingInput = document.getElementById('cal-next-planting-input') as HTMLInputElement | null;
 
     if (subtitleEl) {
-      subtitleEl.innerHTML = `<strong>${talhao.name}</strong> • Área: ${formatHectares(talhao.areaHectares)}${talhao.isExample ? ' <span class="badge-exemplo">exemplo</span>' : ''}`;
+      subtitleEl.innerHTML = `<strong>${talhao.name}</strong> • ${t('area')}: ${formatHectares(talhao.areaHectares)}${talhao.isExample ? ` <span class="badge-exemplo">${t('exampleBadge').toLowerCase()}</span>` : ''}`;
     }
 
     if (cropInput) cropInput.value = talhao.crop || '';
@@ -1151,16 +1156,16 @@ class AgroApp {
 
     if (overlap.hasOverlap) {
       if (overlapBanner) overlapBanner.style.display = 'flex';
-      if (overlapText) overlapText.innerText = overlap.message || 'Sobreposição de safras detectada.';
+      if (overlapText) overlapText.innerText = overlap.message || t('msgOverlapDefault');
       if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.title = 'Corrija o conflito de datas antes de salvar o calendário';
+        saveBtn.title = t('tipFixDatesFirst');
       }
     } else {
       if (overlapBanner) overlapBanner.style.display = 'none';
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.title = 'Salvar calendário do talhão';
+        saveBtn.title = t('tipSaveCalendar');
       }
     }
 
@@ -1255,7 +1260,7 @@ class AgroApp {
 
     const overlap = this.checkCalendarOverlapLive();
     if (overlap.hasOverlap) {
-      alert(`Não é permitido cadastrar safras com sobreposição de datas no mesmo talhão!\n\n${overlap.message}`);
+      alert(t('alertCropOverlap', { message: overlap.message || '' }));
       return;
     }
 
@@ -1293,7 +1298,7 @@ class AgroApp {
     this.updateUI();
     this.mapManager.renderTalhoes(this.farmData.talhoes);
     this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
-    this.showToast(`Calendário do ${talhao.name} atualizado com sucesso!`);
+    this.showToast(t('toastCalendarUpdated', { name: talhao.name }));
   }
 
   private renderColorSwatches(): void {
@@ -1395,6 +1400,25 @@ class AgroApp {
         this.checkCalendarOverlapLive();
       });
     });
+
+    // Language selector: grava o idioma e recarrega a página (os dados da fazenda ficam no localStorage)
+    const langMenu = document.getElementById('lang-menu');
+    document.getElementById('btn-lang-dropdown')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      langMenu?.classList.toggle('show');
+    });
+    langMenu?.querySelectorAll('.lang-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const code = (item as HTMLElement).getAttribute('data-lang') as LanguageCode | null;
+        if (!code || code === getCurrentLanguage()) {
+          langMenu.classList.remove('show');
+          return;
+        }
+        setLanguage(code);
+        window.location.reload();
+      });
+    });
+    document.addEventListener('click', () => langMenu?.classList.remove('show'));
 
     // Talhão Dropdown
     const talhaoBtn = document.getElementById('btn-talhao-dropdown');
@@ -1655,14 +1679,14 @@ class AgroApp {
     document.getElementById('btn-export-geojson')?.addEventListener('click', () => {
       const geojson = exportToGeoJSON(this.farmData);
       this.downloadFile(geojson, 'myroca_fazenda_rio_verde.geojson', 'application/geo+json');
-      this.showToast('Arquivo GeoJSON exportado com sucesso!');
+      this.showToast(t('toastExportGeoJSON'));
       this.closeModals();
     });
 
     document.getElementById('btn-export-kml')?.addEventListener('click', () => {
       const kml = exportToKML(this.farmData);
       this.downloadFile(kml, 'myroca_fazenda_rio_verde.kml', 'application/vnd.google-earth.kml+xml');
-      this.showToast('Arquivo KML exportado com sucesso!');
+      this.showToast(t('toastExportKML'));
       this.closeModals();
     });
 
@@ -1705,17 +1729,17 @@ class AgroApp {
       this.mapManager.fitBoundsToFarm(this.farmData.talhoes, this.farmData.waterPoints);
       this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
       this.farmGameView?.fitToBounds(0.08);
-      this.showToast('Fazenda modelo de Rio Verde (GO) carregada!');
+      this.showToast(t('toastDemoLoaded'));
     });
 
     document.getElementById('btn-clear-all')?.addEventListener('click', () => {
-      if (confirm('Tem certeza que deseja apagar todos os talhões e pontos de água?')) {
+      if (confirm(t('confirmClearAll'))) {
         this.farmData = clearAllFarmData();
         this.updateUI();
         this.renderFarmOnMap();
         this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
         this.farmGameView?.fitToBounds(0.08);
-        this.showToast('Todos os dados foram removidos.');
+        this.showToast(t('toastAllCleared'));
       }
     });
 
@@ -1750,7 +1774,7 @@ class AgroApp {
     const hud = document.getElementById('drawing-hud');
     if (hud) hud.style.display = 'flex';
     this.mapManager.startDrawingTalhao();
-    this.showToast('Clique no mapa para marcar os cantos do talhão.');
+    this.showToast(t('toastDrawingStarted'));
   }
 
   private startPlacingWater(type: WaterPointType): void {
@@ -1766,7 +1790,7 @@ class AgroApp {
     if (hud) hud.style.display = 'flex';
 
     this.mapManager.startPlacingWaterPoint(type);
-    this.showToast(`Clique no mapa para posicionar a fonte: ${meta.label}`);
+    this.showToast(t('toastPlaceOnMap', { label: translateStructureType(type) }));
   }
 
   private hideHUDs(): void {
@@ -1878,7 +1902,7 @@ class AgroApp {
           skipped.color = getCropColor('');
         }
       }
-      this.showToast(`Talhão mantido para preencher depois.`);
+      this.showToast(t('toastImportQueueSkipped'));
       this.processNextImportedTalhao();
     } else {
       this.closeModals();
@@ -1893,7 +1917,7 @@ class AgroApp {
       this.renderFarmOnMap();
       this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
       this.farmGameView?.fitToBounds(0.08);
-      this.showToast('Todos os talhões importados foram processados!');
+      this.showToast(t('toastImportQueueDone'));
       return;
     }
 
@@ -1958,7 +1982,7 @@ class AgroApp {
         talhao.color = color;
         talhao.notes = notes;
       }
-      this.showToast(`Talhão "${name}" atualizado!`);
+      this.showToast(t('toastTalhaoUpdated', { name }));
     } else {
       // Create new
       const newTalhao: Talhao = {
@@ -1978,7 +2002,7 @@ class AgroApp {
       };
 
       this.farmData.talhoes.push(newTalhao);
-      this.showToast(`Talhão "${name}" cadastrado (${formatHectares(newTalhao.areaHectares)})!`);
+      this.showToast(t('toastTalhaoSaved', { name, area: formatHectares(newTalhao.areaHectares) }));
     }
 
     saveFarmData(this.farmData);
@@ -2023,7 +2047,7 @@ class AgroApp {
 
     this.coordsTableRows = samplePoints.map((pt) => parseCoordinatePair(pt.lat, pt.lng));
     this.renderCoordsTable();
-    this.showToast('Exemplo com 4 vértices na lavoura de Rio Verde (GO) carregado na tabela.');
+    this.showToast(t('toastDemoCoordsLoaded'));
   }
 
   private addCoordRow(latStr = '', lngStr = ''): void {
@@ -2063,7 +2087,7 @@ class AgroApp {
     });
 
     this.renderCoordsTable();
-    this.showToast('Coordenadas corrigidas com sinal negativo (-) para o Brasil!');
+    this.showToast(t('toastCoordsFixedNegative'));
   }
 
   private applyPastedCoordinates(rawText: string): void {
@@ -2075,7 +2099,7 @@ class AgroApp {
 
     this.coordsTableRows = [...this.coordsTableRows, ...parsedRows];
     this.renderCoordsTable();
-    this.showToast(`${parsedRows.length} coordenadas processadas e adicionadas à tabela!`);
+    this.showToast(t('toastCoordsProcessed', { count: parsedRows.length }));
   }
 
   private getCoordRowStatusHtml(row: CoordinateRow): string {
@@ -2443,7 +2467,7 @@ class AgroApp {
     }
 
     this.validateWaterInputs();
-    this.showToast('Coordenadas corrigidas para negativo (-) no Brasil!');
+    this.showToast(t('toastCoordsFixedNegative'));
   }
 
   private saveWaterFromModal(): void {
@@ -2474,21 +2498,21 @@ class AgroApp {
     this.updateUI();
     this.renderFarmOnMap();
     this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
-    this.showToast(`Elemento "${name}" cadastrado com sucesso!`);
+    this.showToast(t('toastWaterSaved', { name }));
   }
 
   private deleteTalhao(talhaoId: string): void {
     const talhao = this.farmData.talhoes.find((t) => t.id === talhaoId);
     const name = talhao ? talhao.name : 'Talhão';
 
-    if (confirm(`Deseja realmente excluir o ${name}?`)) {
+    if (confirm(t('confirmDeleteTalhao', { name }))) {
       this.farmData.talhoes = this.farmData.talhoes.filter((t) => t.id !== talhaoId);
       saveFarmData(this.farmData);
       this.updateUI();
       this.renderFarmOnMap();
       this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
       this.farmGameView?.fitToBounds(0.08);
-      this.showToast(`${name} removido.`);
+      this.showToast(t('toastTalhaoRemoved', { name }));
     }
   }
 
@@ -2496,14 +2520,14 @@ class AgroApp {
     const wp = this.farmData.waterPoints.find((w) => w.id === waterPointId);
     const name = wp ? wp.name : 'Ponto de água';
 
-    if (confirm(`Deseja excluir o ponto "${name}"?`)) {
+    if (confirm(t('confirmDeleteWater', { name }))) {
       this.farmData.waterPoints = this.farmData.waterPoints.filter((w) => w.id !== waterPointId);
       saveFarmData(this.farmData);
       this.updateUI();
       this.renderFarmOnMap();
       this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
       this.farmGameView?.fitToBounds(0.08);
-      this.showToast(`Ponto "${name}" removido.`);
+      this.showToast(t('toastWaterRemoved', { name }));
     }
   }
 
@@ -2588,7 +2612,11 @@ class AgroApp {
 
         const totalHa = imported.talhoes.reduce((acc, t) => acc + t.areaHectares, 0);
         this.showToast(
-          `Importado com sucesso: ${imported.talhoes.length} talhões (${formatHectares(totalHa)}) e ${imported.waterPoints.length} pontos d'água!`
+          t('toastImportSuccess', {
+            talhoes: imported.talhoes.length,
+            area: formatHectares(totalHa),
+            water: imported.waterPoints.length,
+          })
         );
 
         // Requirement 4: automatically open modal form for each newly imported talhão, one by one
@@ -2655,6 +2683,7 @@ class AgroApp {
   }
 
   private renderDrawerLists(): void {
+    const exampleTag = t('exampleBadge').toLowerCase();
     // 1. Talhões
     const talhoesContent = document.getElementById('drawer-content-talhoes');
     if (talhoesContent) {
@@ -2677,7 +2706,7 @@ class AgroApp {
                 <div>
                   <div class="drawer-card-title">
                     ${t.name}
-                    ${t.isExample ? '<span class="badge-exemplo">exemplo</span>' : ''}
+                    ${t.isExample ? `<span class="badge-exemplo">${exampleTag}</span>` : ''}
                   </div>
                   <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
                     <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 1px 7px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
@@ -2791,7 +2820,7 @@ class AgroApp {
                   <div>
                     <div class="drawer-card-title">
                       ${wp.name}
-                      ${wp.isExample ? '<span class="badge-exemplo">exemplo</span>' : ''}
+                      ${wp.isExample ? `<span class="badge-exemplo">${exampleTag}</span>` : ''}
                     </div>
                     <span class="water-type-pill" style="background-color: ${meta.badgeBg}; color: ${meta.color}">
                       ${meta.label}
