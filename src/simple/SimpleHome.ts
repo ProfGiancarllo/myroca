@@ -9,12 +9,15 @@ import { fetchNasaSeries, polygonCentroid } from '../utils/nasaPower';
 import { assessPlanting } from '../utils/agronomyRules';
 import { resolveWeather, setOverride, clearOverride, Condition } from '../utils/weather';
 import { cropKey } from '../utils/forecast';
+import { sf } from '../i18n/safraText';
+import { switchHeadline } from '../components/RotationPlanner';
+import { calculateExpectedHarvestDate, diffDays } from '../utils/cropCalendar';
 
 export interface SimpleHomeOptions {
   getFarm: () => FarmData;
   getRefDate: () => string;
   getEstela: () => EstelaChat;
-  openRotation: () => void;
+  openRotation: (tab?: 'current' | 'switch') => void;
   onShowFull: () => void;
 }
 
@@ -81,6 +84,7 @@ export class SimpleHome {
           <button type="button" class="sh-link" id="sh-full">🗺️ ${sx('full')}</button>
         </header>
         <div class="sh-date">${esc(dateTxt)}</div>
+        ${this.hero(farm, ref)}
         <div class="sh-grid">
           <section class="sh-card sh-todo">
             <h2>📋 ${sx('todo')}</h2>
@@ -105,7 +109,9 @@ export class SimpleHome {
     const $ = (id: string) => this.root.querySelector<HTMLElement>(id)!;
     $('#sh-full').onclick = () => this.opts.onShowFull();
     $('#sh-talk').onclick = () => estela.listen();
-    $('#sh-plan').onclick = () => this.opts.openRotation();
+    $('#sh-plan').onclick = () => this.opts.openRotation('switch');
+    $('#sh-h-cur').onclick = () => this.opts.openRotation('current');
+    $('#sh-h-sw').onclick = () => this.opts.openRotation('switch');
     const v = this.root.querySelector<HTMLElement>('#sh-voice');
     if (v) v.onclick = () => { estela.askPending(); estela.listen(); };
     const ty = this.root.querySelector<HTMLElement>('#sh-typed');
@@ -114,6 +120,25 @@ export class SimpleHome {
 
     void this.renderWeather(farm, ref);
     void this.renderNasa(farm, ref);
+  }
+
+  private hero(farm: FarmData, ref: string): string {
+    const live = farm.talhoes.filter((tl) => {
+      const st = calculateTalhaoCropStatus(tl, ref);
+      return !st.isPasture && !!tl.plantingDate && !!tl.cycleDays && tl.plantingDate <= ref && diffDays(ref, tl.harvestDateExpected || calculateExpectedHarvestDate(tl.plantingDate!, tl.cycleDays!)) >= 0;
+    });
+    let curText = sf('heroCurNone');
+    if (live.length) {
+      const nxt = live.map((tl) => ({ tl, d: diffDays(ref, tl.harvestDateExpected || calculateExpectedHarvestDate(tl.plantingDate!, tl.cycleDays!)) })).sort((a, b) => a.d - b.d)[0];
+      curText = sf('heroCurText', { n: live.length, harvest: sf(nxt.d === 0 ? 'chipHarvestToday' : 'chipHarvest', { name: this.tName(nxt.tl), d: nxt.d }) });
+    }
+    const hl = switchHeadline(farm, ref);
+    const swText = hl ? hl.text + (hl.example ? ` (${sf('exampleShort')})` : '') : sf('heroSwitchNone');
+    return `
+      <div class="sh-hero">
+        <button type="button" class="sh-hcard cur" id="sh-h-cur"><span class="sh-hic">🌾</span><div class="sh-htx"><h2>${sf('heroCur')}</h2><p>${esc(curText)}</p></div><span class="sh-hgo">${sf('heroOpen')} ➜</span></button>
+        <button type="button" class="sh-hcard sw" id="sh-h-sw"><span class="sh-hic">🔄</span><div class="sh-htx"><h2>${sf('heroSwitch')}</h2><p>${esc(swText)}</p></div><span class="sh-hgo">${sf('heroOpen')} ➜</span></button>
+      </div>`;
   }
 
   private center(farm: FarmData): { lat: number; lng: number } {

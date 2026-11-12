@@ -12,7 +12,8 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
   await p.fill('#a-pw','demo12345'); await p.fill('#a-pw2','demo12345'); await p.check('#a-consent'); await p.click('#auth-submit'); await p.waitForTimeout(2500);
   await p.evaluate(() => { const uid = Object.keys(localStorage).find(x => x.startsWith('myroca_farm_data_rio_verde_rural_v3:')); localStorage.setItem('myroca_avatar_prompted_v1:' + uid.split(':')[1], '1'); });
   await p.reload(); await p.waitForTimeout(2500);
-  await p.evaluate(() => document.getElementById('btn-rotation')?.click()); await p.waitForTimeout(1200);
+  const openPlanner = async () => { await p.evaluate(() => document.getElementById('btn-rotation')?.click()); await p.waitForTimeout(900); await p.click('[data-tab=switch]'); await p.waitForTimeout(500); await p.click('.sf-details > summary'); await p.waitForTimeout(300); };
+  await openPlanner();
   const t = async (s) => (await p.innerText(s)).replace(/\s+/g,' ');
   ok('1 Painel de mercado aparece com selo de exemplo', /Dados de exemplo/.test(await t('.mk-panel')));
   ok('2 Banner de decisão combinada', /Decisão combinada/.test(await t('.mk-decision')), (await t('.mk-decision')).slice(0,200));
@@ -35,7 +36,7 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
   for (const [code, re] of [['en',/Market and estimated margin/],['es',/Mercado y margen/],['de',/Markt und/],['zh',/市场/],['fr',/Marché et marge/]]) {
     await p.evaluate((c) => { sessionStorage.setItem('lg','1'); localStorage.setItem('myroca_language', c); }, code);
     await p.reload(); await p.waitForTimeout(2200);
-    await p.evaluate(() => document.getElementById('btn-rotation')?.click()); await p.waitForTimeout(900);
+    await openPlanner();
     ok('Idioma ' + code, re.test(await t('.mk-panel')) && /R\$/.test(await t('.mk-margin')), (await t('.mk-decision')).slice(0,110));
     if (code === 'zh') await p.screenshot({ path: process.env.S + '/mercado-zh.png' });
     await p.evaluate(() => document.querySelector('.rot-x')?.click());

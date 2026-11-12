@@ -9,6 +9,10 @@ import { assessPlanting } from '../utils/agronomyRules';
 import { fetchNasaSeries, polygonCentroid } from '../utils/nasaPower';
 import { addDaysToDate, calculateTalhaoCropStatus } from '../utils/cropCalendar';
 import { mt } from '../i18n/marketText';
+import { sf } from '../i18n/safraText';
+import { decide, Decision, focusTalhao } from '../utils/decision';
+import { currentForecast } from '../utils/forecast';
+import { calculateExpectedHarvestDate, diffDays, getCropColor } from '../utils/cropCalendar';
 import { getCurrentLanguage } from '../i18n';
 import {
   clearOverrides, cropMarket, currentMarket, hasOverrides, loadMarket, setOverride, slotMargin, strategyMargin,
@@ -22,6 +26,13 @@ export interface RotationPlannerOptions {
   onChange: (talhao: Talhao, adopted: boolean) => void;
 }
 
+const LOCALES: Record<string, string> = { pt: 'pt-BR', es: 'es', en: 'en-US', de: 'de-DE', zh: 'zh-CN', fr: 'fr-FR' };
+export const fmtMoney = (v: number): string => `${v < 0 ? '−' : ''}R$ ${Math.abs(Math.round(v)).toLocaleString(LOCALES[getCurrentLanguage()] || 'pt-BR')}`;
+const cropLabel = (c: CropKey): string => {
+  if (c === 'cobertura') return rt('cover').split(' (')[0];
+  if (c === 'pousio') return rt('fallow').split(' (')[0];
+  return translateCropName(CROP_STANDARD_NAME[c]);
+};
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const fmtDate = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
 
@@ -32,10 +43,14 @@ export class RotationPlanner {
   private nasaState: 'idle' | 'loading' | 'ok' | 'fail' = 'idle';
   private nasaToken = 0;
   private stress = 0;
+  private tab: 'current' | 'switch' = 'switch';
+  private detailsOpen = false;
 
   constructor(private opts: RotationPlannerOptions) {}
 
-  open(talhaoId?: string): void {
+  open(talhaoId?: string, tab: 'current' | 'switch' = 'switch'): void {
+    this.tab = tab;
+    this.detailsOpen = false;
     const farm = this.opts.getFarm();
     if (!farm.talhoes.length) {
       this.ensureRoot();
@@ -144,23 +159,11 @@ export class RotationPlanner {
   }
 
 
-  private money(v: number): string {
-    const loc = ({ pt: 'pt-BR', es: 'es', en: 'en-US', de: 'de-DE', zh: 'zh-CN', fr: 'fr-FR' } as Record<string, string>)[getCurrentLanguage()] || 'pt-BR';
-    const sign = v < 0 ? '−' : '';
-    return `${sign}R$ ${Math.abs(Math.round(v)).toLocaleString(loc)}`;
-  }
+  private money(v: number): string { return fmtMoney(v); }
 
   private strategyName(ev: Evaluation): string {
     const a = this.cropName(ev.summer.crop);
     return ev.second ? `${a} → ${this.cropName(ev.second.crop)}` : a;
-  }
-
-  /** Margem estimada da estratégia, com o risco agronômico/climático reduzindo a produtividade. */
-  private marginOf(ev: Evaluation): StrategyMargin {
-    const perennial = ROTATION_RULES.perennial.includes(ev.summer.crop);
-    const slots = [slotMargin(ev.summer.crop, ev.level, ev.yields.summer?.value ?? null, this.stress)];
-    if (ev.second && !perennial) slots.push(slotMargin(ev.second.crop, ev.level, ev.yields.second?.value ?? null, this.stress));
-    return strategyMargin(slots);
   }
 
   private spark(series?: number[]): string {
@@ -222,19 +225,128 @@ export class RotationPlanner {
       </div>`;
   }
 
-  private decisionBanner(evals: Evaluation[], margins: StrategyMargin[], area: number): { html: string; bestIdx: number } {
-    let bestIdx = -1;
-    evals.forEach((ev, i) => {
-      if (ev.level === 'high' || !margins[i].slots.length) return;
-      if (bestIdx < 0 || margins[i].perHa.base > margins[bestIdx].perHa.base) bestIdx = i;
-    });
-    if (bestIdx < 0) return { html: `<div class="mk-decision none">⚠️ ${mt('decisionNone')}</div>`, bestIdx };
-    const ev = evals[bestIdx];
-    if (margins[bestIdx].perHa.base < 0) {
-      return { html: `<div class="mk-decision none">⚠️ <strong>${mt('decision')}</strong><div>${esc(mt('decisionLoss', { name: this.strategyName(ev), m: this.money(margins[bestIdx].perHa.base) }))}</div></div>`, bestIdx };
+
+  private static ICON: Record<string, string> = { soja: '🌱', milho: '🌽', sorgo: '🌾', feijao: '🫘', algodao: '☁️', trigo: '🌾', cana: '🎋', pasto: '🐄', cobertura: '🍃', pousio: '⬜' };
+  private ic(c: CropKey): string { return RotationPlanner.ICON[c] || '🌱'; }
+
+  private decisionBanner(d: Decision, area: number): string {
+    if (d.bestIdx < 0) return `<div class="mk-decision none">⚠️ ${mt('decisionNone')}</div>`;
+    const ev = d.evals[d.bestIdx];
+    const m = d.margins[d.bestIdx].perHa.base;
+    if (m < 0) return `<div class="mk-decision none">⚠️ <strong>${mt('decision')}</strong><div>${esc(mt('decisionLoss', { name: this.strategyName(ev), m: this.money(m) }))}</div></div>`;
+    const text = mt('decisionText', { name: this.strategyName(ev), m: this.money(m), risk: this.riskLabel(ev.level), t: this.money(m * area) });
+    return `<div class="mk-decision">🎯 <strong>${mt('decision')}</strong><div>${esc(text)}</div></div>`;
+  }
+
+  /** Ranking visual: barra = margem base por hectare; traço = pessimista a otimista. */
+  private chart(plan: ReturnType<RotationPlanner['plan']>, d: Decision): string {
+    const all = d.margins.flatMap((m) => [m.perHa.pess, m.perHa.opt, m.perHa.base]);
+    const lo = Math.min(0, ...all), hi = Math.max(1, ...all), span = hi - lo || 1;
+    const pos = (v: number) => (((v - lo) / span) * 100).toFixed(1);
+    const zero = pos(0);
+    const rows = plan.strategies.map((s, i) => {
+      const ev = d.evals[i], mg = d.margins[i];
+      const base = mg.perHa.base;
+      const left = Math.min(Number(zero), Number(pos(base))), width = Math.abs(Number(pos(base)) - Number(zero));
+      const kind = s.kind === 'current' ? rt('current') : s.kind === 'suggested' ? `${rt('suggested')} ${s.name}` : `${rt('custom')} ${s.name}`;
+      const best = i === d.bestIdx;
+      const icons = `${this.ic(ev.summer.crop)}${ev.second ? this.ic(ev.second.crop) : ''}`;
+      return `
+        <div class="sf-row ${best ? 'best' : ''}">
+          <div class="sf-label"><span class="sf-ic">${icons}</span><div><strong>${esc(this.strategyName(ev))}</strong><small>${esc(kind)}</small></div></div>
+          <div class="sf-bar" aria-label="${esc(this.money(base))}">
+            <span class="sf-zero" style="left:${zero}%"></span>
+            <span class="sf-fill ${base < 0 ? 'neg' : 'pos'}" style="left:${left}%;width:${width}%"></span>
+            <span class="sf-whisk" style="left:${pos(mg.perHa.pess)}%;width:${Math.max(0, Number(pos(mg.perHa.opt)) - Number(pos(mg.perHa.pess))).toFixed(1)}%"></span>
+          </div>
+          <div class="sf-val ${base < 0 ? 'neg' : ''}"><strong>${this.money(base)}</strong><small>${mt('perHa')}</small></div>
+          <span class="rot-level lvl-${ev.level}">${this.riskLabel(ev.level)}</span>
+          <button class="rot-adopt sf-adopt" data-act="adopt" data-id="${esc(s.id)}">${best ? '🏆 ' : ''}${sf('adopt')}</button>
+        </div>`;
+    }).join('');
+    return `<div class="sf-chart"><h3>${sf('chartTitle')}</h3><p class="sf-sub">${sf('chartSub')}</p>${rows}</div>`;
+  }
+
+  private monthTicks(a: string, b: string): string {
+    const total = Math.max(1, diffDays(a, b));
+    const out: string[] = [];
+    let y = Number(a.slice(0, 4)), m = Number(a.slice(5, 7)) + 1;
+    for (let k = 0; k < 24; k++) {
+      if (m > 12) { m = 1; y++; }
+      const iso = `${y}-${String(m).padStart(2, '0')}-01`;
+      const off = diffDays(a, iso);
+      if (off > total) break;
+      out.push(`<span class="sf-tick" style="left:${((off / total) * 100).toFixed(2)}%">${String(m).padStart(2, '0')}/${String(y).slice(2)}</span>`);
+      m++;
     }
-    const text = mt('decisionText', { name: this.strategyName(ev), m: this.money(margins[bestIdx].perHa.base), risk: this.riskLabel(ev.level), t: this.money(margins[bestIdx].perHa.base * area) });
-    return { html: `<div class="mk-decision">🎯 <strong>${mt('decision')}</strong><div>${esc(text)}</div></div>`, bestIdx };
+    return out.join('');
+  }
+
+  private currentTab(): string {
+    const farm = this.opts.getFarm();
+    const ref = this.opts.getRefDate();
+    if (!farm.talhoes.length) return `<p>${sf('noFields')}</p>`;
+    type Row = { t: Talhao; st: ReturnType<typeof calculateTalhaoCropStatus>; ps: string | null; hv: string | null };
+    const rows: Row[] = farm.talhoes.map((t) => {
+      const st = calculateTalhaoCropStatus(t, ref);
+      const ps = t.plantingDate && t.cycleDays ? t.plantingDate : null;
+      const hv = ps ? (t.harvestDateExpected || calculateExpectedHarvestDate(ps, t.cycleDays!)) : null;
+      return { t, st, ps, hv };
+    });
+    const dated = rows.filter((r) => r.ps && r.hv);
+    let a = addDaysToDate(ref, -40), b = addDaysToDate(ref, 160);
+    dated.forEach((r) => { if (r.ps! < a) a = r.ps!; if (r.hv! > b) b = r.hv!; });
+    if (diffDays(a, b) > 420) { a = addDaysToDate(ref, -90); b = addDaysToDate(ref, 330); }
+    const total = Math.max(1, diffDays(a, b));
+    const pct = (iso: string) => Math.max(0, Math.min(100, (diffDays(a, iso) / total) * 100));
+    const todayPct = pct(ref).toFixed(2);
+    const area = rows.reduce((s, r) => s + (Number(r.t.areaHectares) || 0), 0);
+    const upcoming = rows.filter((r) => r.hv && !r.st.isPasture && diffDays(ref, r.hv) >= 0).sort((x, y) => diffDays(ref, x.hv!) - diffDays(ref, y.hv!))[0];
+    const chips = `<div class="sf-chips"><span>🌾 ${sf('chipFields', { n: rows.length })}</span><span>📐 ${sf('chipArea', { ha: Math.round(area).toLocaleString() })}</span><span>🚜 ${upcoming ? sf(diffDays(ref, upcoming.hv!) === 0 ? 'chipHarvestToday' : 'chipHarvest', { name: esc(upcoming.t.name.replace(/\s*\[[^\]]*\]\s*/, '')), d: diffDays(ref, upcoming.hv!) }) : sf('chipNone')}</span></div>`;
+    const over = (r: Row) => (r.hv && diffDays(r.hv, ref) > 0 ? 1 : 0);
+    rows.sort((x, y) => over(x) - over(y) || (x.hv || '9999').localeCompare(y.hv || '9999'));
+    const html = rows.map((r) => {
+      const { t, st } = r;
+      const key = asCropKey(t.crop);
+      const color = getCropColor(t.crop);
+      const nm = esc(t.name.replace(/\s*\[[^\]]*\]\s*/, ''));
+      const crop = esc(translateCropName(t.crop) || sf('noCrop'));
+      let bar = '', meta = '';
+      if (st.isPasture) {
+        bar = `<span class="sf-seg pasture" style="left:0;width:100%;background:${color}"></span>`;
+        meta = sf('pasture');
+      } else if (r.ps && r.hv) {
+        const l = pct(r.ps), w = Math.max(1.5, pct(r.hv) - l);
+        const doneDays = Math.max(0, Math.min(diffDays(r.ps, r.hv), diffDays(r.ps, ref)));
+        const fill = Math.max(0, Math.min(100, (doneDays / Math.max(1, diffDays(r.ps, r.hv))) * 100));
+        const harvested = diffDays(r.hv, ref) > 0;
+        bar = `<span class="sf-seg ${harvested ? 'harvested' : ''}" style="left:${l.toFixed(2)}%;width:${w.toFixed(2)}%;background:${color}33;border-color:${color}"><i style="width:${fill.toFixed(0)}%;background:${color}"></i></span>`;
+        const left = diffDays(ref, r.hv);
+        meta = harvested ? sf('done') : `${sf('dayOf', { d: Math.max(0, diffDays(r.ps, ref)), t: t.cycleDays! })} · ${sf('harvestOn', { date: r.hv.slice(8, 10) + '/' + r.hv.slice(5, 7) })} · ${sf('daysLeft', { d: left })}`;
+      } else meta = sf('noCrop');
+      const np = t.nextCropPlan?.plannedPlanting && t.nextCropPlan.crop ? t.nextCropPlan : null;
+      if (np && np.plannedPlanting) {
+        const l = pct(np.plannedPlanting), e = np.plannedHarvest ? pct(np.plannedHarvest) : Math.min(100, l + 20);
+        bar += `<span class="sf-seg next" style="left:${l.toFixed(2)}%;width:${Math.max(1.5, e - l).toFixed(2)}%"></span>`;
+        meta += ` · ${sf('next', { crop: esc(translateCropName(np.crop) || '') })}`;
+      }
+      const fc = !st.isPasture ? currentForecast(t) : null;
+      const fcTxt = fc && fc.value !== null ? ` · ${sf('forecast', { v: fc.value.toFixed(0) })}` : '';
+      return `
+        <div class="sf-trow" data-talhao="${esc(t.id)}">
+          <div class="sf-tname"><span class="sf-dot" style="background:${color}"></span><div><strong>${nm}</strong><small>${this.ic(key)} ${crop} · ${esc(st.stageBadgeText)}</small></div></div>
+          <div class="sf-track">${bar}<span class="sf-now" style="left:${todayPct}%"></span></div>
+          <div class="sf-meta">${esc(meta)}${esc(fcTxt)}</div>
+          <button class="sf-go" data-act="decide" data-id="${esc(t.id)}">🔄 ${sf('decide')}</button>
+        </div>`;
+    }).join('');
+    return `
+      <h3 class="sf-h">${sf('curTitle')}</h3><p class="sf-sub">${sf('curSub')}</p>
+      ${chips}
+      <div class="sf-gantt">
+        <div class="sf-trow sf-axis"><div class="sf-tname"></div><div class="sf-track"><span class="sf-todaytag" style="left:${todayPct}%">${sf('today')}</span>${this.monthTicks(a, b)}</div><div class="sf-meta"></div><div></div></div>
+        ${html}
+      </div>`;
   }
 
   private card(s: RotationStrategyData, ev: Evaluation, idx: number, marketHtml = ''): string {
@@ -290,23 +402,22 @@ export class RotationPlanner {
     const t = this.talhao();
     const plan = this.plan();
     const ref = this.opts.getRefDate();
-    const evals = plan.strategies.map((s) =>
-      evaluateStrategy(s, t, plan.summerSow!, ref, this.cropName, this.nasa)
-    );
-    const area = Math.max(0, Number(t.areaHectares) || 0);
-    const margins = evals.map((ev) => this.marginOf(ev));
-    const dec = this.decisionBanner(evals, margins, area);
-    const usedCrops = Array.from(new Set(evals.flatMap((ev) => [ev.summer.crop, ev.second?.crop].filter(Boolean) as CropKey[]))).filter((c) => c !== 'pousio');
-    const nasaBox =
-      this.nasaState === 'ok' && this.nasa
-        ? `<div class="rot-nasa-box">🛰️ <strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${rt('nasaLine', { mm: this.nasa.rain15, risk: this.riskLabel(this.nasa.level) })}</div></div>`
-        : `<div class="rot-nasa-box">🛰️ <strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${this.nasaState === 'loading' ? rt('nasaLoading') : rt('nasaFail')}</div></div>`;
-    this.root.innerHTML = `
-      <div class="rot-card" role="dialog" aria-label="${rt('title')}">
-        <div class="rot-head">
-          <div><h2>🔄 ${rt('title')}</h2><p class="rot-sub">${rt('subtitle')}</p></div>
-          <button class="rot-x" data-act="close" aria-label="${rt('close')}">&times;</button>
-        </div>
+    const tabs = `<div class="sf-tabs" role="tablist">
+        <button role="tab" class="sf-tab ${this.tab === 'current' ? 'on' : ''}" data-act="tab" data-tab="current">🌾 ${sf('tabCurrent')}</button>
+        <button role="tab" class="sf-tab ${this.tab === 'switch' ? 'on' : ''}" data-act="tab" data-tab="switch">🔄 ${sf('tabSwitch')}</button>
+      </div>`;
+    let body = '';
+    if (this.tab === 'current') {
+      body = this.currentTab();
+    } else {
+      const d = decide(t, ref, this.cropName, this.nasa, this.stress);
+      const area = Math.max(0, Number(t.areaHectares) || 0);
+      const usedCrops = Array.from(new Set(d.evals.flatMap((ev) => [ev.summer.crop, ev.second?.crop].filter(Boolean) as CropKey[]))).filter((c) => c !== 'pousio');
+      const nasaBox =
+        this.nasaState === 'ok' && this.nasa
+          ? `<div class="rot-nasa-box">🛰️ <strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${rt('nasaLine', { mm: this.nasa.rain15, risk: this.riskLabel(this.nasa.level) })}</div></div>`
+          : `<div class="rot-nasa-box">🛰️ <strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${this.nasaState === 'loading' ? rt('nasaLoading') : rt('nasaFail')}</div></div>`;
+      body = `
         <div class="rot-controls">
           <label>${rt('talhao')}
             <select id="rot-talhao">${farm.talhoes.map((x) => `<option value="${esc(x.id)}" ${x.id === this.talhaoId ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>
@@ -315,15 +426,28 @@ export class RotationPlanner {
             <input type="date" id="rot-sow" value="${plan.summerSow}" />
           </label>
         </div>
+        ${this.decisionBanner(d, area)}
+        ${this.chart(plan, d)}
         ${nasaBox}
-        ${dec.html}
-        ${this.marketPanel(usedCrops)}
-        <div class="rot-grid">${plan.strategies.map((s, i) => this.card(s, evals[i], i, this.marginBlock(margins[i], area, i === dec.bestIdx, evals[i]))).join('')}</div>
-        <div class="rot-bottom">
-          <button class="rot-add" data-act="add">${rt('add')}</button>
-          <p class="rot-foot">${rt('foot')}</p>
-          <p class="rot-foot">${mt('foot')}</p>
+        <details class="sf-details" ${this.detailsOpen ? 'open' : ''}>
+          <summary>⚙️ ${sf('details')}</summary>
+          ${this.marketPanel(usedCrops)}
+          <div class="rot-grid">${plan.strategies.map((s, i) => this.card(s, d.evals[i], i, this.marginBlock(d.margins[i], area, i === d.bestIdx, d.evals[i]))).join('')}</div>
+          <div class="rot-bottom">
+            <button class="rot-add" data-act="add">${rt('add')}</button>
+            <p class="rot-foot">${rt('foot')}</p>
+            <p class="rot-foot">${mt('foot')}</p>
+          </div>
+        </details>`;
+    }
+    this.root.innerHTML = `
+      <div class="rot-card" role="dialog" aria-label="${sf('hub')}">
+        <div class="rot-head">
+          <div><h2>🌾 ${sf('hub')}</h2></div>
+          <button class="rot-x" data-act="close" aria-label="${rt('close')}">&times;</button>
         </div>
+        ${tabs}
+        ${body}
       </div>`;
     this.bind(plan.strategies);
   }
@@ -335,12 +459,24 @@ export class RotationPlanner {
     const plan = this.plan();
     const persist = () => this.opts.onChange(t, false);
 
-    root.querySelector<HTMLSelectElement>('#rot-talhao')!.onchange = (e) => {
+    root.querySelector<HTMLDetailsElement>('.sf-details')?.addEventListener('toggle', (e) => { this.detailsOpen = (e.target as HTMLDetailsElement).open; });
+    root.querySelectorAll<HTMLButtonElement>('[data-act=tab]').forEach((b) => {
+      b.onclick = () => { this.tab = b.dataset.tab as 'current' | 'switch'; this.render(); };
+    });
+    root.querySelectorAll<HTMLButtonElement>('[data-act=decide]').forEach((b) => {
+      b.onclick = () => { this.talhaoId = b.dataset.id!; this.tab = 'switch'; this.loadNasa(); this.render(); };
+    });
+    root.querySelectorAll<HTMLElement>('.sf-trow[data-talhao]').forEach((r) => {
+      r.onclick = (e) => { if ((e.target as HTMLElement).closest('button')) return; this.talhaoId = r.dataset.talhao!; this.tab = 'switch'; this.loadNasa(); this.render(); };
+    });
+    const sel = root.querySelector<HTMLSelectElement>('#rot-talhao');
+    if (sel) sel.onchange = (e) => {
       this.talhaoId = (e.target as HTMLSelectElement).value;
       this.loadNasa();
       this.render();
     };
-    root.querySelector<HTMLInputElement>('#rot-sow')!.onchange = (e) => {
+    const sow = root.querySelector<HTMLInputElement>('#rot-sow');
+    if (sow) sow.onchange = (e) => {
       const v = (e.target as HTMLInputElement).value;
       if (/^\d{4}-\d{2}-\d{2}$/.test(v)) { plan.summerSow = v; persist(); this.render(); }
     };
@@ -375,7 +511,7 @@ export class RotationPlanner {
       };
       st.onchange = () => { this.stress = Number(st.value); this.render(); };
     }
-    root.querySelector('[data-act=add]')!.addEventListener('click', () => {
+    root.querySelector('[data-act=add]')?.addEventListener('click', () => {
       plan.strategies.push(newCustomStrategy(plan.strategies.filter((x) => x.kind === 'custom').length + 1));
       persist();
       this.render();
@@ -431,3 +567,15 @@ export class RotationPlanner {
   }
 }
 void addDaysToDate;
+
+/** Resumo da melhor opção de troca de safra para a tela Hoje (sem consultar a NASA). */
+export function switchHeadline(farm: FarmData, ref: string): { field: string; text: string; example: boolean } | null {
+  const t = focusTalhao(farm, ref);
+  if (!t) return null;
+  const d = decide(t, ref, cropLabel, null, 0);
+  if (d.bestIdx < 0) return null;
+  const ev = d.evals[d.bestIdx];
+  const name = ev.second ? `${cropLabel(ev.summer.crop)} → ${cropLabel(ev.second.crop)}` : cropLabel(ev.summer.crop);
+  const risk = rt(ev.level === 'low' ? 'riskLow' : ev.level === 'medium' ? 'riskMedium' : 'riskHigh');
+  return { field: t.name.replace(/\s*\[[^\]]*\]\s*/, ''), text: sf('heroSwitchText', { field: t.name.replace(/\s*\[[^\]]*\]\s*/, ''), name, m: fmtMoney(d.margins[d.bestIdx].perHa.base), risk }), example: currentMarket().example };
+}

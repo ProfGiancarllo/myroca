@@ -11,6 +11,7 @@ import { EstelaChat } from './estela/EstelaChat';
 import { SimpleHome } from './simple/SimpleHome';
 import { playIntro } from './intro/IntroVideo';
 import { rt } from './i18n/rotationText';
+import { sf } from './i18n/safraText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
 import {
@@ -77,6 +78,12 @@ class AgroApp {
       },
     });
     this.renderDOM();
+    const fab = document.createElement('div');
+    fab.id = 'safra-fab';
+    fab.innerHTML = `<button type="button" id="fab-cur">🌾 <span>${sf('fabCur')}</span></button><button type="button" id="fab-sw" class="primary">🔄 <span>${sf('fabSwitch')}</span></button>`;
+    document.body.appendChild(fab);
+    fab.querySelector('#fab-cur')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
+    fab.querySelector('#fab-sw')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'switch'));
     this.initMap();
     this.initGameMode();
     this.bindEvents();
@@ -101,7 +108,7 @@ class AgroApp {
       getFarm: () => this.farmData,
       getRefDate: () => this.referenceDate,
       getEstela: () => this.estela,
-      openRotation: () => this.rotationPlanner.open(),
+      openRotation: (tab) => this.rotationPlanner.open(undefined, tab || 'switch'),
       onShowFull: () => this.simpleHome.setMode('full'),
     });
 
@@ -224,7 +231,7 @@ class AgroApp {
             </div>
 
             <button class="btn btn-outline btn-rotation-open" id="btn-rotation" title="${rt('title')}">
-              <span>🔄</span> <span class="btn-text">${rt('open')}</span>
+              <span>🌾</span> <span class="btn-text">${sf('hub')}</span>
             </button>
             <button class="btn btn-outline btn-logout-user" id="btn-logout" title="${at('logout')}">
               <span>👤</span> <span class="btn-text">${(currentUser()?.id === 'guest' ? at('guestName') : (currentUser()?.name || '')).split(' ')[0].replace(/[&<>"']/g, '')}</span> <span>⎋</span>
@@ -1499,7 +1506,7 @@ class AgroApp {
       });
     });
 
-    document.getElementById('btn-rotation')?.addEventListener('click', () => this.rotationPlanner.open());
+    document.getElementById('btn-rotation')?.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
     document.getElementById('btn-logout')?.addEventListener('click', () => {
       logout();
       window.location.reload();

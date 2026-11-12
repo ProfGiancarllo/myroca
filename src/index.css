@@ -3258,3 +3258,65 @@ path.holo-glow { filter: blur(4px); }
 .mk-loss { margin-top: 6px; font-size: 12.5px; color: #fca5a5; }
 .mk-adj, .mk-cover, .mk-none { margin-top: 6px; font-size: 11.5px; color: #94a3b8; }
 @media (max-width: 520px) { .mk-cells { grid-template-columns: 1fr; } }
+
+/* ===== Painel "Safra e decisões": abas, ranking e linha do tempo ===== */
+.sf-tabs { display: flex; gap: 8px; margin: 12px 0 14px; }
+.sf-tab { flex: 1; min-height: 52px; background: #111c33; border: 2px solid #334155; color: #cbd5e1; border-radius: 12px; font-size: 17px; font-weight: 800; cursor: pointer; }
+.sf-tab.on { background: #166534; border-color: #22c55e; color: #fff; }
+.sf-h, .sf-chart h3 { margin: 4px 0 2px; font-size: 18px; }
+.sf-sub { margin: 0 0 10px; font-size: 13px; color: #94a3b8; }
+.sf-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.sf-chips span { background: #111c33; border: 1px solid #334155; border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.sf-gantt { background: #0b1326; border: 1px solid #334155; border-radius: 12px; padding: 6px 8px; overflow-x: auto; }
+.sf-trow { display: grid; grid-template-columns: 190px minmax(260px, 1fr) minmax(190px, 260px) 92px; gap: 10px; align-items: center; padding: 6px 4px; border-bottom: 1px solid #1e293b; cursor: pointer; }
+.sf-trow:hover { background: rgba(56,189,248,.06); }
+.sf-axis { cursor: default; border-bottom: 1px solid #334155; } .sf-axis:hover { background: none; }
+.sf-tname { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.sf-tname strong { font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sf-tname small { display: block; font-size: 11.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sf-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.sf-track { position: relative; height: 26px; background: #111c33; border-radius: 8px; }
+.sf-axis .sf-track { background: none; height: 22px; }
+.sf-tick { position: absolute; top: 3px; transform: translateX(-50%); font-size: 10.5px; color: #64748b; }
+.sf-tick::after { content: ''; position: absolute; left: 50%; top: 16px; height: 6px; border-left: 1px solid #334155; }
+.sf-todaytag { position: absolute; top: 1px; transform: translateX(-50%); background: #fff; color: #0f172a; font-size: 10.5px; font-weight: 800; border-radius: 6px; padding: 1px 6px; z-index: 3; }
+.sf-seg { position: absolute; top: 3px; height: 20px; border: 2px solid; border-radius: 6px; overflow: hidden; box-sizing: border-box; }
+.sf-seg i { position: absolute; left: 0; top: 0; bottom: 0; opacity: .85; }
+.sf-seg.pasture { opacity: .5; border: 0; }
+.sf-seg.harvested { opacity: .45; }
+.sf-seg.next { border: 2px dashed #38bdf8; background: rgba(56,189,248,.15); }
+.sf-now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #fff; z-index: 2; box-shadow: 0 0 6px #fff; }
+.sf-meta { font-size: 12px; color: #cbd5e1; line-height: 1.3; }
+.sf-go { background: #0e7490; color: #fff; border: 0; border-radius: 10px; padding: 8px 8px; font-size: 13px; font-weight: 800; cursor: pointer; min-height: 38px; }
+.sf-chart { background: #111c33; border: 1px solid #334155; border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; }
+.sf-row { display: grid; grid-template-columns: 200px minmax(160px, 1fr) 110px 86px 118px; gap: 10px; align-items: center; padding: 8px 6px; border-radius: 10px; border: 2px solid transparent; }
+.sf-row.best { border-color: #22c55e; background: rgba(34,197,94,.08); }
+.sf-label { display: flex; gap: 8px; align-items: center; }
+.sf-label strong { display: block; font-size: 15px; } .sf-label small { color: #94a3b8; font-size: 11.5px; }
+.sf-ic { font-size: 24px; }
+.sf-bar { position: relative; height: 30px; background: #0b1326; border-radius: 8px; }
+.sf-zero { position: absolute; top: 0; bottom: 0; width: 2px; background: #64748b; }
+.sf-fill { position: absolute; top: 6px; height: 18px; border-radius: 5px; }
+.sf-fill.pos { background: linear-gradient(90deg, #16a34a, #4ade80); } .sf-fill.neg { background: linear-gradient(90deg, #f87171, #b91c1c); }
+.sf-whisk { position: absolute; top: 14px; height: 3px; background: #fff; opacity: .85; border-left: 2px solid #fff; border-right: 2px solid #fff; box-sizing: border-box; }
+.sf-val { text-align: right; } .sf-val strong { display: block; font-size: 16px; color: #4ade80; } .sf-val.neg strong { color: #f87171; } .sf-val small { color: #94a3b8; font-size: 11px; }
+.sf-adopt { min-height: 40px; padding: 6px 8px; font-size: 13px; }
+.sf-details { margin-top: 6px; } .sf-details > summary { cursor: pointer; font-size: 15px; font-weight: 800; padding: 12px; background: #111c33; border: 1px solid #334155; border-radius: 12px; margin-bottom: 10px; }
+@media (max-width: 860px) {
+  .sf-trow { grid-template-columns: 1fr; gap: 4px; } .sf-axis { display: none; } .sf-go { justify-self: start; }
+  .sf-row { grid-template-columns: 1fr 1fr; } .sf-bar { grid-column: 1 / -1; order: 3; } .sf-val { text-align: left; }
+}
+
+/* Cartões grandes na tela Hoje e botões flutuantes no mapa */
+.sh-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.sh-hcard { display: flex; align-items: center; gap: 14px; text-align: left; border: 2px solid #22c55e; background: linear-gradient(135deg, #14532d, #0f3d2a); color: #fff; border-radius: 18px; padding: 16px; cursor: pointer; min-height: 112px; }
+.sh-hcard.sw { border-color: #38bdf8; background: linear-gradient(135deg, #0c4a6e, #0f3d5a); }
+.sh-hic { font-size: 40px; } .sh-htx h2 { margin: 0 0 4px; font-size: 20px; } .sh-htx p { margin: 0; font-size: 14px; color: #d1fae5; line-height: 1.35; }
+.sh-hcard.sw .sh-htx p { color: #e0f2fe; }
+.sh-hgo { margin-left: auto; font-weight: 800; white-space: nowrap; font-size: 14px; }
+@media (max-width: 700px) { .sh-hero { grid-template-columns: 1fr; } .sh-hgo { display: none; } }
+#safra-fab { position: fixed; left: 50%; transform: translateX(-50%); bottom: 26px; z-index: 1200; display: flex; flex-direction: row; gap: 10px; }
+#safra-fab button { min-height: 52px; padding: 0 18px; border-radius: 999px; border: 2px solid #22c55e; background: rgba(15,23,42,.92); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.45); backdrop-filter: blur(6px); text-align: left; }
+#safra-fab button.primary { background: #16a34a; }
+body.mode-simple #safra-fab { display: none; }
+@media (max-width: 700px) { #safra-fab { bottom: 96px; } #safra-fab button span { display: none; } #safra-fab button { padding: 0 18px; font-size: 22px; } }
