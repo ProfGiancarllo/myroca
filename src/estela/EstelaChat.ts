@@ -61,6 +61,7 @@ export class EstelaChat {
   private pendingDiary: { type: DiaryEntryType; amount?: number; date: string; talhaoId?: string; note?: string } | null = null;
   private fromVoice = false;
   private ask: Pending | null = null;
+  private amountAsked = false;
   private skipped = new Set<string>();
   private badgeTimer: number | undefined;
 
@@ -437,9 +438,16 @@ export class EstelaChat {
       // 0) Resposta a uma pendência perguntada pela Estela
       if (this.ask && !this.pendingDiary && this.handleAsk(text)) return;
       // 1) Resposta a "qual talhão?"
+      if (this.pendingDiary && this.amountAsked) {
+        const m = n.match(/(\d+(?:[.,]\d+)?)/);
+        if (m) this.pendingDiary.amount = Number(m[1].replace(',', '.'));
+        else if (!SKIP_RE.test(n)) return void this.say(esc(pq('noparse')));
+        this.amountAsked = false;
+        return this.confirmDiary();
+      }
       if (this.pendingDiary && !this.pendingDiary.talhaoId) {
         const tl = this.findTalhao(text);
-        if (tl) { this.pendingDiary.talhaoId = tl.id; return this.confirmDiary(); }
+        if (tl) { this.pendingDiary.talhaoId = tl.id; return this.continueDiary(); }
       }
       // 2) Registro no diário
       if (this.parseDiary(text)) return;
@@ -495,13 +503,62 @@ export class EstelaChat {
       type: rule[0], amount: rule[2] && amountM ? Number(amountM[1].replace(',', '.')) : undefined,
       date: this.parseDate(n), talhaoId: tl?.id, note: rule[2] ? undefined : text,
     };
-    if (!farm.talhoes.length) { this.say(esc(et('noTalhao'))); return true; }
-    if (!tl) {
-      if (farm.talhoes.length === 1) this.pendingDiary.talhaoId = farm.talhoes[0].id;
-      else { this.say(esc(et('askTalhao', { list: farm.talhoes.map((x) => this.tName(x)).join(', ') }))); return true; }
-    }
-    this.confirmDiary();
+    this.continueDiary();
     return true;
+  }
+
+  /** Completa o registro: talhão, quantidade (quando faz sentido) e confirmação. */
+  private continueDiary(): void {
+    const p = this.pendingDiary;
+    if (!p) return;
+    const farm = this.opts.getFarm();
+    if (!farm.talhoes.length) { this.say(esc(et('noTalhao'))); return; }
+    if (!p.talhaoId) {
+      if (farm.talhoes.length === 1) p.talhaoId = farm.talhoes[0].id;
+      else {
+        this.say(esc(et('askTalhao', { list: farm.talhoes.map((x) => this.tName(x)).join(', ') })),
+          farm.talhoes.slice(0, 6).map((x) => ({ label: this.tName(x), run: () => { if (this.pendingDiary) { this.pendingDiary.talhaoId = x.id; this.continueDiary(); } } })));
+        return;
+      }
+    }
+    const unit = DIARY_RULES.find((r) => r[0] === p.type)?.[2];
+    if (unit && p.amount === undefined && !this.amountAsked) {
+      this.amountAsked = true;
+      this.say(esc(pq('q_amount', { type: et('diary_' + p.type), unit })));
+      this.listenSoon();
+      return;
+    }
+    this.amountAsked = false;
+    this.confirmDiary();
+  }
+
+  /** Chamado pelos botões grandes da tela simples (Chuva, Irrigação, ...). */
+  public quickRecord(type: DiaryEntryType): void {
+    this.toggle(true);
+    this.root.querySelector<HTMLElement>('#estela-chips')!.style.display = 'none';
+    this.ask = null; this.amountAsked = false;
+    this.pendingDiary = { type, date: this.ref() };
+    this.msgs.push({ who: 'me', html: esc(et('diary_' + type)) });
+    this.paint();
+    this.continueDiary();
+  }
+
+  /** Abre o chat já fazendo as perguntas pendentes. */
+  public askPending(): void {
+    this.toggle(true);
+    this.root.querySelector<HTMLElement>('#estela-chips')!.style.display = 'none';
+    this.startPending();
+  }
+
+  /** Abre o chat e já liga o microfone. */
+  public listen(): void {
+    this.fromVoice = true;
+    this.toggle(true);
+    if (!this.listening) this.toggleMic();
+  }
+
+  public pendingCount(): number {
+    return computePending(this.opts.getFarm(), this.ref(), this.skipped).length;
   }
 
   private confirmDiary(): void {
@@ -512,7 +569,7 @@ export class EstelaChat {
     const d = `${p.date.slice(8, 10)}/${p.date.slice(5, 7)}/${p.date.slice(0, 4)}`;
     this.say(esc(et('confirmDiary', { type: et('diary_' + p.type), amount, name: this.tName(tl), date: d })), [
       { label: '✅ ' + et('yes'), run: () => this.saveDiary() },
-      { label: '✖ ' + et('no'), run: () => { this.pendingDiary = null; this.say(esc(et('cancelled'))); if (this.ask) { const a = this.ask; this.ask = null; this.skipped.add(`${a.kind}:${a.talhaoId}`); this.nextPending(); } } },
+      { label: '✖ ' + et('no'), run: () => { this.pendingDiary = null; this.amountAsked = false; this.say(esc(et('cancelled'))); if (this.ask) { const a = this.ask; this.ask = null; this.skipped.add(`${a.kind}:${a.talhaoId}`); this.nextPending(); } } },
     ]);
   }
 

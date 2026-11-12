@@ -8,6 +8,7 @@ import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
 import { RotationPlanner } from './components/RotationPlanner';
 import { EstelaChat } from './estela/EstelaChat';
+import { SimpleHome } from './simple/SimpleHome';
 import { rt } from './i18n/rotationText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
@@ -33,6 +34,7 @@ class AgroApp {
   private mapManager!: MapManager;
   private rotationPlanner!: RotationPlanner;
   private estela!: EstelaChat;
+  private simpleHome!: SimpleHome;
 
   // View mode & Agricultural calendar
   private referenceDate = DEFAULT_REFERENCE_DATE;
@@ -90,8 +92,16 @@ class AgroApp {
         this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
         this.mapManager.renderTalhoes(this.farmData.talhoes, this.referenceDate);
         this.estela?.refreshBadge();
+        this.simpleHome?.refresh();
         this.showToast(`📒 ${t('diarySaved')}`);
       },
+    });
+    this.simpleHome = new SimpleHome({
+      getFarm: () => this.farmData,
+      getRefDate: () => this.referenceDate,
+      getEstela: () => this.estela,
+      openRotation: () => this.rotationPlanner.open(),
+      onShowFull: () => this.simpleHome.setMode('full'),
     });
 
     window.addEventListener('resize', () => {
@@ -1087,6 +1097,7 @@ class AgroApp {
     this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
     this.renderDrawerLists();
     this.estela?.refreshBadge();
+    this.simpleHome?.refresh();
   }
 
   public advanceTime(days: number): void {

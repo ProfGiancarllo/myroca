@@ -1,6 +1,7 @@
 import { getCurrentLanguage } from '../i18n';
 type D = Record<string, string>;
 const pt: D = {
+  q_amount: '{type}: quantos {unit}? (diga só o número, ou "não sei")',
   intro: 'Encontrei {n} pendência(s) na sua fazenda. Posso te perguntar uma de cada vez? Você responde por texto ou voz e eu peço sua confirmação antes de gravar.',
   go: 'Vamos', later: 'Depois', skip: 'Pular',
   q_crop: '{name}: qual cultura está neste talhão? (ex.: soja, milho, pasto)',
@@ -18,6 +19,7 @@ const pt: D = {
   chipPend: 'O que falta?', harvestSaved: 'Colheita registrada. Quer planejar a próxima safra?', openRot: 'Abrir planejador',
 };
 const en: D = {
+  q_amount: '{type}: how many {unit}? (just say the number, or "I do not know")',
   intro: 'I found {n} pending item(s) on your farm. May I ask them one at a time? Answer by text or voice and I will ask you to confirm before saving.',
   go: "Let's go", later: 'Later', skip: 'Skip',
   q_crop: '{name}: which crop is in this field? (e.g. soybean, corn, pasture)',
@@ -35,6 +37,7 @@ const en: D = {
   chipPend: 'What is missing?', harvestSaved: 'Harvest recorded. Want to plan the next season?', openRot: 'Open planner',
 };
 const es: D = {
+  q_amount: '{type}: ¿cuántos {unit}? (diga solo el número, o "no sé")',
   intro: 'Encontré {n} pendiente(s) en su finca. ¿Le pregunto uno por uno? Responda por texto o voz y le pediré confirmar antes de guardar.',
   go: 'Vamos', later: 'Después', skip: 'Omitir',
   q_crop: '{name}: ¿qué cultivo hay en este lote? (ej.: soja, maíz, pasto)',
@@ -52,6 +55,7 @@ const es: D = {
   chipPend: '¿Qué falta?', harvestSaved: 'Cosecha registrada. ¿Quiere planificar la próxima zafra?', openRot: 'Abrir planificador',
 };
 const de: D = {
+  q_amount: '{type}: wie viel {unit}? (nur die Zahl, oder "weiß nicht")',
   intro: 'Ich habe {n} offene Punkte auf Ihrer Farm gefunden. Darf ich sie einzeln fragen? Antworten Sie per Text oder Sprache; ich lasse mir vor dem Speichern bestätigen.',
   go: 'Los', later: 'Später', skip: 'Überspringen',
   q_crop: '{name}: Welche Kultur steht auf diesem Feld? (z. B. Soja, Mais, Weide)',
@@ -69,6 +73,7 @@ const de: D = {
   chipPend: 'Was fehlt?', harvestSaved: 'Ernte erfasst. Nächste Saison planen?', openRot: 'Planer öffnen',
 };
 const zh: D = {
+  q_amount: '{type}：多少 {unit}？（只说数字，或“不知道”）',
   intro: '我在您的农场发现 {n} 项待补充信息。我可以逐项询问吗？您可用文字或语音回答，保存前我会请您确认。',
   go: '开始', later: '稍后', skip: '跳过',
   q_crop: '{name}：这块地种的是什么作物？（如大豆、玉米、牧草）',
@@ -86,6 +91,7 @@ const zh: D = {
   chipPend: '还缺什么？', harvestSaved: '已记录收获。要规划下一季吗？', openRot: '打开规划器',
 };
 const fr: D = {
+  q_amount: '{type} : combien de {unit} ? (dites juste le nombre, ou "je ne sais pas")',
   intro: "J'ai trouvé {n} point(s) en attente sur votre ferme. Puis-je vous les demander un par un ? Répondez par texte ou voix ; je demanderai confirmation avant d'enregistrer.",
   go: 'Allons-y', later: 'Plus tard', skip: 'Passer',
   q_crop: '{name} : quelle culture est sur cette parcelle ? (ex. : soja, maïs, pâturage)',
