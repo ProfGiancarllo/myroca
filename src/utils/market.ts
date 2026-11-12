@@ -147,7 +147,7 @@ const YIELD_SCEN: Record<Scenario, number> = { pess: 0.85, base: 1, opt: 1.1 };
 
 /**
  * Margem de uma cultura em uma safra.
- * Preço base = preço atual com metade da tendência de 12 meses aplicada até a colheita e o teste de estresse.
+ * Preço base = preço atual com metade da tendência de 12 meses (limitada a ±10%) aplicada até a colheita e o teste de estresse.
  * Produtividade = referência do talhão (se houver) ou regional, reduzida pelo risco agronômico/climático da estratégia.
  */
 export function slotMargin(
@@ -162,7 +162,9 @@ export function slotMargin(
   const { m } = cm;
   const y0 = talhaoYield !== null && talhaoYield > 0 ? talhaoYield : m.yieldRef;
   const rf = RISK_YIELD_FACTOR[level];
-  const basePrice = m.price * (1 + (m.trend12m / 2) / 100) * (1 + stressPct / 100);
+  // metade da tendência de 12 meses, limitada a ±10% para não projetar saltos extremos
+  const drift = Math.max(-10, Math.min(10, m.trend12m / 2));
+  const basePrice = m.price * (1 + drift / 100) * (1 + stressPct / 100);
   const price: Record<Scenario, number> = {
     pess: basePrice * (1 - m.vol / 100),
     base: basePrice,

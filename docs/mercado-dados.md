@@ -20,5 +20,9 @@ Campos por cultura: `unit` (sc, @ ou t), `price` (R$/unidade), `trend12m` (%), `
 O produtor também pode digitar o próprio preço e custo na tabela; fica salvo no navegador (botão "Restaurar valores" limpa).
 
 ## Limites
-Estimativa para planejamento, não é recomendação de compra ou venda. O preço base aplica metade da variação dos últimos 12 meses.
+Estimativa para planejamento, não é recomendação de compra ou venda. O preço base aplica metade da variação dos últimos 12 meses, limitada a ±10%.
 Limiares e fatores ficam em `src/utils/market.ts` (`RISK_YIELD_FACTOR`, cenários de produtividade) para o agrônomo ajustar.
+
+## Fonte de preços automática (FRED)
+O workflow "Publicar site" roda `scripts/atualizar-mercado.mjs` antes do build. Ele baixa as séries mensais abertas do FRED (sem chave) — soja PSOYBUSDM, milho PMAIZMTUSDM, trigo PWHEAMTUSDM, algodão PCOTTINDUSDM — e o dólar diário DEXBZUS, converte para R$/saca (60 kg) ou R$/@ e grava `public/data/mercado.json` (não versionado). São preços internacionais convertidos pelo dólar, com defasagem de cerca de dois meses; o preço da praça de Rio Verde pode ser diferente (o produtor edita na tabela).
+Culturas sem série (sorgo, feijão, cana, pastagem) continuam como "exemplo". Para atualizar os preços, basta publicar de novo (Actions > Publicar site > Run workflow).
