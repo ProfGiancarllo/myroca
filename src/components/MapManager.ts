@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import { twinLook, ensurePattern } from '../utils/twinLook';
 import { Talhao, WaterPoint, WaterPointType, WATER_POINT_META } from '../types';
 import { calculatePolygonAreaHectares, calculatePerimeterKm, calculatePolygonCenter, formatHectares } from '../utils/geo';
 import { calculateTalhaoCropStatus, getCropColor } from '../utils/cropCalendar';
@@ -181,11 +182,14 @@ export class MapManager {
       const talhaoColor = talhao.color || cropColor;
 
       // Polygon
+      // Gêmeo digital: halo luminoso + contorno ciano holográfico por cima da imagem de satélite
+      L.polygon(talhao.coordinates, { color: '#5ec8ff', weight: 9, opacity: 0.22, fill: false, interactive: false, className: 'holo-glow' }).addTo(this.talhoesLayer);
       const polygon = L.polygon(talhao.coordinates, {
-        color: cropColor,
-        weight: 3,
+        color: '#8fe3ff',
+        weight: 2.5,
         fillColor: cropColor,
-        fillOpacity: 0.38,
+        fillOpacity: 0.6,
+        className: 'holo-poly',
       });
 
       const cropStatus = calculateTalhaoCropStatus(talhao, this.currentReferenceDate);
@@ -273,6 +277,17 @@ export class MapManager {
         interactive: true,
         zIndexOffset: 1000,
       });
+
+      // ícone holográfico flutuando sobre o talhão
+      L.marker(trueCenter, {
+        icon: L.divIcon({
+          className: 'holo-float-wrap',
+          html: `<div class="holo-float" style="animation-delay:${(index % 5) * 0.4}s"><span>${cropStatus.phase.icon}</span></div>`,
+          iconSize: [44, 44], iconAnchor: [22, 74],
+        }),
+        interactive: false,
+        zIndexOffset: 900,
+      }).addTo(this.talhoesLayer);
 
       // Tapping badge or polygon toggles expansion / details below zoom 14
       labelMarker.on('click', (e: L.LeafletMouseEvent) => {
@@ -398,18 +413,23 @@ export class MapManager {
       polygon.on('mouseover', () => {
         polygon.setStyle({
           weight: 4,
-          fillOpacity: 0.55,
+          fillOpacity: 0.78,
         });
       });
 
       polygon.on('mouseout', () => {
         polygon.setStyle({
-          weight: 3,
-          fillOpacity: 0.38,
+          weight: 2.5,
+          fillOpacity: 0.6,
         });
       });
 
       this.talhoesLayer.addLayer(polygon);
+      // cor/textura realista conforme cultura e fase da safra (soja escura, milho claro, pasto, solo exposto...)
+      try {
+        const svg = (polygon as unknown as { _path?: SVGElement })._path?.ownerSVGElement ?? null;
+        polygon.setStyle({ fillColor: ensurePattern(svg, twinLook(talhao.crop, cropStatus.phase.key)) });
+      } catch { /* mantém a cor simples */ }
       this.talhoesLayer.addLayer(labelMarker);
     });
   }

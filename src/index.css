@@ -3187,3 +3187,25 @@ body.mode-simple .estela-fab,body.mode-simple .estela-fab-mic{display:none!impor
 #intro-video .iv-sub { margin: 14px 0 22px; font-size: clamp(14px, 2vw, 20px); color: #bfe3ff; letter-spacing: .02em; }
 #intro-video #iv-enter { background: #3fa34d; color: #fff; border: 0; border-radius: 12px; padding: 14px 28px; font-size: 20px; font-weight: 700; cursor: pointer; min-height: 52px; box-shadow: 0 6px 24px rgba(63,163,77,.5); }
 @media (max-width: 700px) { #intro-video .iv-end { left: 5%; top: 30%; max-width: 90vw; } }
+
+/* ===== Gêmeo digital (mapa de satélite com camada holográfica) ===== */
+.leaflet-tile-pane { filter: saturate(1.15) contrast(1.06) brightness(.92); }
+.leaflet-container { background: #06101c; }
+.leaflet-container::before { content: ''; position: absolute; inset: 0; z-index: 450; pointer-events: none;
+  background-image: linear-gradient(rgba(94,200,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(94,200,255,.08) 1px, transparent 1px);
+  background-size: 56px 56px; mix-blend-mode: screen; }
+.leaflet-container::after { content: ''; position: absolute; top: 0; bottom: 0; width: 140px; left: -160px; z-index: 451; pointer-events: none;
+  background: linear-gradient(90deg, rgba(94,200,255,0), rgba(120,220,255,.22), rgba(94,200,255,0)); animation: holo-scan 7s linear infinite; }
+@keyframes holo-scan { to { left: 110%; } }
+path.holo-poly { filter: drop-shadow(0 0 5px rgba(94,200,255,.95)); stroke-dasharray: 10 6; animation: holo-dash 2.2s linear infinite; }
+path.holo-glow { filter: blur(4px); }
+@keyframes holo-dash { to { stroke-dashoffset: -32; } }
+.holo-float-wrap { pointer-events: none; }
+.holo-float { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px;
+  background: linear-gradient(160deg, rgba(120,220,255,.35), rgba(30,90,160,.45)); border: 1px solid rgba(160,235,255,.8);
+  box-shadow: 0 0 14px rgba(94,200,255,.75), inset 0 0 10px rgba(255,255,255,.25); backdrop-filter: blur(3px); animation: holo-bob 3s ease-in-out infinite; }
+.holo-float::after { content: ''; position: absolute; left: 50%; top: 100%; width: 2px; height: 26px; background: linear-gradient(rgba(160,235,255,.9), rgba(160,235,255,0)); transform: translateX(-50%); }
+@keyframes holo-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+.talhao-label-badge { background: rgba(8,28,52,.62) !important; color: #e8f6ff !important; border: 1px solid rgba(120,220,255,.65) !important; backdrop-filter: blur(4px); box-shadow: 0 0 12px rgba(94,200,255,.45) !important; }
+.talhao-label-badge .talhao-label-name, .talhao-label-badge .talhao-label-ha { color: #e8f6ff !important; }
+@media (prefers-reduced-motion: reduce) { .leaflet-container::after, path.holo-poly, .holo-float { animation: none; } }
