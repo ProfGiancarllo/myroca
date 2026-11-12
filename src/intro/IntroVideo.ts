@@ -25,7 +25,7 @@ export function playIntro(): Promise<void> {
   let seen = false;
   try { seen = sessionStorage.getItem('myroca_intro_seen') === '1'; sessionStorage.setItem('myroca_intro_seen', '1'); } catch { /* ignore */ }
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const speed = reduce ? 3 : seen ? 1.6 : 1;
+  const speed = reduce ? 3 : seen ? 1.2 : 0.72; // 1ª vez ~13 s de abertura (legendas de ~3,5 s); reabertura mais rápida
 
   return new Promise((resolve) => {
     const root = document.createElement('div');
