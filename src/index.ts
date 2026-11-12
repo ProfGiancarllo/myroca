@@ -154,6 +154,10 @@ class AgroApp {
             </button>
           </div>
 
+          <button class="btn btn-safra-main" id="btn-rotation" title="${sf('hub')}">
+              <span>🌾</span> <span class="btn-text">${sf('hub')}</span>
+            </button>
+
           <!-- Metric Pills -->
           <div class="stats-group">
             <div class="stat-pill" title="${t('fields')}">
@@ -230,9 +234,7 @@ class AgroApp {
               </div>
             </div>
 
-            <button class="btn btn-outline btn-rotation-open" id="btn-rotation" title="${rt('title')}">
-              <span>🌾</span> <span class="btn-text">${sf('hub')}</span>
-            </button>
+
             <button class="btn btn-outline btn-logout-user" id="btn-logout" title="${at('logout')}">
               <span>👤</span> <span class="btn-text">${(currentUser()?.id === 'guest' ? at('guestName') : (currentUser()?.name || '')).split(' ')[0].replace(/[&<>"']/g, '')}</span> <span>⎋</span>
             </button>

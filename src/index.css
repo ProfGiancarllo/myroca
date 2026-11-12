@@ -3319,4 +3319,12 @@ path.holo-glow { filter: blur(4px); }
 #safra-fab button { min-height: 52px; padding: 0 18px; border-radius: 999px; border: 2px solid #22c55e; background: rgba(15,23,42,.92); color: #fff; font-size: 16px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.45); backdrop-filter: blur(6px); text-align: left; }
 #safra-fab button.primary { background: #16a34a; }
 body.mode-simple #safra-fab { display: none; }
-@media (max-width: 700px) { #safra-fab { bottom: 96px; } #safra-fab button span { display: none; } #safra-fab button { padding: 0 18px; font-size: 22px; } }
+@media (max-width: 700px) { #safra-fab { left: auto; right: 14px; transform: none; bottom: 150px; flex-direction: column; } #safra-fab button span { display: none; } #safra-fab button { padding: 0 18px; font-size: 22px; } }
+
+/* Botão principal "Safra e decisões" no começo da barra superior */
+.btn-safra-main { background: #f59e0b; color: #1f1300; border: 2px solid #fde68a; font-weight: 900; font-size: 15px; padding: 8px 16px; border-radius: 12px; white-space: nowrap; cursor: pointer; flex: none; animation: safraPulse 2.6s ease-out infinite; }
+.btn-safra-main:hover { background: #fbbf24; }
+.btn-safra-main .btn-text { display: inline !important; }
+@keyframes safraPulse { 0% { box-shadow: 0 0 0 0 rgba(245,158,11,.65); } 70% { box-shadow: 0 0 0 12px rgba(245,158,11,0); } 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0); } }
+@media (max-width: 700px) { .btn-safra-main .btn-text { display: none !important; } .btn-safra-main { padding: 8px 12px; } }
+@media (prefers-reduced-motion: reduce) { .btn-safra-main { animation: none; } }

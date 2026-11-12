@@ -45,7 +45,7 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
   await p.click('#estela-close');
   // 8. Planejar safra
   await p.click('#sh-plan'); await p.waitForTimeout(1200);
-  const rot = await p.$('.rot-modal, .rotation-modal, #rotation-planner, [class*=rotation]');
+  const rot = await p.$('.rot-card .sf-tabs');
   ok('8 Planejador de safra abre', !!rot);
   await p.screenshot({ path: 'flow_rot.png' });
   await p.click('.rot-x'); await p.waitForTimeout(400);
