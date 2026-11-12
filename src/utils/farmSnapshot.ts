@@ -46,3 +46,6 @@ export async function ensureSnapshot(bounds: [[number, number], [number, number]
     return cached ?? null; // offline: usa a última foto guardada
   }
 }
+
+/** Fazenda de demonstração: imagem aérea embutida (funciona sem internet) e seus limites. */
+export const DEMO_BOUNDS: [[number, number], [number, number]] = [[-17.82014, -51.11331], [-17.78986, -51.05669]];

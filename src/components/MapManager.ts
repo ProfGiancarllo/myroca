@@ -1,6 +1,6 @@
 import L from 'leaflet';
 import { twinLook, ensurePattern } from '../utils/twinLook';
-import { ensureSnapshot, farmBounds, Snap } from '../utils/farmSnapshot';
+import { ensureSnapshot, farmBounds, Snap, DEMO_BOUNDS } from '../utils/farmSnapshot';
 import { segmentField } from '../utils/segment';
 import { Talhao, WaterPoint, WaterPointType, WATER_POINT_META } from '../types';
 import { calculatePolygonAreaHectares, calculatePerimeterKm, calculatePolygonCenter, formatHectares } from '../utils/geo';
@@ -48,6 +48,7 @@ export class MapManager {
       center: [RIO_VERDE_RURAL_LAT, RIO_VERDE_RURAL_LNG],
       zoom: 13,
       zoomControl: false,
+      zoomSnap: 0.1,
     });
 
     // Custom Zoom control at bottom right
@@ -805,7 +806,17 @@ export class MapManager {
     waterPoints.forEach((w) => pts.push([w.coordinates[0], w.coordinates[1]]));
     const b = farmBounds(pts);
     if (!b) return;
-    const snap: Snap | null = await ensureSnapshot(b, force);
+    // fazenda de demonstração: usa a imagem aérea embutida (sem internet, sem depender do satélite)
+    const demo = talhoes.length > 0 && talhoes.every((tl) => tl.isExample);
+    let snap: Snap | null = null;
+    if (demo) {
+      try {
+        const base = (import.meta as unknown as { env: { BASE_URL: string } }).env.BASE_URL || './';
+        const blob = await (await fetch(base + 'intro/farm.jpg')).blob();
+        snap = { key: 'demo', date: Date.now(), blob, bounds: DEMO_BOUNDS };
+      } catch { snap = null; }
+    }
+    if (!snap) snap = await ensureSnapshot(b, force);
     if (!snap) return; // sem foto e sem internet: mantém fundo escuro/ladrilhos ao vivo
     if (!this.map.getPane('snapshot')) { const pn = this.map.createPane('snapshot'); pn.style.zIndex = '250'; }
     if (this.snapUrl) URL.revokeObjectURL(this.snapUrl);
@@ -818,7 +829,7 @@ export class MapManager {
     this.snapLayer = L.imageOverlay(this.snapUrl, lb, { pane: 'snapshot', interactive: false }).addTo(this.map);
     this.liveTiles.forEach((tl) => tl.remove());
     const minZ = this.map.getBoundsZoom(lb, false);
-    this.map.setMinZoom(minZ - 0.3); this.map.setMaxZoom(17.5);
+    this.map.setMinZoom(minZ - 0.15); this.map.setMaxZoom(17.5);
     this.map.setMaxBounds(lb.pad(0.6));
     if (!this.snapCtl) {
       const Ctl = L.Control.extend({ onAdd: () => { const d = L.DomUtil.create('div', 'snap-ctl'); L.DomEvent.disableClickPropagation(d); this.snapCtl = d; return d; } });
@@ -826,11 +837,13 @@ export class MapManager {
     }
     if (this.snapCtl) {
       const dt = new Date(snap.date).toLocaleDateString(document.documentElement.lang || undefined);
-      this.snapCtl.innerHTML = `🛰️ ${dt} <button type="button" title="↻">↻</button>`;
-      (this.snapCtl.querySelector('button') as HTMLButtonElement).onclick = () => { this.snapCtl!.textContent = '🛰️ …'; void this.useFarmSnapshot(talhoes, waterPoints, true); };
+      this.snapCtl.innerHTML = demo ? `🛰️ ${document.documentElement.lang?.startsWith('en') ? 'example image' : 'imagem de exemplo'}` : `🛰️ ${dt} <button type="button" title="↻">↻</button>`;
+      const rb = this.snapCtl.querySelector('button') as HTMLButtonElement | null;
+      if (rb) rb.onclick = () => { this.snapCtl!.textContent = '🛰️ …'; void this.useFarmSnapshot(talhoes, waterPoints, true); };
     }
     this.map.invalidateSize();
-    this.map.fitBounds(L.latLngBounds(pts.map((p) => L.latLng(p[0], p[1]))), { padding: [60, 60], maxZoom: 16 });
+    if (demo) { this.map.fitBounds(lb, { padding: [0, 0] }); }
+    else this.map.fitBounds(L.latLngBounds(pts.map((p) => L.latLng(p[0], p[1]))), { padding: [60, 60], maxZoom: 16 });
   }
 
   // ---- Ajustar talhões: arrastar os cantos até a borda da lavoura na imagem ----
