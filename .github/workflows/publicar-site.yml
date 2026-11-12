@@ -18,6 +18,8 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - name: Baixar preços de mercado (FRED)
+        run: node scripts/atualizar-mercado.mjs || echo "Sem dados de mercado agora; o app usa os valores de exemplo."
       - run: npx vite build --base=./
         env:
           VITE_ESTELA_URL: ${{ vars.VITE_ESTELA_URL || secrets.VITE_ESTELA_URL }}

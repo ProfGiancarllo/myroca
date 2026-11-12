@@ -23,6 +23,11 @@ export interface CropMarket {
   cost: number;
   /** Série de preços recente (opcional), para o minigráfico. */
   series?: number[];
+  /** true quando os valores são ilustrativos; false quando vêm de uma fonte real. */
+  example?: boolean;
+  /** Fonte do preço (quando real). */
+  source?: string;
+  asOf?: string;
 }
 
 export interface MarketData {
@@ -42,7 +47,7 @@ const mk = (unit: CropMarket['unit'], price: number, trend12m: number, vol: numb
     series.push(Math.round((start + (price - start) * k) * (1 + wave) * 100) / 100);
   }
   series[11] = price;
-  return { unit, price, trend12m, vol, yieldRef, cost, series };
+  return { unit, price, trend12m, vol, yieldRef, cost, series, example: true };
 };
 
 export const EXAMPLE_MARKET: MarketData = {
@@ -77,9 +82,15 @@ export function loadMarket(): Promise<MarketData> {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         const ok = j && typeof j === 'object' && j.crops && typeof j.crops === 'object' && j.crops.soja && typeof j.crops.soja.price === 'number';
-        loaded = ok
-          ? { example: j.example === true, source: String(j.source || ''), asOf: String(j.asOf || ''), crops: { ...EXAMPLE_MARKET.crops, ...j.crops } }
-          : EXAMPLE_MARKET;
+        if (ok) {
+          // por cultura: o que veio da fonte real substitui o exemplo; produtividade e custo continuam os do exemplo se faltarem
+          const crops: MarketData['crops'] = { ...EXAMPLE_MARKET.crops };
+          for (const [k, v] of Object.entries(j.crops as Record<string, Partial<CropMarket>>)) {
+            const base = EXAMPLE_MARKET.crops[k as CropKey];
+            if (base && v && typeof v.price === 'number') crops[k as CropKey] = { ...base, ...v, example: v.example === true };
+          }
+          loaded = { example: j.example === true, source: String(j.source || ''), asOf: String(j.asOf || ''), crops };
+        } else loaded = EXAMPLE_MARKET;
         return loaded;
       })
       .catch(() => (loaded = EXAMPLE_MARKET));

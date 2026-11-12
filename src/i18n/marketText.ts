@@ -3,6 +3,7 @@ import { getCurrentLanguage } from './index';
 type D = Record<string, string>;
 
 const pt: D = {
+  exTag: 'exemplo', realTag: 'real', partialNote: 'Culturas marcadas "exemplo" ainda usam valores ilustrativos. O preço real é a referência internacional convertida pelo dólar; o preço na sua praça pode ser diferente, por isso você pode ajustar.',
   decisionLoss: 'Com estes preços nenhuma estratégia cobre o custo. A menos negativa é {name}: margem base de {m} por hectare. Revise custos e culturas.',
   title: 'Mercado e margem estimada', exampleBadge: 'Dados de exemplo', realBadge: 'Dados de mercado',
   exampleNote: 'Preços, tendências e custos abaixo são ilustrativos até a série real ser carregada. Você pode digitar o seu preço e o seu custo.',
@@ -19,6 +20,7 @@ const pt: D = {
 };
 
 const en: D = {
+  exTag: 'example', realTag: 'real', partialNote: 'Crops tagged "example" still use illustrative values. The real price is the international reference converted by the dollar; your local price may differ, so you can adjust it.',
   decisionLoss: 'At these prices no strategy covers its cost. The least negative is {name}: base margin of {m} per hectare. Review costs and crops.',
   title: 'Market and estimated margin', exampleBadge: 'Example data', realBadge: 'Market data',
   exampleNote: 'Prices, trends and costs below are illustrative until the real series is loaded. You can type your own price and cost.',
@@ -35,6 +37,7 @@ const en: D = {
 };
 
 const es: D = {
+  exTag: 'ejemplo', realTag: 'real', partialNote: 'Los cultivos marcados "ejemplo" aún usan valores ilustrativos. El precio real es la referencia internacional convertida por el dólar; su precio local puede diferir, por eso puede ajustarlo.',
   decisionLoss: 'Con estos precios ninguna estrategia cubre el costo. La menos negativa es {name}: margen base de {m} por hectárea. Revise costos y cultivos.',
   title: 'Mercado y margen estimado', exampleBadge: 'Datos de ejemplo', realBadge: 'Datos de mercado',
   exampleNote: 'Los precios, tendencias y costos de abajo son ilustrativos hasta cargar la serie real. Puede escribir su precio y su costo.',
@@ -51,6 +54,7 @@ const es: D = {
 };
 
 const de: D = {
+  exTag: 'Beispiel', realTag: 'echt', partialNote: 'Mit "Beispiel" markierte Kulturen verwenden noch Beispielwerte. Der echte Preis ist die internationale Referenz, umgerechnet mit dem Dollar; Ihr lokaler Preis kann abweichen, daher können Sie ihn anpassen.',
   decisionLoss: 'Bei diesen Preisen deckt keine Strategie die Kosten. Am wenigsten negativ ist {name}: Basismarge von {m} pro Hektar. Prüfen Sie Kosten und Kulturen.',
   title: 'Markt und geschätzte Marge', exampleBadge: 'Beispieldaten', realBadge: 'Marktdaten',
   exampleNote: 'Preise, Trends und Kosten unten sind Beispiele, bis die echte Reihe geladen ist. Sie können Ihren eigenen Preis und Ihre Kosten eingeben.',
@@ -67,6 +71,7 @@ const de: D = {
 };
 
 const zh: D = {
+  exTag: '示例', realTag: '真实', partialNote: '标注“示例”的作物仍使用示意数值。真实价格为按美元换算的国际参考价；您当地的价格可能不同，可自行调整。',
   decisionLoss: '按这些价格，没有任何方案能覆盖成本。亏损最小的是 {name}：基准利润每公顷 {m}。请检查成本和作物。',
   title: '市场与预估利润', exampleBadge: '示例数据', realBadge: '市场数据',
   exampleNote: '下方价格、趋势和成本仅为示例，待真实数据序列加载后替换。您也可以输入自己的价格和成本。',
@@ -83,6 +88,7 @@ const zh: D = {
 };
 
 const fr: D = {
+  exTag: 'exemple', realTag: 'réel', partialNote: 'Les cultures marquées « exemple » utilisent encore des valeurs illustratives. Le prix réel est la référence internationale convertie par le dollar ; votre prix local peut différer, vous pouvez donc l’ajuster.',
   decisionLoss: 'À ces prix, aucune stratégie ne couvre son coût. La moins négative est {name} : marge de base de {m} par hectare. Revoyez coûts et cultures.',
   title: 'Marché et marge estimée', exampleBadge: 'Données d’exemple', realBadge: 'Données de marché',
   exampleNote: 'Les prix, tendances et coûts ci-dessous sont illustratifs jusqu’au chargement de la série réelle. Vous pouvez saisir votre prix et votre coût.',

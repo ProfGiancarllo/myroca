@@ -15,7 +15,7 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
   const openPlanner = async () => { await p.evaluate(() => document.getElementById('btn-rotation')?.click()); await p.waitForTimeout(900); await p.click('[data-tab=switch]'); await p.waitForTimeout(500); await p.click('.sf-details > summary'); await p.waitForTimeout(300); };
   await openPlanner();
   const t = async (s) => (await p.innerText(s)).replace(/\s+/g,' ');
-  ok('1 Painel de mercado aparece com selo de exemplo', /Dados de exemplo/.test(await t('.mk-panel')));
+  ok('1 Painel de mercado aparece com selo de exemplo', /Dados de (exemplo|mercado)/.test(await t('.mk-panel')));
   ok('2 Banner de decisão combinada', /Decisão combinada/.test(await t('.mk-decision')), (await t('.mk-decision')).slice(0,200));
   const cards = await p.locator('.mk-margin').count(); ok('3 Margem em cada estratégia', cards >= 2, 'cartões=' + cards);
   ok('4 Um cartão marcado como melhor margem', await p.locator('.mk-margin.best').count() === 1);
@@ -41,6 +41,9 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
     if (code === 'zh') await p.screenshot({ path: process.env.S + '/mercado-zh.png' });
     await p.evaluate(() => document.querySelector('.rot-x')?.click());
   }
+  await openPlanner();
+  ok('10 Etiquetas por cultura (real quando há fonte, exemplo quando não)', (await p.locator('.mk-tag').count()) >= 2, 'real=' + await p.locator('.mk-tag.real').count() + ' exemplo=' + await p.locator('.mk-tag:not(.real)').count());
+  ok('11 Nota cita a fonte (se real) ou avisa que é exemplo', /FRED|illustr|ilustr|Example|exemplo/i.test(await t('.mk-panel')), (await t('.mk-note')).slice(0,160));
   ok('9 Sem erros de JS', errs.length === 0, errs.join(' | '));
   await b.close();
 })();
