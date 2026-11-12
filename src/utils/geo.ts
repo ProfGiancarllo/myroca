@@ -693,7 +693,7 @@ export function getRioVerdeDemoFarm(): FarmData {
       id, name: t('defaultTalhaoName', { n }), color: pasto ? '#059669' : f.crop === 'Soja' ? '#16a34a' : '#eab308',
       crop: f.crop, cultivar: pasto ? 'Brachiaria brizantha (Marandu / Piatã)' : f.crop === 'Soja' ? 'Brasmax Bônus IPRO' : 'DKB 390 PRO3',
       plantingDate: f.plant, cycleDays: cycle, harvestDateExpected: harvest, isExample: true, healthStatus: 'verde',
-      diary: f.plant ? [{ id: id + '_d1', date: f.plant, type: 'plantio' }, { id: id + '_d2', date: '2026-11-09', type: 'monitoramento' }] : [{ id: id + '_d2', date: '2026-11-09', type: 'monitoramento' }], harvestHistory: [],
+      diary: [...(f.plant ? [{ id: id + '_d1', date: f.plant, type: 'plantio' as const }] : []), { id: id + '_d2', date: '2026-11-09', type: 'monitoramento' as const }, ...(harvest && f.plant < '2026-08-01' ? [{ id: id + '_d3', date: harvest < '2026-11-09' ? harvest : '2026-11-09', type: 'colheita' as const }] : [])], harvestHistory: [],
       areaHectares: calculatePolygonAreaHectares(coords), perimeterKm: calculatePerimeterKm(coords), coordinates: coords,
       createdAt: new Date().toISOString(), notes: '[Exemplo]',
     });
