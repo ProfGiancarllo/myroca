@@ -1,5 +1,7 @@
 import L from 'leaflet';
 import { twinLook, ensurePattern } from '../utils/twinLook';
+import { ensureSnapshot, farmBounds, Snap } from '../utils/farmSnapshot';
+import { segmentField } from '../utils/segment';
 import { Talhao, WaterPoint, WaterPointType, WATER_POINT_META } from '../types';
 import { calculatePolygonAreaHectares, calculatePerimeterKm, calculatePolygonCenter, formatHectares } from '../utils/geo';
 import { calculateTalhaoCropStatus, getCropColor } from '../utils/cropCalendar';
@@ -12,6 +14,7 @@ export interface MapEvents {
   onTalhaoEdit: (talhao: Talhao) => void;
   onTalhaoDelete: (talhaoId: string) => void;
   onWaterPointDelete: (waterPointId: string) => void;
+  onTalhaoGeometry?: (talhao: Talhao) => void;
 }
 
 export class MapManager {
@@ -77,6 +80,7 @@ export class MapManager {
     // Satélite Híbrido como padrão (Satélite + Estradas e Nomes)
     esriSatellite.addTo(this.map);
     esriLabels.addTo(this.map);
+    this.liveTiles = [esriSatellite, esriLabels];
 
     const baseMaps = {
       [t('layerSatellite')]: esriSatellite,
@@ -122,6 +126,8 @@ export class MapManager {
     updateZoomClass();
 
     this.setupMapListeners();
+    this.addAdjustControl();
+    this.addWandControl();
   }
 
   private setupMapListeners(): void {
@@ -785,6 +791,171 @@ export class MapManager {
     const marker = L.marker([lat, lng], { icon });
     this.previewLayer.addLayer(marker);
     this.map.setView([lat, lng], 15);
+  }
+
+  private liveTiles: L.TileLayer[] = [];
+  private snapLayer: L.ImageOverlay | null = null;
+  private snapCtl: HTMLElement | null = null;
+  private snapUrl = '';
+
+  /** Gêmeo digital: foto de satélite fixa da fazenda como fundo (offline após a 1ª vez), vista travada na fazenda. */
+  public async useFarmSnapshot(talhoes: Talhao[], waterPoints: WaterPoint[], force = false): Promise<void> {
+    const pts: [number, number][] = [];
+    talhoes.forEach((tl) => tl.coordinates.forEach((c) => pts.push([c[0], c[1]])));
+    waterPoints.forEach((w) => pts.push([w.coordinates[0], w.coordinates[1]]));
+    const b = farmBounds(pts);
+    if (!b) return;
+    const snap: Snap | null = await ensureSnapshot(b, force);
+    if (!snap) return; // sem foto e sem internet: mantém fundo escuro/ladrilhos ao vivo
+    if (!this.map.getPane('snapshot')) { const pn = this.map.createPane('snapshot'); pn.style.zIndex = '250'; }
+    if (this.snapUrl) URL.revokeObjectURL(this.snapUrl);
+    this.snapUrl = URL.createObjectURL(snap.blob);
+    this.snapBounds = snap.bounds as [[number, number], [number, number]];
+    this.snapData = null;
+    void this.loadSnapData();
+    this.snapLayer?.remove();
+    const lb = L.latLngBounds(snap.bounds as [[number, number], [number, number]]);
+    this.snapLayer = L.imageOverlay(this.snapUrl, lb, { pane: 'snapshot', interactive: false }).addTo(this.map);
+    this.liveTiles.forEach((tl) => tl.remove());
+    const minZ = this.map.getBoundsZoom(lb, false);
+    this.map.setMinZoom(minZ - 0.3); this.map.setMaxZoom(17.5);
+    this.map.setMaxBounds(lb.pad(0.6));
+    if (!this.snapCtl) {
+      const Ctl = L.Control.extend({ onAdd: () => { const d = L.DomUtil.create('div', 'snap-ctl'); L.DomEvent.disableClickPropagation(d); this.snapCtl = d; return d; } });
+      new Ctl({ position: 'bottomleft' }).addTo(this.map);
+    }
+    if (this.snapCtl) {
+      const dt = new Date(snap.date).toLocaleDateString(document.documentElement.lang || undefined);
+      this.snapCtl.innerHTML = `🛰️ ${dt} <button type="button" title="↻">↻</button>`;
+      (this.snapCtl.querySelector('button') as HTMLButtonElement).onclick = () => { this.snapCtl!.textContent = '🛰️ …'; void this.useFarmSnapshot(talhoes, waterPoints, true); };
+    }
+    this.map.invalidateSize();
+    this.map.fitBounds(L.latLngBounds(pts.map((p) => L.latLng(p[0], p[1]))), { padding: [60, 60], maxZoom: 16 });
+  }
+
+  // ---- Ajustar talhões: arrastar os cantos até a borda da lavoura na imagem ----
+  private adjustLayer: L.LayerGroup | null = null;
+  private adjusting = false;
+  private adjustBtn: HTMLButtonElement | null = null;
+  private static ADJ: Record<string, [string, string, string]> = {
+    pt: ['✏️ Ajustar talhões', '✔ Concluir ajuste', 'Arraste os cantos até a borda da lavoura'],
+    en: ['✏️ Adjust fields', '✔ Done adjusting', 'Drag the corners to the field edge'],
+    es: ['✏️ Ajustar lotes', '✔ Terminar ajuste', 'Arrastre las esquinas al borde del lote'],
+    de: ['✏️ Felder anpassen', '✔ Fertig', 'Ecken an den Feldrand ziehen'],
+    zh: ['✏️ 调整地块', '✔ 完成调整', '拖动角点到地块边缘'],
+    fr: ['✏️ Ajuster les parcelles', '✔ Terminer', 'Faites glisser les coins au bord de la parcelle'],
+  };
+  private adjText(i: number): string { const l = (document.documentElement.lang || 'pt').slice(0, 2); return (MapManager.ADJ[l] || MapManager.ADJ.pt)[i]; }
+
+  public addAdjustControl(): void {
+    const self = this;
+    const Ctl = L.Control.extend({ onAdd() { const b = L.DomUtil.create('button', 'adjust-btn') as HTMLButtonElement; b.type = 'button'; L.DomEvent.disableClickPropagation(b); b.onclick = () => self.setAdjustMode(!self.adjusting); self.adjustBtn = b; b.textContent = self.adjText(0); return b; } });
+    new Ctl({ position: 'topleft' }).addTo(this.map);
+  }
+
+  // ---- Marcar lavoura por cor (varinha mágica) ----
+  private snapBounds: [[number, number], [number, number]] | null = null;
+  private snapData: ImageData | null = null;
+  private wandOn = false;
+  private wandBtn: HTMLButtonElement | null = null;
+  private wandPanel: HTMLElement | null = null;
+  private wandLayer: L.LayerGroup | null = null;
+  private wandSeed: L.LatLng | null = null;
+  private wandTol = 20;
+  private wandCoords: [number, number][] | null = null;
+  private static WAND: Record<string, string[]> = {
+    pt: ['🪄 Marcar lavoura (toque)', '✖ Cancelar marcação', 'Toque dentro de uma lavoura na imagem', 'Mais área', 'Menos área', '✔ Usar este talhão', 'Não consegui identificar. Toque em outro ponto.'],
+    en: ['🪄 Mark field (tap)', '✖ Cancel marking', 'Tap inside a field on the image', 'More area', 'Less area', '✔ Use this field', 'Could not detect it. Tap another spot.'],
+    es: ['🪄 Marcar lote (toque)', '✖ Cancelar marcado', 'Toque dentro de un lote en la imagen', 'Más área', 'Menos área', '✔ Usar este lote', 'No se pudo identificar. Toque otro punto.'],
+    de: ['🪄 Feld markieren (tippen)', '✖ Abbrechen', 'Tippen Sie in ein Feld im Bild', 'Mehr Fläche', 'Weniger Fläche', '✔ Dieses Feld verwenden', 'Nicht erkannt. Anderen Punkt antippen.'],
+    zh: ['🪄 点选地块', '✖ 取消标记', '在图像中点击一块农田', '扩大', '缩小', '✔ 使用此地块', '未能识别，请点击其他位置。'],
+    fr: ['🪄 Marquer la parcelle (toucher)', '✖ Annuler', 'Touchez l’intérieur d’une parcelle sur l’image', 'Plus de surface', 'Moins de surface', '✔ Utiliser cette parcelle', 'Non détectée. Touchez un autre point.'],
+  };
+  private wt(i: number): string { const l = (document.documentElement.lang || 'pt').slice(0, 2); return (MapManager.WAND[l] || MapManager.WAND.pt)[i]; }
+
+  private async loadSnapData(): Promise<void> {
+    if (!this.snapUrl) return;
+    const im = new Image(); im.src = this.snapUrl;
+    try { await im.decode(); } catch { return; }
+    const sc = Math.min(1, 900 / im.naturalWidth), c = document.createElement('canvas');
+    c.width = Math.round(im.naturalWidth * sc); c.height = Math.round(im.naturalHeight * sc);
+    const g = c.getContext('2d', { willReadFrequently: true })!; g.drawImage(im, 0, 0, c.width, c.height);
+    try { this.snapData = g.getImageData(0, 0, c.width, c.height); } catch { this.snapData = null; }
+  }
+  private static R = 6378137;
+  private mx(lng: number) { return (lng * Math.PI * MapManager.R) / 180; }
+  private my(lat: number) { return Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) * MapManager.R; }
+  private toPx(ll: L.LatLng): [number, number] | null {
+    if (!this.snapBounds || !this.snapData) return null;
+    const [[s, w], [n, e]] = this.snapBounds, W = this.snapData.width, H = this.snapData.height;
+    const x = ((this.mx(ll.lng) - this.mx(w)) / (this.mx(e) - this.mx(w))) * W, y = ((this.my(n) - this.my(ll.lat)) / (this.my(n) - this.my(s))) * H;
+    return x < 0 || y < 0 || x >= W || y >= H ? null : [x, y];
+  }
+  private toLatLng(x: number, y: number): [number, number] {
+    const [[s, w], [n, e]] = this.snapBounds!, W = this.snapData!.width, H = this.snapData!.height;
+    const X = this.mx(w) + (x / W) * (this.mx(e) - this.mx(w)), Y = this.my(n) - (y / H) * (this.my(n) - this.my(s));
+    return [((2 * Math.atan(Math.exp(Y / MapManager.R)) - Math.PI / 2) * 180) / Math.PI, (X * 180) / (Math.PI * MapManager.R)];
+  }
+
+  public addWandControl(): void {
+    const self = this;
+    const Ctl = L.Control.extend({ onAdd() {
+      const box = L.DomUtil.create('div', 'wand-box'); L.DomEvent.disableClickPropagation(box);
+      const b = L.DomUtil.create('button', 'adjust-btn wand-btn', box) as HTMLButtonElement; b.type = 'button'; b.textContent = self.wt(0); b.onclick = () => self.setWandMode(!self.wandOn); self.wandBtn = b;
+      const pn = L.DomUtil.create('div', 'wand-panel', box); pn.style.display = 'none'; self.wandPanel = pn; return box; } });
+    new Ctl({ position: 'topleft' }).addTo(this.map);
+    this.map.on('click', (e: L.LeafletMouseEvent) => { if (this.wandOn) this.wandAt(e.latlng); });
+  }
+
+  public setWandMode(on: boolean): void {
+    this.wandOn = on; this.wandLayer?.remove(); this.wandLayer = null; this.wandCoords = null; this.wandSeed = null;
+    if (on) { this.setAdjustMode(false); this.wandLayer = L.layerGroup().addTo(this.map); }
+    if (this.wandBtn) { this.wandBtn.textContent = this.wt(on ? 1 : 0); this.wandBtn.classList.toggle('on', on); }
+    if (this.wandPanel) { this.wandPanel.style.display = on ? 'block' : 'none'; this.wandPanel.textContent = on ? this.wt(2) : ''; }
+    this.map.getContainer().classList.toggle('wand-active', on);
+  }
+
+  private wandAt(ll: L.LatLng, tol?: number): void {
+    if (tol !== undefined) this.wandTol = tol;
+    const pt = this.toPx(ll);
+    if (!pt || !this.snapData) { if (this.wandPanel) this.wandPanel.textContent = this.wt(6); return; }
+    this.wandSeed = ll;
+    const seg = segmentField(this.snapData, pt[0], pt[1], this.wandTol);
+    this.wandLayer?.clearLayers();
+    if (!seg || seg.areaFrac > 0.7) { this.wandCoords = null; if (this.wandPanel) this.wandPanel.textContent = this.wt(6); return; }
+    const coords = seg.poly.map(([x, y]) => this.toLatLng(x, y));
+    this.wandCoords = coords;
+    L.polygon(coords, { color: '#ffd84d', weight: 3, fillColor: '#ffd84d', fillOpacity: 0.25, dashArray: '6 4', interactive: false }).addTo(this.wandLayer!);
+    const ha = calculatePolygonAreaHectares(coords);
+    const pn = this.wandPanel!; pn.innerHTML = '';
+    const info = document.createElement('div'); info.textContent = `${formatHectares(ha)}`; info.style.fontWeight = '700'; pn.appendChild(info);
+    const mk = (txt: string, fn: () => void, cls = '') => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'wand-mini ' + cls; b.onclick = fn; pn.appendChild(b); };
+    mk('➖ ' + this.wt(4), () => this.wandAt(this.wandSeed!, Math.max(8, this.wandTol - 8)));
+    mk('➕ ' + this.wt(3), () => this.wandAt(this.wandSeed!, Math.min(90, this.wandTol + 8)));
+    mk(this.wt(5), () => { const c = this.wandCoords!; this.setWandMode(false); this.events.onDrawingComplete(c, calculatePolygonAreaHectares(c), calculatePerimeterKm(c)); }, 'ok');
+  }
+
+  public setAdjustMode(on: boolean): void {
+    this.adjusting = on;
+    this.adjustLayer?.remove(); this.adjustLayer = null;
+    if (this.adjustBtn) { this.adjustBtn.textContent = this.adjText(on ? 1 : 0); this.adjustBtn.classList.toggle('on', on); }
+    this.map.getContainer().classList.toggle('adjusting', on);
+    if (!on) return;
+    this.adjustLayer = L.layerGroup().addTo(this.map);
+    this.lastTalhoes.forEach((tl) => {
+      const temp = L.polygon(tl.coordinates, { color: '#ffd84d', weight: 2, fill: false, dashArray: '4 4', interactive: false }).addTo(this.adjustLayer!);
+      tl.coordinates.forEach((c, i) => {
+        const m = L.marker(c, { draggable: true, zIndexOffset: 2000, icon: L.divIcon({ className: 'adj-handle-wrap', html: '<div class="adj-handle"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }) }).addTo(this.adjustLayer!);
+        m.on('drag', () => { const ll = m.getLatLng(); tl.coordinates[i] = [ll.lat, ll.lng]; temp.setLatLngs(tl.coordinates); });
+        m.on('dragend', () => {
+          tl.areaHectares = calculatePolygonAreaHectares(tl.coordinates);
+          tl.perimeterKm = calculatePerimeterKm(tl.coordinates);
+          this.events.onTalhaoGeometry?.(tl);
+          const keep = this.adjusting; this.renderTalhoes(this.lastTalhoes); if (keep) this.setAdjustMode(true);
+        });
+      });
+    });
+    const tip = this.adjText(2); const c = this.map.getContainer(); c.setAttribute('data-adjust-tip', tip);
   }
 
   public invalidateSize(): void {

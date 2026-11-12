@@ -63,7 +63,7 @@ class AgroApp {
     this.farmData = loadFarmData();
     this.referenceDate = this.farmData.simulateTime ? (this.farmData.referenceDate || DEFAULT_REFERENCE_DATE) : this.todayIso();
     this.farmData.referenceDate = this.referenceDate;
-    this.activeViewMode = this.farmData.activeViewMode || 'mapa';
+    this.activeViewMode = 'mapa';
 
     this.rotationPlanner = new RotationPlanner({
       getFarm: () => this.farmData,
@@ -111,9 +111,9 @@ class AgroApp {
       }
     });
 
-    if (this.activeViewMode === 'fazenda') {
-      this.switchViewMode('fazenda');
-    }
+    // Gêmeo digital é a visão única: a antiga "Minha fazenda" 2.5D fica oculta (código preservado)
+    this.activeViewMode = 'mapa';
+    void this.mapManager.useFarmSnapshot(this.farmData.talhoes, this.farmData.waterPoints);
   }
 
   private renderDOM(): void {
@@ -981,6 +981,11 @@ class AgroApp {
       },
       onTalhaoDelete: (talhaoId) => {
         this.deleteTalhao(talhaoId);
+      },
+      onTalhaoGeometry: () => {
+        saveFarmData(this.farmData);
+        this.updateUI();
+        this.simpleHome?.refresh();
       },
       onWaterPointDelete: (waterPointId) => {
         this.deleteWaterPoint(waterPointId);
