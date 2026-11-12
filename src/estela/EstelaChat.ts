@@ -91,6 +91,7 @@ export class EstelaChat {
       <button class="estela-fab" id="estela-fab" aria-label="${et('fab')}">
         <span class="estela-fab-ico">🧑‍🌾</span><span class="estela-fab-txt">${et('fab')}</span><span class="estela-badge" id="estela-badge" style="display:none">0</span>
       </button>
+      <button class="estela-fab-mic" id="estela-fab-mic" title="${et('mic')}" aria-label="${et('mic')}">🎤</button>
       <div class="estela-panel" id="estela-panel" style="display:none" role="dialog" aria-label="${et('title')}">
         <div class="estela-head">
           <div class="estela-title">🌱 ${et('title')}</div>
@@ -115,6 +116,7 @@ export class EstelaChat {
     this.list = this.root.querySelector('#estela-list')!;
     this.input = this.root.querySelector('#estela-input')!;
     this.root.querySelector('#estela-fab')!.addEventListener('click', () => this.toggle());
+    this.root.querySelector('#estela-fab-mic')!.addEventListener('click', () => { this.fromVoice = true; this.toggle(true); if (!this.listening) this.toggleMic(); });
     this.root.querySelector('#estela-close')!.addEventListener('click', () => this.toggle(false));
     this.root.querySelector('#estela-clear')!.addEventListener('click', () => { this.msgs = []; this.pendingDiary = null; this.hello(); });
     this.root.querySelector('#estela-speak')!.addEventListener('click', () => this.toggleSpeak());
@@ -144,6 +146,7 @@ export class EstelaChat {
     this.open = force ?? !this.open;
     this.panel.style.display = this.open ? 'flex' : 'none';
     this.root.querySelector('#estela-fab')!.classList.toggle('hidden', this.open && window.innerWidth < 640);
+    this.root.querySelector('#estela-fab-mic')!.classList.toggle('hidden', this.open);
     if (this.open) {
       if (!this.msgs.length) this.hello();
       setTimeout(() => this.input.focus(), 50);

@@ -300,8 +300,11 @@ export class FarmGameView {
           <button class="btn-game-hud-control" id="btn-game-zoom-in" title="${t('zoomIn')}">+</button>
           <button class="btn-game-hud-control" id="btn-game-zoom-out" title="${t('zoomOut')}">&minus;</button>
           <button class="btn-game-hud-control" id="btn-game-reset-view" title="${t('centerFarm')}">🎯</button>
-          <button class="btn-game-hud-control" id="btn-game-move-mode" title="${t('moveModeBtn')}">✋</button>
-          <button class="btn-game-hud-control" id="btn-game-avatar" title="${t('avBtn')}">🧑‍🌾</button>
+          <button class="btn-game-hud-control" id="btn-game-more" title="Mais">⋯</button>
+          <div class="game-more-menu" id="game-more-menu" style="display:none">
+            <button class="btn-game-hud-control" id="btn-game-move-mode" title="${t('moveModeBtn')}">✋</button>
+            <button class="btn-game-hud-control" id="btn-game-avatar" title="${t('avBtn')}">🧑‍🌾</button>
+          </div>
         </div>
 
         <!-- BOTTOM-RIGHT FLOATING AGRONOMIST CARD (Engª. Estela) -->
@@ -970,6 +973,10 @@ export class FarmGameView {
     });
 
     document.getElementById('weather-chip')?.addEventListener('click', () => this.toggleWeatherChip());
+    document.getElementById('btn-game-more')?.addEventListener('click', () => {
+      const m = document.getElementById('game-more-menu');
+      if (m) m.style.display = m.style.display === 'none' ? 'flex' : 'none';
+    });
     document.getElementById('btn-game-move-mode')?.addEventListener('click', () => {
       this.setMoveMode(!this.moveMode);
     });
@@ -981,8 +988,18 @@ export class FarmGameView {
     // Left Panel Toggle
     const toggleBtn = document.getElementById('btn-toggle-left-panel');
     const leftContent = document.getElementById('left-panel-content');
+    const applyPanel = () => {
+      if (leftContent) leftContent.style.display = this.isLeftPanelCollapsed ? 'none' : 'block';
+      if (toggleBtn) {
+        toggleBtn.innerText = this.isLeftPanelCollapsed ? '▶' : '◀';
+        toggleBtn.title = this.isLeftPanelCollapsed ? 'Expandir painel' : 'Recolher painel';
+      }
+    };
+    try { this.isLeftPanelCollapsed = localStorage.getItem('myroca_legend_open_v1') !== '1'; } catch { this.isLeftPanelCollapsed = true; }
+    applyPanel();
     toggleBtn?.addEventListener('click', () => {
       this.isLeftPanelCollapsed = !this.isLeftPanelCollapsed;
+      try { localStorage.setItem('myroca_legend_open_v1', this.isLeftPanelCollapsed ? '0' : '1'); } catch { /* ignora */ }
       if (leftContent) {
         leftContent.style.display = this.isLeftPanelCollapsed ? 'none' : 'block';
       }

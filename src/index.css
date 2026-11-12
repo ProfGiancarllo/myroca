@@ -3132,3 +3132,16 @@ body {
 
 .estela-badge{position:absolute;top:-6px;right:-4px;min-width:20px;height:20px;border-radius:999px;background:#dc2626;color:#fff;font-size:12px;font-weight:800;align-items:center;justify-content:center;padding:0 5px;border:2px solid #0f172a}
 .estela-fab{position:fixed}
+
+/* ===== Usabilidade: ajustes da fase A ===== */
+.game-more-menu{display:flex;flex-direction:column;gap:8px}
+.estela-fab{font-size:17px;padding:14px 20px;bottom:92px}
+.estela-fab-ico{font-size:24px}
+.estela-fab-mic{position:fixed;left:14px;bottom:20px;width:64px;height:64px;border-radius:50%;background:#dc2626;color:#fff;border:0;font-size:28px;box-shadow:0 6px 18px rgba(0,0,0,.4);cursor:pointer}
+.estela-fab-mic.hidden{display:none}
+.estela-fab-mic:hover{background:#b91c1c}
+.btn-game-hud-control{min-width:44px;min-height:44px}
+@media(max-width:640px){
+  .estela-fab{bottom:96px}
+  .weather-chip{font-size:15px;padding:8px 14px}
+}
