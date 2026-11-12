@@ -19,7 +19,7 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
   });
   await p.reload(); await p.waitForTimeout(2500);
   const txt = async (s) => (await p.innerText(s)).replace(/\s+/g, ' ');
-  ok('2 Tela Hoje mostra pendências da Estela', /2|3/.test(await txt('.sh-todo')), await txt('.sh-todo'));
+  ok('2 Tela Hoje mostra pendências da Estrela', /2|3/.test(await txt('.sh-todo')), await txt('.sh-todo'));
   ok('3 Data de hoje correta', /12/.test(await txt('.sh-date')), await txt('.sh-date'));
   // 4. Clima: corrigir para chuva
   await p.click('#sh-fix'); await p.click('[data-wx=rain]'); await p.waitForTimeout(600);
@@ -32,7 +32,7 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
   await send('5 de outubro'); await conf();
   await send('DM 54i52 RSF'); await conf();
   let list = await txt('#estela-list'); console.log('LIST>', list.slice(-500));
-  ok('5 Estela perguntou e gravou plantio e cultivar', /Saved|Gravado/.test(list) );
+  ok('5 Estrela perguntou e gravou plantio e cultivar', /Saved|Gravado/.test(list) );
   await send('sem novidades'); await conf();
   await send('sem novidades'); await conf();
   await p.click('#estela-close'); await p.waitForTimeout(800);

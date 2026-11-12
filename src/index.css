@@ -2204,7 +2204,7 @@ body {
   transform: scale(1.06);
 }
 
-/* 4. BOTTOM-RIGHT FLOATING AGRONOMIST (Engª. Estela) */
+/* 4. BOTTOM-RIGHT FLOATING AGRONOMIST (Engª. Estrela) */
 .game-agronomist-floating-wrapper {
   position: absolute;
   bottom: 20px;
@@ -2963,7 +2963,7 @@ body {
 .nasa-source { font-size: 11px; color: #64748b; margin-top: 8px; line-height: 1.4; }
 @media (max-width: 520px) { .nasa-tiles { grid-template-columns: repeat(2, 1fr); } }
 
-/* ===== Recomendação do Engª. Estela ===== */
+/* ===== Recomendação do Engª. Estrela ===== */
 .sheet-tiago-box { background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; }
 .tiago-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
 .tiago-badge { font-size: 12px; font-weight: 800; border-radius: 999px; padding: 5px 12px; color: #fff; }
@@ -3103,7 +3103,7 @@ body {
 .wfix-open{margin-top:6px;background:#334155;color:#fff;border:0;border-radius:8px;padding:6px 10px;cursor:pointer;width:100%}
 @media(max-width:640px){.weather-chip-wrap{top:64px}}
 
-/* ===== Chat da Estela ===== */
+/* ===== Chat da Estrela ===== */
 #estela-root{position:fixed;z-index:9000;left:0;bottom:0}
 .estela-fab{position:fixed;left:14px;bottom:96px;display:flex;align-items:center;gap:8px;background:#16a34a;color:#fff;border:0;border-radius:999px;padding:10px 16px;font-size:14px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer}
 .estela-fab:hover{background:#15803d}

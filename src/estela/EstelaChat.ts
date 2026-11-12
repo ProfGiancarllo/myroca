@@ -72,7 +72,7 @@ export class EstelaChat {
     this.badgeTimer = window.setInterval(() => this.refreshBadge(), 60000);
   }
 
-  /** Número de pendências que a Estela quer perguntar (mostrado no botão). */
+  /** Número de pendências que a Estrela quer perguntar (mostrado no botão). */
   public refreshBadge(): void {
     const n = computePending(this.opts.getFarm(), this.ref(), this.skipped).length;
     const el = this.root?.querySelector<HTMLElement>('#estela-badge');
@@ -435,7 +435,7 @@ export class EstelaChat {
     const n = norm(text);
     const farm = this.opts.getFarm();
     try {
-      // 0) Resposta a uma pendência perguntada pela Estela
+      // 0) Resposta a uma pendência perguntada pela Estrela
       if (this.ask && !this.pendingDiary && this.handleAsk(text)) return;
       // 1) Resposta a "qual talhão?"
       if (this.pendingDiary && this.amountAsked) {

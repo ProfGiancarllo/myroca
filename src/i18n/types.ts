@@ -134,7 +134,7 @@ export interface TranslationDictionary {
   btnZoomOut: string;
   btnResetView: string;
 
-  // Agronomist (Engª. Estela)
+  // Agronomist (Engª. Estrela)
   agronomistTitle: string;
   agronomistSpeechAllHealthy: string;
   agronomistSpeechFlowering: string; // params: {talhao, crop}

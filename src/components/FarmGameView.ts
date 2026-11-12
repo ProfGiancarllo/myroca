@@ -307,7 +307,7 @@ export class FarmGameView {
           </div>
         </div>
 
-        <!-- BOTTOM-RIGHT FLOATING AGRONOMIST CARD (Engª. Estela) -->
+        <!-- BOTTOM-RIGHT FLOATING AGRONOMIST CARD (Engª. Estrela) -->
         <div class="game-agronomist-floating-wrapper" id="game-agronomist-card">
           <div class="agronomist-speech-bubble" id="agronomist-speech-bubble">
             <div class="bubble-header">
@@ -2715,7 +2715,7 @@ export class FarmGameView {
     return t(l === 'low' ? 'agLevelLow' : l === 'medium' ? 'agLevelMedium' : 'agLevelHigh');
   }
 
-  /** Recomendação do Engª. Estela no talhão: risco de plantio (7 dias) e alertas da lavoura. */
+  /** Recomendação do Engª. Estrela no talhão: risco de plantio (7 dias) e alertas da lavoura. */
   private renderEstelaBox(talhao: Talhao): void {
     const box = document.getElementById('sheet-tiago-box');
     const series = this.nasaSeries[talhao.id];

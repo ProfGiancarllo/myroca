@@ -1,7 +1,7 @@
-# Ligar a Estela à inteligência do Claude (passo a passo)
+# Ligar a Estrela à inteligência do Claude (passo a passo)
 
 A chave NUNCA vai no app nem no GitHub. Ela fica guardada num "intermediário" gratuito (Cloudflare Worker).
-Sem isso a Estela continua funcionando (regras locais + dados da NASA); a IA só responde perguntas livres.
+Sem isso a Estrela continua funcionando (regras locais + dados da NASA); a IA só responde perguntas livres.
 
 ## 1) Criar a chave (você faz, eu não posso)
 1. Entre em https://console.anthropic.com e faça login.

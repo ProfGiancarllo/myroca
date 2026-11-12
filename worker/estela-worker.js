@@ -1,4 +1,4 @@
-// Intermediário da Estela (Cloudflare Worker). A chave da Anthropic fica SÓ aqui, como segredo.
+// Intermediário da Estrela (Cloudflare Worker). A chave da Anthropic fica SÓ aqui, como segredo.
 // Segredos/variáveis: ANTHROPIC_API_KEY (segredo), ALLOWED_ORIGIN (ex.: https://seusite.com), MODEL (opcional)
 const MAX_PER_IP_PER_DAY = 40;
 const hits = new Map(); // limite simples por IP (reinicia quando o worker reinicia)
@@ -30,7 +30,7 @@ export default {
     if (!question) return json({ answer: '' }, cors, 400);
 
     const system =
-      'Você é a Estela, engenheira agrônoma virtual do app MyRoça (Rio Verde-GO). ' +
+      'Você é a Estrela, engenheira agrônoma virtual do app MyRoça (Rio Verde-GO). ' +
       'Responda de forma curta, simples e prática para o produtor rural, no idioma da pergunta. ' +
       'Use os dados da fazenda fornecidos. Não invente números; se não souber, diga que falta informação ' +
       'e sugira consultar o agrônomo responsável. Não dê receita de defensivos nem dose.';
