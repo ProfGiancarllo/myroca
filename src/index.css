@@ -3221,3 +3221,5 @@ path.holo-glow { filter: blur(4px); }
 .wand-mini { background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 8px; padding: 7px 10px; font-size: 13px; cursor: pointer; min-height: 36px; }
 .wand-mini.ok { background: #3fa34d; border-color: #3fa34d; font-weight: 700; }
 .leaflet-container.wand-active { cursor: crosshair; }
+.map-zoom-below-14 .holo-float { transform: scale(.62); transform-origin: 50% 100%; animation: none; }
+.map-zoom-below-14 .holo-float::after { height: 14px; }

@@ -181,7 +181,8 @@ export class MapManager {
     this.talhoesLayer.clearLayers();
 
     const placedScreenCenters: { pt: L.Point; latlng: [number, number] }[] = [];
-    const isBelowZoom14 = this.map.getZoom() < 14;
+    const isBelowZoom14 = this.map.getZoom() < 14 || (talhoes.length > 8 && this.map.getZoom() < 15.3);
+    this.map.getContainer().classList.toggle('map-zoom-below-14', isBelowZoom14);
 
     talhoes.forEach((talhao, index) => {
       // Color strictly based on crop

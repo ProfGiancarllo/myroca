@@ -125,6 +125,7 @@ export interface FarmData {
   activeViewMode?: 'mapa' | 'fazenda'; // Modo atual: 'mapa' ou 'fazenda'
   talhoes: Talhao[];
   waterPoints: WaterPoint[];
+  demoVersion?: number; // versão da fazenda de exemplo (para trocar exemplos antigos)
 }
 
 export interface ElementMeta {

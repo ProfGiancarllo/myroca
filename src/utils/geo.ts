@@ -1,3 +1,5 @@
+import { DEMO_FIELDS } from './demoFields';
+import { DEMO_BOUNDS } from './farmSnapshot';
 import { FarmData, Talhao, WaterPoint, WaterPointType, TALHAO_COLORS } from '../types';
 import { getCropColor } from './cropCalendar';
 import { t, translateCropName, TranslationDictionary } from '../i18n';
@@ -674,6 +676,29 @@ export function getRioVerdeDemoFarm(): FarmData {
     ],
   };
   localizeExampleNames(demoFarm);
+  // Demais lavouras visíveis na imagem aérea embutida (fazenda de demonstração)
+  const [[bs, bw], [bn, be]] = DEMO_BOUNDS;
+  const R = 6378137, mxx = (g: number) => (g * Math.PI * R) / 180, myy = (a: number) => Math.log(Math.tan(Math.PI / 4 + (a * Math.PI) / 360)) * R;
+  const px2ll = (x: number, y: number): [number, number] => {
+    const X = mxx(bw) + (x / 900) * (mxx(be) - mxx(bw)), Y = myy(bn) - (y / 503) * (myy(bn) - myy(bs));
+    return [Math.round(((2 * Math.atan(Math.exp(Y / R)) - Math.PI / 2) * 180 / Math.PI) * 1e5) / 1e5, Math.round((X * 180 / (Math.PI * R)) * 1e5) / 1e5];
+  };
+  DEMO_FIELDS.forEach((f, i) => {
+    const n = i + 4, id = `talhao_demo_${String(n).padStart(2, '0')}`;
+    const coords = f.poly.map(([x, y]) => px2ll(x, y));
+    const pasto = f.crop.startsWith('Pastagem');
+    const cycle = pasto ? 0 : f.crop === 'Soja' ? 115 : 120;
+    const harvest = f.plant && cycle ? new Date(new Date(f.plant + 'T12:00:00Z').getTime() + cycle * 864e5).toISOString().slice(0, 10) : undefined;
+    demoFarm.talhoes.push({
+      id, name: t('defaultTalhaoName', { n }), color: pasto ? '#059669' : f.crop === 'Soja' ? '#16a34a' : '#eab308',
+      crop: f.crop, cultivar: pasto ? 'Brachiaria brizantha (Marandu / Piatã)' : f.crop === 'Soja' ? 'Brasmax Bônus IPRO' : 'DKB 390 PRO3',
+      plantingDate: f.plant, cycleDays: cycle, harvestDateExpected: harvest, isExample: true, healthStatus: 'verde',
+      diary: f.plant ? [{ id: id + '_d1', date: f.plant, type: 'plantio' }, { id: id + '_d2', date: '2026-11-09', type: 'monitoramento' }] : [{ id: id + '_d2', date: '2026-11-09', type: 'monitoramento' }], harvestHistory: [],
+      areaHectares: calculatePolygonAreaHectares(coords), perimeterKm: calculatePerimeterKm(coords), coordinates: coords,
+      createdAt: new Date().toISOString(), notes: '[Exemplo]',
+    });
+  });
+  demoFarm.demoVersion = 2;
   return demoFarm;
 }
 
