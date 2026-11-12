@@ -9,6 +9,7 @@ import { requireAuth } from './auth/loginScreen';
 import { RotationPlanner } from './components/RotationPlanner';
 import { EstelaChat } from './estela/EstelaChat';
 import { SimpleHome } from './simple/SimpleHome';
+import { playIntro } from './intro/IntroVideo';
 import { rt } from './i18n/rotationText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
@@ -2987,5 +2988,5 @@ class AgroApp {
 
 // Initialise application on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-  requireAuth().then(() => new AgroApp());
+  playIntro().then(() => requireAuth()).then(() => new AgroApp());
 });

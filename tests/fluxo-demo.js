@@ -5,7 +5,7 @@ const ok = (n, c, extra='') => console.log((c ? 'OK   ' : 'FALHA') + ' | ' + n +
   const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.route('**/api.open-meteo.com/**', r => r.abort());
   await p.route('**/power.larc.nasa.gov/**', r => r.abort());
-  await p.goto('http://127.0.0.1:3111/'); await p.waitForTimeout(800);
+  await p.goto('http://127.0.0.1:3111/?intro=0'); await p.waitForTimeout(800);
   // 1. Cadastro
   await p.click('.auth-tabs button[data-mode=signup]');
   await p.fill('#a-name','Produtor Teste'); await p.fill('#a-email','demo@example.com'); await p.fill('#a-farm','Fazenda Demo'); await p.fill('#a-city','Rio Verde/GO');
