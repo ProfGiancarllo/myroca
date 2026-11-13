@@ -24,8 +24,8 @@ export interface SimpleHomeOptions {
 }
 
 const MODE_KEY = 'myroca_ui_mode_v1';
-const ICON: Record<string, string> = { clear: '☀️', partly: '⛅', cloudy: '☁️', rain: '🌧️', storm: '⛈️' };
-const RECORDS: [DiaryEntryType, string][] = [['chuva', '🌧️'], ['irrigacao', '💧'], ['adubacao', '🌱'], ['aplicacao', '🧪'], ['plantio', '🌾'], ['colheita', '🚜']];
+const ICON: Record<string, string> = { clear: '', partly: '', cloudy: '', rain: '', storm: '' };
+const RECORDS: [DiaryEntryType, string][] = [['chuva', ''], ['irrigacao', ''], ['adubacao', ''], ['aplicacao', ''], ['plantio', ''], ['colheita', '']];
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 
 export class SimpleHome {
@@ -44,7 +44,7 @@ export class SimpleHome {
     this.pill.type = 'button';
     this.pill.style.display = 'none';
     this.pill.onclick = () => this.setMode('simple');
-    document.body.appendChild(this.pill);
+    (document.getElementById('home-head-actions') || document.body).appendChild(this.pill);
     this.setMode(SimpleHome.savedMode(), false);
   }
 
@@ -59,7 +59,7 @@ export class SimpleHome {
     const simple = mode === 'simple';
     this.root.style.display = simple ? 'block' : 'none';
     this.pill.style.display = simple ? 'none' : 'block';
-    this.pill.textContent = '🏠 ' + sx('simple');
+    this.pill.textContent = '' + sx('simple');
     document.body.classList.toggle('mode-simple', simple);
     window.clearInterval(this.timer);
     if (simple) { this.render(); this.timer = window.setInterval(() => this.refresh(), 5 * 60 * 1000); }
@@ -82,32 +82,32 @@ export class SimpleHome {
     this.root.innerHTML = `
       <div class="sh-wrap">
         <header class="sh-top">
-          <div class="sh-brand">🌱 MyRoça <small>${esc(farm.farmName || '')}</small></div>
-          <button type="button" class="sh-link" id="sh-full">🗺️ ${sx('full')}</button>
+          <div class="sh-brand"><span class="brand-mark brand-mark-sh" role="img" aria-label="SpaceAgro"><img src="./assets/brand/spaceagro-logo.svg" alt="" /></span><small>${esc(farm.farmName || '')}</small></div>
+          <button type="button" class="sh-link" id="sh-full">${sx('full')}</button>
         </header>
         <div class="sh-date">${esc(dateTxt)}</div>
         ${this.hero(farm, ref)}
         <div class="sh-grid">
           <section class="sh-card sh-todo">
-            <h2>📋 ${sx('todo')}</h2>
-            <p class="sh-big">${n ? esc(sx('todoN', { n })) : '✅ ' + esc(sx('allDone'))}</p>
-            ${n ? `<div class="sh-row"><button type="button" class="sh-btn sh-primary" id="sh-voice">🎤 ${sx('voice')}</button><button type="button" class="sh-btn" id="sh-typed">✍️ ${sx('typed')}</button></div>` : ''}
+            <h2>${sx('todo')}</h2>
+            <p class="sh-big">${n ? esc(sx('todoN', { n })) : '' + esc(sx('allDone'))}</p>
+            ${n ? `<div class="sh-row"><button type="button" class="sh-btn sh-primary" id="sh-voice">${sx('voice')}</button><button type="button" class="sh-btn" id="sh-typed">${sx('typed')}</button></div>` : ''}
           </section>
-          <section class="sh-card" id="sh-weather"><h2>⛅ ${sx('weather')}</h2><p class="sh-big">…</p></section>
-          <section class="sh-card sh-wide" id="sh-nasa"><h2>🛰️ ${sx('nasa')}</h2><p class="sh-muted">${sx('loading')}</p></section>
+          <section class="sh-card" id="sh-weather"><h2>${sx('weather')}</h2><p class="sh-big">…</p></section>
+          <section class="sh-card sh-wide" id="sh-nasa"><h2>${sx('nasa')}</h2><p class="sh-muted">${sx('loading')}</p></section>
           <section class="sh-card sh-wide sh-diary">
-            <button type="button" class="sh-btn sh-primary sh-xl" id="sh-diary">📓 ${esc(dj('btn'))}</button>
+            <button type="button" class="sh-btn sh-primary sh-xl" id="sh-diary">${esc(dj('btn'))}</button>
           </section>
           <section class="sh-card sh-wide">
-            <h2>📒 ${sx('record')}</h2>
+            <h2>${sx('record')}</h2>
             <div class="sh-rec">
               ${RECORDS.map(([t, ic]) => `<button type="button" class="sh-btn sh-rbtn" data-rec="${t}"><span>${ic}</span>${esc(et('diary_' + t))}</button>`).join('')}
             </div>
           </section>
         </div>
         <div class="sh-bottom">
-          <button type="button" class="sh-btn sh-primary sh-xl" id="sh-talk">🎤 ${sx('talk')}</button>
-          <button type="button" class="sh-btn sh-xl" id="sh-plan">🌾 ${sx('plan')}</button>
+          <button type="button" class="sh-btn sh-primary sh-xl" id="sh-talk">${sx('talk')}</button>
+          <button type="button" class="sh-btn sh-xl" id="sh-plan">${sx('plan')}</button>
         </div>
       </div>`;
 
@@ -142,8 +142,8 @@ export class SimpleHome {
     const swText = hl ? hl.text + (hl.example ? ` (${sf('exampleShort')})` : '') : sf('heroSwitchNone');
     return `
       <div class="sh-hero">
-        <button type="button" class="sh-hcard cur" id="sh-h-cur"><span class="sh-hic">🌾</span><div class="sh-htx"><h2>${sf('heroCur')}</h2><p>${esc(curText)}</p></div><span class="sh-hgo">${sf('heroOpen')} ➜</span></button>
-        <button type="button" class="sh-hcard sw" id="sh-h-sw"><span class="sh-hic">🔄</span><div class="sh-htx"><h2>${sf('heroSwitch')}</h2><p>${esc(swText)}</p></div><span class="sh-hgo">${sf('heroOpen')} ➜</span></button>
+        <button type="button" class="sh-hcard cur" id="sh-h-cur"><span class="sh-hic"></span><div class="sh-htx"><h2>${sf('heroCur')}</h2><p>${esc(curText)}</p></div><span class="sh-hgo">${sf('heroOpen')} ➜</span></button>
+        <button type="button" class="sh-hcard sw" id="sh-h-sw"><span class="sh-hic"></span><div class="sh-htx"><h2>${sf('heroSwitch')}</h2><p>${esc(swText)}</p></div><span class="sh-hgo">${sf('heroOpen')} ➜</span></button>
       </div>`;
   }
 
@@ -163,7 +163,7 @@ export class SimpleHome {
       <h2>${ICON[w.cond]} ${sx('weather')}</h2>
       <p class="sh-temp">${w.tempC !== null ? Math.round(w.tempC) + '°C' : ''} <span>${esc(wt(w.cond))}</span></p>
       <p class="sh-big">${esc(sx(adv))}</p>
-      <button type="button" class="sh-link" id="sh-fix">✏️ ${sx('fix')}</button>
+      <button type="button" class="sh-link" id="sh-fix">${sx('fix')}</button>
       <div class="sh-fixrow" id="sh-fixrow" style="display:none">
         ${(['clear', 'partly', 'cloudy', 'rain', 'storm'] as Condition[]).map((k) => `<button type="button" class="sh-btn" data-wx="${k}">${ICON[k]}<small>${esc(wt(k))}</small></button>`).join('')}
         <button type="button" class="sh-link" id="sh-auto">↺ ${esc(wt('auto'))}</button>
@@ -177,7 +177,7 @@ export class SimpleHome {
     const box = this.root.querySelector<HTMLElement>('#sh-nasa');
     if (!box) return;
     const list = farm.talhoes.filter((t) => t.coordinates && t.coordinates.length >= 3).slice(0, 5);
-    if (!list.length) { box.innerHTML = `<h2>🛰️ ${sx('nasa')}</h2><p class="sh-muted">${esc(sx('noField'))}</p><button type="button" class="sh-btn" id="sh-open">🗺️ ${sx('open')}</button>`; box.querySelector<HTMLElement>('#sh-open')!.onclick = () => this.opts.onShowFull(); return; }
+    if (!list.length) { box.innerHTML = `<h2>${sx('nasa')}</h2><p class="sh-muted">${esc(sx('noField'))}</p><button type="button" class="sh-btn" id="sh-open">${sx('open')}</button>`; box.querySelector<HTMLElement>('#sh-open')!.onclick = () => this.opts.onShowFull(); return; }
     const rows: string[] = [];
     for (const tl of list) {
       const st = calculateTalhaoCropStatus(tl, ref);
@@ -196,13 +196,13 @@ export class SimpleHome {
           this.nasaCache.set(key, { at: Date.now(), level });
         }
       }
-      const dot = level === 'low' ? '🟢' : level === 'medium' ? '🟡' : level === 'high' ? '🔴' : '⚪';
+      const dot = `<i class="risk-dot risk-${level || 'none'}" aria-hidden="true"></i>`;
       const word = level === 'low' ? et('riskLow') : level === 'medium' ? et('riskMedium') : level === 'high' ? et('riskHigh') : (st.isPasture ? '' : sx('nasaFail'));
       const days = tl.plantingDate && tl.cycleDays ? ' · ' + sx('day', { d: st.daysPassed, t: tl.cycleDays }) : '';
       rows.push(`<li><span class="sh-dot">${dot}</span><div><strong>${esc(this.tName(tl))}</strong> — ${esc(translateCropName(tl.crop) || '')}${esc(days)}<br><span class="sh-muted">${esc(word)}</span></div></li>`);
     }
     if (!box.isConnected) return;
     void cropKey;
-    box.innerHTML = `<h2>🛰️ ${sx('nasa')}</h2><ul class="sh-list">${rows.join('')}</ul>`;
+    box.innerHTML = `<h2>${sx('nasa')}</h2><ul class="sh-list">${rows.join('')}</ul>`;
   }
 }

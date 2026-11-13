@@ -191,13 +191,13 @@ export class MapManager {
       const talhaoColor = talhao.color || cropColor;
 
       // Polygon
-      // Gêmeo digital: halo luminoso + contorno ciano holográfico por cima da imagem de satélite
-      L.polygon(talhao.coordinates, { color: '#5ec8ff', weight: 9, opacity: 0.22, fill: false, interactive: false, className: 'holo-glow' }).addTo(this.talhoesLayer);
+      // Contorno branco discreto sobre a imagem de satélite
       const polygon = L.polygon(talhao.coordinates, {
-        color: '#8fe3ff',
-        weight: 2.5,
+        color: '#ffffff',
+        weight: 1.5,
+        opacity: 0.9,
         fillColor: cropColor,
-        fillOpacity: 0.6,
+        fillOpacity: 0.45,
         className: 'holo-poly',
       });
 
@@ -287,16 +287,6 @@ export class MapManager {
         zIndexOffset: 1000,
       });
 
-      // ícone holográfico flutuando sobre o talhão
-      L.marker(trueCenter, {
-        icon: L.divIcon({
-          className: 'holo-float-wrap',
-          html: `<div class="holo-float" style="animation-delay:${(index % 5) * 0.4}s"><span>${cropStatus.phase.icon}</span></div>`,
-          iconSize: [44, 44], iconAnchor: [22, 74],
-        }),
-        interactive: false,
-        zIndexOffset: 900,
-      }).addTo(this.talhoesLayer);
 
       // Tapping badge or polygon toggles expansion / details below zoom 14
       labelMarker.on('click', (e: L.LeafletMouseEvent) => {
@@ -369,7 +359,7 @@ export class MapManager {
               ? `
           <div class="popup-row">
             <span class="popup-label">${t('drawerNextCrop')}:</span>
-            <span class="popup-value" style="font-size: 12px; color: #38bdf8;">
+            <span class="popup-value" style="font-size: 12px; color: #2f6690;">
               ${translateCropName(talhao.nextCropPlan.crop)} (${talhao.nextCropPlan.plannedPlanting})
             </span>
           </div>`
@@ -456,7 +446,7 @@ export class MapManager {
       const icon = L.divIcon({
         className: 'water-point-container',
         html: `
-          <div class="water-point-pin" style="background-color: ${meta.color}; box-shadow: 0 0 14px ${meta.color}99" title="${wp.name}">
+          <div class="water-point-pin" style="background-color: ${meta.color}; box-shadow: 0 8px 24px rgba(24, 43, 37, 0.12)" title="${wp.name}">
             <span class="water-point-emoji">${meta.icon}</span>
           </div>
           <div class="water-point-tag water-point-hover-tag">${wp.name}</div>
@@ -753,7 +743,7 @@ export class MapManager {
       const badgeIcon = L.divIcon({
         className: 'custom-talhao-label-container',
         html: `
-          <div class="talhao-label-badge" style="border-left: 5px solid #22c55e; border-style: dashed;">
+          <div class="talhao-label-badge" style="border-left: 5px solid #245b43; border-style: dashed;">
             <div class="talhao-label-name">Prévia do Talhão</div>
             <div class="talhao-label-ha">${formatHectares(areaHa)}</div>
           </div>
@@ -782,7 +772,7 @@ export class MapManager {
     const icon = L.divIcon({
       className: 'water-point-container',
       html: `
-        <div class="water-point-pin" style="background-color: ${meta.color}; box-shadow: 0 0 18px ${meta.color}">
+        <div class="water-point-pin" style="background-color: ${meta.color}; box-shadow: 0 8px 24px rgba(24, 43, 37, 0.12)">
           <span class="water-point-emoji">${meta.icon}</span>
         </div>
         <div class="water-point-tag">Prévia: ${meta.label}</div>
@@ -799,6 +789,31 @@ export class MapManager {
   private liveTiles: L.TileLayer[] = [];
   private snapZoomFn: (() => void) | null = null;
   private snapLayer: L.ImageOverlay | null = null;
+  private snapLB: L.LatLngBounds | null = null;
+  private snapResizeHooked = false;
+  private bgTiles: L.TileLayer | null = null;
+
+  /**
+   * Limites de zoom e de arraste conforme o fundo disponível (recalculado quando o mapa muda de tamanho).
+   * Com internet, o satélite ao vivo preenche o entorno da foto, então dá para afastar e ver a fazenda inteira em telas largas.
+   * Sem internet, o menor zoom é aquele em que a foto ainda cobre o mapa todo (sem bordas vazias).
+   */
+  private applySnapMinZoom(): void {
+    if (!this.snapLB) return;
+    const cover = this.map.getBoundsZoom(this.snapLB, true);
+    const bg = !!this.bgTiles && navigator.onLine;
+    const z = bg ? Math.max(3, cover - 3) : cover;
+    this.map.setMinZoom(z);
+    this.map.setMaxBounds(bg ? this.snapLB.pad(1.5) : this.snapLB);
+    if (this.map.getZoom() < z) this.map.setZoom(z, { animate: false });
+  }
+
+  /** Depois que o contêiner muda de tamanho (ex.: mapa maximizado): recalcula o tamanho, o zoom mínimo e enquadra a fazenda. */
+  public refitAfterResize(talhoes: Talhao[], waterPoints: WaterPoint[]): void {
+    this.map.invalidateSize({ animate: false });
+    this.applySnapMinZoom();
+    this.fitBoundsToFarm(talhoes, waterPoints);
+  }
   private snapCtl: HTMLElement | null = null;
   private snapUrl = '';
 
@@ -829,9 +844,18 @@ export class MapManager {
     this.snapZoomFn = () => { const hi = this.map.getZoom() >= 15 && navigator.onLine; this.liveTiles.forEach((tl) => (hi ? tl.addTo(this.map) : tl.remove())); this.snapLayer?.setOpacity(hi ? 0 : 1); };
     this.map.on('zoomend', this.snapZoomFn);
     // o menor zoom é aquele em que a imagem ainda preenche toda a tela: sem margens pretas
-    const minZ = this.map.getBoundsZoom(lb, true);
-    this.map.setMinZoom(minZ); this.map.setMaxZoom(17.5);
-    this.map.setMaxBounds(lb); (this.map.options as { maxBoundsViscosity?: number }).maxBoundsViscosity = 1;
+    this.snapLB = lb;
+    // satélite ao vivo por baixo da foto: preenche o que fica fora dela
+    if (!this.bgTiles) {
+      if (!this.map.getPane('snapBg')) { const pb = this.map.createPane('snapBg'); pb.style.zIndex = '240'; }
+      this.bgTiles = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { pane: 'snapBg', maxZoom: 19, attribution: 'Tiles &copy; Esri' });
+    }
+    if (navigator.onLine) this.bgTiles.addTo(this.map);
+    this.map.setMaxZoom(17.5);
+    this.applySnapMinZoom();
+    if (!this.snapResizeHooked) { this.snapResizeHooked = true; this.map.on('resize', () => this.applySnapMinZoom()); }
+    (this.map.options as { maxBoundsViscosity?: number }).maxBoundsViscosity = 1;
+    this.applySnapMinZoom();
     if (demo) this.drawCarLayers(); else this.carLayer?.remove();
     if (!this.snapCtl) {
       const Ctl = L.Control.extend({ onAdd: () => { const d = L.DomUtil.create('div', 'snap-ctl'); L.DomEvent.disableClickPropagation(d); this.snapCtl = d; return d; } });
@@ -839,9 +863,9 @@ export class MapManager {
     }
     if (this.snapCtl) {
       const dt = new Date(snap.date).toLocaleDateString(document.documentElement.lang || undefined);
-      this.snapCtl.innerHTML = `🛰️ ${dt} <button type="button" title="↻">↻</button>`;
+      this.snapCtl.innerHTML = `${dt} <button type="button" title="↻">↻</button>`;
       const rb = this.snapCtl.querySelector('button') as HTMLButtonElement | null;
-      if (rb) rb.onclick = () => { this.snapCtl!.textContent = '🛰️ …'; void this.useFarmSnapshot(talhoes, waterPoints, true); };
+      if (rb) rb.onclick = () => { this.snapCtl!.textContent = '…'; void this.useFarmSnapshot(talhoes, waterPoints, true); };
     }
     this.map.invalidateSize();
     if (demo) { this.map.fitBounds(L.latLngBounds(CAR_FIT), { padding: [24, 24] }); }
@@ -871,7 +895,7 @@ export class MapManager {
     const box = (r: [number, number][]) => { const b = L.latLngBounds(r.map((c) => L.latLng(c[0], c[1]))); return { b, a: (b.getNorth() - b.getSouth()) * (b.getEast() - b.getWest()) }; };
     CAR_RESERVA.map((r) => ({ r, ...box(r) })).sort((x, y) => y.a - x.a).slice(0, 6).forEach(({ r }) => {
       let sy = 0, sx = 0; r.forEach((c) => { sy += c[0]; sx += c[1]; });
-      L.marker([sy / r.length, sx / r.length], { pane: 'car', interactive: false, keyboard: false, icon: L.divIcon({ className: 'car-label', html: `<span>🌳 ${tx[0]}</span>`, iconSize: [0, 0] }) }).addTo(g);
+      L.marker([sy / r.length, sx / r.length], { pane: 'car', interactive: false, keyboard: false, icon: L.divIcon({ className: 'car-label', html: `<span>${tx[0]}</span>`, iconSize: [0, 0] }) }).addTo(g);
     });
     g.addTo(this.map);
     this.carLayer = g;
@@ -882,12 +906,12 @@ export class MapManager {
   private adjusting = false;
   private adjustBtn: HTMLButtonElement | null = null;
   private static ADJ: Record<string, [string, string, string]> = {
-    pt: ['✏️ Ajustar talhões', '✔ Concluir ajuste', 'Arraste os cantos até a borda da lavoura'],
-    en: ['✏️ Adjust fields', '✔ Done adjusting', 'Drag the corners to the field edge'],
-    es: ['✏️ Ajustar lotes', '✔ Terminar ajuste', 'Arrastre las esquinas al borde del lote'],
-    de: ['✏️ Felder anpassen', '✔ Fertig', 'Ecken an den Feldrand ziehen'],
-    zh: ['✏️ 调整地块', '✔ 完成调整', '拖动角点到地块边缘'],
-    fr: ['✏️ Ajuster les parcelles', '✔ Terminer', 'Faites glisser les coins au bord de la parcelle'],
+    pt: ['Ajustar talhões', 'Concluir ajuste', 'Arraste os cantos até a borda da lavoura'],
+    en: ['Adjust fields', 'Done adjusting', 'Drag the corners to the field edge'],
+    es: ['Ajustar lotes', 'Terminar ajuste', 'Arrastre las esquinas al borde del lote'],
+    de: ['Felder anpassen', 'Fertig', 'Ecken an den Feldrand ziehen'],
+    zh: ['调整地块', '完成调整', '拖动角点到地块边缘'],
+    fr: ['Ajuster les parcelles', 'Terminer', 'Faites glisser les coins au bord de la parcelle'],
   };
   private adjText(i: number): string { const l = (document.documentElement.lang || 'pt').slice(0, 2); return (MapManager.ADJ[l] || MapManager.ADJ.pt)[i]; }
 
@@ -908,12 +932,12 @@ export class MapManager {
   private wandTol = 20;
   private wandCoords: [number, number][] | null = null;
   private static WAND: Record<string, string[]> = {
-    pt: ['🪄 Marcar lavoura (toque)', '✖ Cancelar marcação', 'Toque dentro de uma lavoura na imagem', 'Mais área', 'Menos área', '✔ Usar este talhão', 'Não consegui identificar. Toque em outro ponto.'],
-    en: ['🪄 Mark field (tap)', '✖ Cancel marking', 'Tap inside a field on the image', 'More area', 'Less area', '✔ Use this field', 'Could not detect it. Tap another spot.'],
-    es: ['🪄 Marcar lote (toque)', '✖ Cancelar marcado', 'Toque dentro de un lote en la imagen', 'Más área', 'Menos área', '✔ Usar este lote', 'No se pudo identificar. Toque otro punto.'],
-    de: ['🪄 Feld markieren (tippen)', '✖ Abbrechen', 'Tippen Sie in ein Feld im Bild', 'Mehr Fläche', 'Weniger Fläche', '✔ Dieses Feld verwenden', 'Nicht erkannt. Anderen Punkt antippen.'],
-    zh: ['🪄 点选地块', '✖ 取消标记', '在图像中点击一块农田', '扩大', '缩小', '✔ 使用此地块', '未能识别，请点击其他位置。'],
-    fr: ['🪄 Marquer la parcelle (toucher)', '✖ Annuler', 'Touchez l’intérieur d’une parcelle sur l’image', 'Plus de surface', 'Moins de surface', '✔ Utiliser cette parcelle', 'Non détectée. Touchez un autre point.'],
+    pt: ['Marcar lavoura (toque)', 'Cancelar marcação', 'Toque dentro de uma lavoura na imagem', 'Mais área', 'Menos área', 'Usar este talhão', 'Não consegui identificar. Toque em outro ponto.'],
+    en: ['Mark field (tap)', 'Cancel marking', 'Tap inside a field on the image', 'More area', 'Less area', 'Use this field', 'Could not detect it. Tap another spot.'],
+    es: ['Marcar lote (toque)', 'Cancelar marcado', 'Toque dentro de un lote en la imagen', 'Más área', 'Menos área', 'Usar este lote', 'No se pudo identificar. Toque otro punto.'],
+    de: ['Feld markieren (tippen)', 'Abbrechen', 'Tippen Sie in ein Feld im Bild', 'Mehr Fläche', 'Weniger Fläche', 'Dieses Feld verwenden', 'Nicht erkannt. Anderen Punkt antippen.'],
+    zh: ['点选地块', '取消标记', '在图像中点击一块农田', '扩大', '缩小', '使用此地块', '未能识别，请点击其他位置。'],
+    fr: ['Marquer la parcelle (toucher)', 'Annuler', 'Touchez l’intérieur d’une parcelle sur l’image', 'Plus de surface', 'Moins de surface', 'Utiliser cette parcelle', 'Non détectée. Touchez un autre point.'],
   };
   private wt(i: number): string { const l = (document.documentElement.lang || 'pt').slice(0, 2); return (MapManager.WAND[l] || MapManager.WAND.pt)[i]; }
 
@@ -974,8 +998,8 @@ export class MapManager {
     const pn = this.wandPanel!; pn.innerHTML = '';
     const info = document.createElement('div'); info.textContent = `${formatHectares(ha)}`; info.style.fontWeight = '700'; pn.appendChild(info);
     const mk = (txt: string, fn: () => void, cls = '') => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.className = 'wand-mini ' + cls; b.onclick = fn; pn.appendChild(b); };
-    mk('➖ ' + this.wt(4), () => this.wandAt(this.wandSeed!, Math.max(8, this.wandTol - 8)));
-    mk('➕ ' + this.wt(3), () => this.wandAt(this.wandSeed!, Math.min(90, this.wandTol + 8)));
+    mk('' + this.wt(4), () => this.wandAt(this.wandSeed!, Math.max(8, this.wandTol - 8)));
+    mk('' + this.wt(3), () => this.wandAt(this.wandSeed!, Math.min(90, this.wandTol + 8)));
     mk(this.wt(5), () => { const c = this.wandCoords!; this.setWandMode(false); this.events.onDrawingComplete(c, calculatePolygonAreaHectares(c), calculatePerimeterKm(c)); }, 'ok');
   }
 

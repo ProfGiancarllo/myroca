@@ -65,7 +65,7 @@ export function clearOverride(): void {
 }
 
 // ---- Open-Meteo
-function fromWmo(code: number, cloud: number | null, rainMm: number): { cond: Condition; intensity: 0 | 1 | 2 | 3 } {
+export function fromWmo(code: number, cloud: number | null, rainMm: number): { cond: Condition; intensity: 0 | 1 | 2 | 3 } {
   if (code >= 95) return { cond: 'storm', intensity: 3 };
   const wet = (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || rainMm > 0.1;
   if (wet) {

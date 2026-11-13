@@ -255,7 +255,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   planejamento: {
     key: 'planejamento',
     label: 'Planejamento / Pousio',
-    icon: '📋',
+    icon: '',
     badgeColor: '#94a3b8',
     badgeBg: 'rgba(148, 163, 184, 0.18)',
     description: 'Área em descanso ou planejamento de semeadura',
@@ -263,7 +263,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   preparo: {
     key: 'preparo',
     label: 'Preparo do Solo',
-    icon: '🚜',
+    icon: '',
     badgeColor: '#d97706',
     badgeBg: 'rgba(217, 119, 6, 0.18)',
     description: 'Dessecação, calagem e preparo de sulcos/plantio direto',
@@ -271,7 +271,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   plantio: {
     key: 'plantio',
     label: 'Plantio / Semeadura',
-    icon: '🌱',
+    icon: '',
     badgeColor: '#10b981',
     badgeBg: 'rgba(16, 185, 129, 0.18)',
     description: 'Semeadora em campo e deposição das sementes',
@@ -279,7 +279,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   emergencia: {
     key: 'emergencia',
     label: 'Emergência (VE - V1)',
-    icon: '🌿',
+    icon: '',
     badgeColor: '#22c55e',
     badgeBg: 'rgba(34, 197, 94, 0.18)',
     description: 'Plântulas rompendo o solo com estande homogêneo',
@@ -287,7 +287,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   crescimento: {
     key: 'crescimento',
     label: 'Crescimento Vegetativo',
-    icon: '🍃',
+    icon: '',
     badgeColor: '#16a34a',
     badgeBg: 'rgba(22, 163, 74, 0.22)',
     description: 'Desenvolvimento das folhas, nós e fechamento de entrelinhas',
@@ -295,7 +295,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   floracao: {
     key: 'floracao',
     label: 'Floração (R1 - R2)',
-    icon: '🌸',
+    icon: '',
     badgeColor: '#ec4899',
     badgeBg: 'rgba(236, 72, 153, 0.22)',
     description: 'Abertura das flores e definição do potencial de vagens/grãos',
@@ -303,7 +303,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   enchimento: {
     key: 'enchimento',
     label: 'Enchimento de Grãos (R3 - R6)',
-    icon: '🌾',
+    icon: '',
     badgeColor: '#eab308',
     badgeBg: 'rgba(234, 179, 8, 0.22)',
     description: 'Acúmulo de matéria seca e granação das vagens/espigas',
@@ -311,7 +311,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   colheita: {
     key: 'colheita',
     label: 'Maturação e Colheita',
-    icon: '🚜',
+    icon: '',
     badgeColor: '#f97316',
     badgeBg: 'rgba(249, 115, 22, 0.22)',
     description: 'Ponto de maturidade ideal e colhedoras operando',
@@ -319,7 +319,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   colhido: {
     key: 'colhido',
     label: 'Safra Colhida',
-    icon: '📦',
+    icon: '',
     badgeColor: '#64748b',
     badgeBg: 'rgba(100, 116, 139, 0.18)',
     description: 'Área colhida aguardando próxima safra ou dessecação',
@@ -327,7 +327,7 @@ export const CROP_PHASE_META: Record<CropPhaseKey, CropPhaseInfo> = {
   pastagem: {
     key: 'pastagem',
     label: 'Pastagem Perene',
-    icon: '🐂',
+    icon: '',
     badgeColor: '#059669',
     badgeBg: 'rgba(5, 150, 105, 0.2)',
     description: 'Pastagem contínua para pastejo rotacionado de gado',

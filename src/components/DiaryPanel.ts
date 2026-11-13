@@ -29,19 +29,19 @@ interface TypeDef {
 
 const COMBATE_ALVOS = ['Lagarta-do-cartucho', 'Percevejo', 'Ferrugem-asiática', 'Mancha-alvo', 'Buva', 'Capim-amargoso', 'Mofo-branco', 'Cigarrinha'];
 const TYPES: TypeDef[] = [
-  { key: 'preparo', icon: '🚜', prod: 'implement', sugg: ['Subsolagem', 'Escarificação', 'Gradagem', 'Aração', 'Sem preparo (plantio direto)'], depth: true },
-  { key: 'calagem', icon: '⛰️', prod: 'product', sugg: ['Calcário dolomítico', 'Calcário calcítico', 'Gesso agrícola'], units: ['t/ha', 'kg/ha'] },
-  { key: 'plantio', icon: '🌾', prod: 'cultivar', units: ['kg/ha', 'sem/m'] },
-  { key: 'adubacao', icon: '🌱', prod: 'product', sugg: ['MAP', 'Ureia', 'Cloreto de potássio (KCl)', 'Superfosfato simples', 'Sulfato de amônio', 'NPK 04-30-10', 'NPK 08-28-16', 'NPK 20-05-20'], units: ['kg/ha'] },
-  { key: 'foliar', icon: '🍃', prod: 'product', sugg: ['Boro', 'Zinco', 'Manganês', 'Molibdênio', 'Cobalto + Molibdênio', 'Bioestimulante'], units: ['L/ha', 'kg/ha'] },
-  { key: 'aplicacao', icon: '🧪', prod: 'product', units: ['L/ha', 'kg/ha', 'g/ha', 'mL/ha'], cat: true, target: COMBATE_ALVOS },
-  { key: 'irrigacao', icon: '💧', units: ['mm'] },
-  { key: 'chuva', icon: '🌧️', units: ['mm'] },
-  { key: 'monitoramento', icon: '🔍', target: COMBATE_ALVOS },
-  { key: 'colheita', icon: '🌽', units: ['sc/ha'] },
-  { key: 'ocorrencia', icon: '⛈️', target: ['Granizo', 'Geada', 'Veranico', 'Enchente', 'Vendaval', 'Incêndio'] },
-  { key: 'analise_solo', icon: '🧫' },
-  { key: 'observacao', icon: '📝' },
+  { key: 'preparo', icon: '', prod: 'implement', sugg: ['Subsolagem', 'Escarificação', 'Gradagem', 'Aração', 'Sem preparo (plantio direto)'], depth: true },
+  { key: 'calagem', icon: '', prod: 'product', sugg: ['Calcário dolomítico', 'Calcário calcítico', 'Gesso agrícola'], units: ['t/ha', 'kg/ha'] },
+  { key: 'plantio', icon: '', prod: 'cultivar', units: ['kg/ha', 'sem/m'] },
+  { key: 'adubacao', icon: '', prod: 'product', sugg: ['MAP', 'Ureia', 'Cloreto de potássio (KCl)', 'Superfosfato simples', 'Sulfato de amônio', 'NPK 04-30-10', 'NPK 08-28-16', 'NPK 20-05-20'], units: ['kg/ha'] },
+  { key: 'foliar', icon: '', prod: 'product', sugg: ['Boro', 'Zinco', 'Manganês', 'Molibdênio', 'Cobalto + Molibdênio', 'Bioestimulante'], units: ['L/ha', 'kg/ha'] },
+  { key: 'aplicacao', icon: '', prod: 'product', units: ['L/ha', 'kg/ha', 'g/ha', 'mL/ha'], cat: true, target: COMBATE_ALVOS },
+  { key: 'irrigacao', icon: '', units: ['mm'] },
+  { key: 'chuva', icon: '', units: ['mm'] },
+  { key: 'monitoramento', icon: '', target: COMBATE_ALVOS },
+  { key: 'colheita', icon: '', units: ['sc/ha'] },
+  { key: 'ocorrencia', icon: '', target: ['Granizo', 'Geada', 'Veranico', 'Enchente', 'Vendaval', 'Incêndio'] },
+  { key: 'analise_solo', icon: '' },
+  { key: 'observacao', icon: '' },
 ];
 const CATS = ['herbicida', 'fungicida', 'inseticida', 'dessecacao', 'outro'];
 const NEEDS_DOSE = (d: TypeDef) => !!d.units;
@@ -165,8 +165,8 @@ export class DiaryPanel {
   private save(): void {
     const farm = this.opts.getFarm();
     const def = TYPES.find((x) => x.key === this.f.type)!;
-    if (!this.sel.size) { this.msg = '⚠️ ' + dj('pickField'); this.paintMsg(); return; }
-    if (!this.f.date) { this.msg = '⚠️ ' + dj('pickDate'); this.paintMsg(); return; }
+    if (!this.sel.size) { this.msg = '' + dj('pickField'); this.paintMsg(); return; }
+    if (!this.f.date) { this.msg = '' + dj('pickDate'); this.paintMsg(); return; }
     const gid = `g${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
     const amt = this.f.amount.trim() ? Number(this.f.amount.replace(',', '.')) : NaN;
     const rain = this.f.rain.trim() ? Number(this.f.rain.replace(',', '.')) : NaN;
@@ -190,7 +190,7 @@ export class DiaryPanel {
       n++;
     });
     this.opts.onChange();
-    this.msg = '✅ ' + dj('saved', { n });
+    this.msg = '' + dj('saved', { n });
     this.f.amount = ''; this.f.product = ''; this.f.target = ''; this.f.depth = ''; this.f.rain = ''; this.f.note = '';
     this.render();
     void this.enrichAll();
@@ -199,7 +199,7 @@ export class DiaryPanel {
   private del(btn: HTMLElement): void {
     if (btn.dataset.armed !== '1') {
       btn.dataset.armed = '1'; btn.classList.add('armed'); btn.textContent = dj('delSure');
-      window.setTimeout(() => { if (btn.isConnected) { btn.dataset.armed = ''; btn.classList.remove('armed'); btn.textContent = '🗑️'; } }, 3000);
+      window.setTimeout(() => { if (btn.isConnected) { btn.dataset.armed = ''; btn.classList.remove('armed'); btn.textContent = '×'; } }, 3000);
       return;
     }
     const ids = new Set((btn.dataset.del || '').split(','));
@@ -235,7 +235,7 @@ export class DiaryPanel {
 
   private paintFilled(n: number): void {
     const el = this.overlay?.querySelector('#dj-filled');
-    if (el) el.textContent = '🛰️ ' + dj('wxFilled', { n });
+    if (el) el.textContent = '' + dj('wxFilled', { n });
   }
 
   /* ---------- tela ---------- */
@@ -243,10 +243,10 @@ export class DiaryPanel {
     if (!this.overlay) return;
     this.overlay.innerHTML = `
       <div class="mkp-card dj-card">
-        <div class="mkp-head"><div><h2>📓 ${esc(dj('title'))}</h2><p>${esc(dj('sub'))}</p></div>
+        <div class="mkp-head"><div><h2>${esc(dj('title'))}</h2><p>${esc(dj('sub'))}</p></div>
           <button type="button" class="mkp-x" data-act="close" aria-label="${esc(dj('close'))}">×</button></div>
         <div class="mkp-body">
-          <button type="button" class="dj-estela" data-act="estela">💬 ${esc(dj('estela'))}</button>
+          <button type="button" class="dj-estela" data-act="estela">${esc(dj('estela'))}</button>
           <section id="dj-form"></section>
           <section id="dj-complete"></section>
           <section id="dj-timeline"></section>
@@ -283,7 +283,7 @@ export class DiaryPanel {
     fields.push(`<label class="dj-f dj-w3"><span>${esc(dj('note'))}</span><input type="text" data-f="note" value="${esc(this.f.note)}"></label>`);
     const max = [todayIso(), this.opts.getRefDate()].sort().pop()!;
     box.innerHTML = `
-      <h3>✍️ ${esc(dj('newRec'))}</h3>
+      <h3>${esc(dj('newRec'))}</h3>
       <div class="dj-row">
         <label class="dj-f"><span>${esc(dj('date'))}</span><input type="date" data-f="date" value="${esc(this.f.date)}" max="${max}"></label>
       </div>
@@ -293,9 +293,9 @@ export class DiaryPanel {
       <div class="dj-lab">${esc(dj('what'))}</div>
       <div class="dj-types">${types}</div>
       <div class="dj-fields">${fields.join('')}</div>
-      ${def.key !== 'chuva' ? `<p class="dj-hint">🛰️ ${esc(dj('rainHint'))}</p>` : ''}
+      ${def.key !== 'chuva' ? `<p class="dj-hint">${esc(dj('rainHint'))}</p>` : ''}
       ${dl}${tl}
-      <div class="dj-save"><button type="button" class="dj-primary" data-act="save">💾 ${esc(dj('save'))}</button><span id="dj-msg" class="dj-msg">${esc(this.msg)}</span></div>`;
+      <div class="dj-save"><button type="button" class="dj-primary" data-act="save">${esc(dj('save'))}</button><span id="dj-msg" class="dj-msg">${esc(this.msg)}</span></div>`;
   }
 
   private paintMsg(): void { const m = this.overlay?.querySelector('#dj-msg'); if (m) m.textContent = this.msg; }
@@ -315,7 +315,7 @@ export class DiaryPanel {
     const names = stale.slice(0, 12).map((t) => `<button type="button" class="dj-mini warn" data-reg="${t.id}" title="${esc(dj('register'))}">${esc(t.name)} ＋</button>`).join('');
     const extra = stale.length > 12 ? `<span class="dj-more-n">+${stale.length - 12}</span>` : '';
     box.innerHTML = `
-      <h3>📊 ${esc(dj('complete'))}</h3>
+      <h3>${esc(dj('complete'))}</h3>
       <div class="dj-bar" role="img" aria-label="${pct}%"><i style="width:${pct}%"></i></div>
       <p class="dj-sum"><b>${pct}%</b> · ${esc(dj('completeN', { a: ok, n: act.length }))}</p>
       ${stale.length ? `<div class="dj-lab">${esc(dj('missing'))}</div><div class="dj-quick">${names}${extra}</div>` : ''}
@@ -356,18 +356,18 @@ export class DiaryPanel {
       const bits: string[] = [];
       if (e0.category) bits.push(esc(dj('c_' + e0.category)));
       if (e0.product) bits.push(esc(e0.product));
-      if (e0.target) bits.push('🎯 ' + esc(e0.target));
+      if (e0.target) bits.push('' + esc(e0.target));
       if (typeof e0.amount === 'number') bits.push(`${esc(nf(e0.amount, 2))} ${esc(e0.unit || '')}`);
       if (typeof e0.depth === 'number') bits.push(`${esc(nf(e0.depth, 1))} cm`);
       const who = g.items.length > 1 ? `${esc(dj('fieldsN', { n: g.items.length }))}` : esc(g.items[0].t.name);
       const title = g.items.length > 1 ? ` title="${esc(g.items.map((x) => x.t.name).join(', '))}"` : '';
       const ids = g.items.map((x) => x.e.id).join(',');
-      return `${head}<div class="dj-ent"><span class="dj-ic">${def?.icon || '📝'}</span><div class="dj-et"><b>${esc(dj('t_' + g.type))}</b> <span class="dj-who"${title}>· ${who}</span>${bits.length ? `<div class="dj-bits">${bits.join(' · ')}</div>` : ''}${e0.note ? `<div class="dj-note">${esc(e0.note)}</div>` : ''}</div><button type="button" class="dj-del" data-del="${ids}" aria-label="${esc(dj('del'))}">🗑️</button></div>`;
+      return `${head}<div class="dj-ent"><span class="dj-ic">${def?.icon || ''}</span><div class="dj-et"><b>${esc(dj('t_' + g.type))}</b> <span class="dj-who"${title}>· ${who}</span>${bits.length ? `<div class="dj-bits">${bits.join(' · ')}</div>` : ''}${e0.note ? `<div class="dj-note">${esc(e0.note)}</div>` : ''}</div><button type="button" class="dj-del" data-del="${ids}" aria-label="${esc(dj('del'))}">×</button></div>`;
     }).join('');
     const tOpts = `<option value="">${esc(dj('fAll'))}</option>` + farm.talhoes.map((t) => `<option value="${t.id}" ${this.filterTl === t.id ? 'selected' : ''}>${esc(t.name)}</option>`).join('');
     const yOpts = `<option value="">${esc(dj('fAllTypes'))}</option>` + TYPES.map((x) => `<option value="${x.key}" ${this.filterType === x.key ? 'selected' : ''}>${esc(dj('t_' + x.key))}</option>`).join('');
     box.innerHTML = `
-      <h3>🗓️ ${esc(dj('timeline'))}</h3>
+      <h3>${esc(dj('timeline'))}</h3>
       <div class="dj-filters"><label class="dj-f"><span>${esc(dj('fField'))}</span><select data-flt="tl">${tOpts}</select></label><label class="dj-f"><span>${esc(dj('fType'))}</span><select data-flt="type">${yOpts}</select></label></div>
       ${rows || `<p class="dj-empty">${esc(dj('empty'))}</p>`}
       ${groups.length > this.shown ? `<button type="button" class="dj-mini" data-act="more">${esc(dj('more'))}</button>` : ''}`;
@@ -391,8 +391,8 @@ export class DiaryPanel {
       const a = w[x.dataset.wx!];
       if (!a) { x.textContent = dj('noWx'); return; }
       const parts: string[] = [];
-      if (a.rain !== null) parts.push(`☔ ${nf(a.rain, 1)} mm`);
-      if (a.tmax !== null && a.tmin !== null) parts.push(`🌡️ ${nf(a.tmin, 0)}°–${nf(a.tmax, 0)}°`);
+      if (a.rain !== null) parts.push(`${nf(a.rain, 1)} mm`);
+      if (a.tmax !== null && a.tmin !== null) parts.push(`${nf(a.tmin, 0)}°–${nf(a.tmax, 0)}°`);
       x.textContent = parts.length ? `${parts.join(' · ')} · ${a.src}` : dj('noWx');
     });
   }

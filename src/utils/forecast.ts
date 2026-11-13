@@ -2,7 +2,7 @@
  * Previsão de produtividade x resultado (aprendizado).
  *
  * Fonte da previsão, por ordem:
- *  1) modelo do MyRoça (serviço externo, configurado em VITE_FORECAST_URL);
+ *  1) modelo do SpaceAgro (serviço externo, configurado em VITE_FORECAST_URL);
  *  2) linha de base: média das safras anteriores da mesma cultura no talhão
  *     (histórico de safras + colheitas registradas no diário).
  * Cada colheita registrada no diário é comparada com a previsão que existia antes dela

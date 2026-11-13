@@ -420,7 +420,7 @@ export function getRioVerdeDemoFarm(): FarmData {
   const talhao3Coords: [number, number][] = CAR_TALHOES[2];
 
   const demoFarm: FarmData = {
-    farmName: 'Fazenda MyRoça - Rio Verde (GO)',
+    farmName: 'Fazenda SpaceAgro - Rio Verde (GO)',
     referenceDate: '2026-11-09',
     activeViewMode: 'mapa',
     talhoes: [
@@ -718,6 +718,16 @@ export function localizeExampleNames(farm: FarmData): boolean {
 
   farm.talhoes.forEach(apply);
   farm.waterPoints.forEach(apply);
+
+  // A fazenda de exemplo salva antes da troca de marca ainda tem o nome antigo: acompanha o novo nome
+  if (farm.farmName === 'Fazenda My' + 'Roça - Rio Verde (GO)') setIf(farm, 'farmName', 'Fazenda SpaceAgro - Rio Verde (GO)');
+
+  // Nomes automáticos ("Field 4", "Talhão 4", "Parcela 4"…) acompanham o idioma atual; nomes dados pelo produtor não mudam.
+  const AUTO_NAME = /^(Talhão|Parcela|Field|Schlag|地块|Parcelle)\s*(\d+)$/;
+  farm.talhoes.forEach((tl) => {
+    const m = tl.name.trim().match(AUTO_NAME);
+    if (m) setIf(tl, 'name', t('defaultTalhaoName', { n: m[2] }));
+  });
 
   // Notas dos itens de exemplo
   const noteKeys: Record<string, keyof TranslationDictionary> = {

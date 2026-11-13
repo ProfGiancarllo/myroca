@@ -31,8 +31,8 @@ export function playIntro(): Promise<void> {
     const root = document.createElement('div');
     root.id = 'intro-video';
     root.innerHTML = `<canvas></canvas><div class="iv-cap" id="iv-cap"></div>
-      <div class="iv-end" id="iv-end"><div class="iv-title">${tx('cta')}</div><div class="iv-sub">MyRoça · NASA Space Apps Challenge 2026</div><button type="button" id="iv-enter">${tx('enter')} ➜</button></div>
-      <button type="button" class="iv-skip" id="iv-skip">${tx('skip')} ⏭</button>`;
+      <div class="iv-end" id="iv-end"><div class="iv-title">${tx('cta')}</div><div class="iv-sub">SpaceAgro · NASA Space Apps Challenge 2026</div><button type="button" id="iv-enter">${tx('enter')} ➜</button></div>
+      <button type="button" class="iv-skip" id="iv-skip">${tx('skip')} </button>`;
     document.body.appendChild(root);
     const cv = root.querySelector('canvas') as HTMLCanvasElement;
     const ctx = cv.getContext('2d')!;

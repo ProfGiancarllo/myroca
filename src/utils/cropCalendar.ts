@@ -1,7 +1,7 @@
 import { CropPhaseKey, CropPhaseInfo, CROP_PHASE_META, Talhao } from '../types';
 
 /**
- * Standard crops supported in MyRoça with their predefined cycle days and thematic colors
+ * Standard crops supported in SpaceAgro with their predefined cycle days and thematic colors
  */
 export const STANDARD_CROPS = [
   'Soja',

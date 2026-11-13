@@ -226,12 +226,12 @@ export class FarmGameView {
         <div class="game-floating-left-panel" id="game-left-panel">
           <div class="panel-header-row">
             <div class="panel-title-group">
-              <span class="panel-header-icon">⛅</span>
+              <span class="panel-header-icon"></span>
               <span class="panel-title-text" id="game-panel-title-text">${t('weatherAndLegend')}</span>
               <span class="badge-exemplo" id="game-panel-badge-exemplo">${t('exampleBadge')}</span>
             </div>
             <button class="btn-panel-toggle" id="btn-toggle-left-panel" title="${t('collapseExpand')}">
-              ◀
+              
             </button>
           </div>
 
@@ -239,10 +239,10 @@ export class FarmGameView {
             <!-- Weather Card -->
             <div class="game-weather-compact">
               <div class="weather-temp-row">
-                <span class="weather-art-icon" id="game-weather-icon">⛅</span>
+                <span class="weather-art-icon" id="game-weather-icon"></span>
                 <span class="weather-temp" id="game-weather-temp">--°C</span>
                 <div class="weather-desc" id="game-weather-desc"></div>
-                <button type="button" class="weather-fix-btn" id="btn-weather-fix" title="${wt('fix')}">✏️</button>
+                <button type="button" class="weather-fix-btn" id="btn-weather-fix" title="${wt('fix')}">${wt('fix')}</button>
               </div>
               <div class="weather-metrics-row" id="game-weather-metrics"></div>
               <div class="weather-src" id="game-weather-src"></div>
@@ -284,7 +284,7 @@ export class FarmGameView {
         <!-- WEATHER CHIP (sempre visível) -->
         <div class="weather-chip-wrap" id="weather-chip-wrap">
           <button type="button" class="weather-chip" id="weather-chip" title="${wt('fix')}">
-            <span id="chip-weather-icon">⛅</span>
+            <span id="chip-weather-icon"></span>
             <strong id="chip-weather-temp">--°C</strong>
             <span id="chip-weather-desc"></span>
           </button>
@@ -299,11 +299,11 @@ export class FarmGameView {
         <div class="game-floating-right-controls">
           <button class="btn-game-hud-control" id="btn-game-zoom-in" title="${t('zoomIn')}">+</button>
           <button class="btn-game-hud-control" id="btn-game-zoom-out" title="${t('zoomOut')}">&minus;</button>
-          <button class="btn-game-hud-control" id="btn-game-reset-view" title="${t('centerFarm')}">🎯</button>
+          <button class="btn-game-hud-control" id="btn-game-reset-view" title="${t('centerFarm')}" aria-label="${t('centerFarm')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
           <button class="btn-game-hud-control" id="btn-game-more" title="Mais">⋯</button>
           <div class="game-more-menu" id="game-more-menu" style="display:none">
-            <button class="btn-game-hud-control" id="btn-game-move-mode" title="${t('moveModeBtn')}">✋</button>
-            <button class="btn-game-hud-control" id="btn-game-avatar" title="${t('avBtn')}">🧑‍🌾</button>
+            <button class="btn-game-hud-control" id="btn-game-move-mode" title="${t('moveModeBtn')}" aria-label="${t('moveModeBtn')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg></button>
+            <button class="btn-game-hud-control" id="btn-game-avatar" title="${t('avBtn')}" aria-label="${t('avBtn')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></button>
           </div>
         </div>
 
@@ -363,7 +363,7 @@ export class FarmGameView {
           <div class="game-talhao-sheet-card">
             <div class="sheet-header">
               <div class="sheet-title-group">
-                <span class="sheet-crop-icon" id="sheet-crop-icon">🌱</span>
+                <span class="sheet-crop-icon" id="sheet-crop-icon"></span>
                 <div>
                   <h3 class="sheet-title" id="sheet-talhao-name">Talhão 01</h3>
                   <div class="sheet-subtitle">
@@ -402,32 +402,32 @@ export class FarmGameView {
                 </div>
                 <div class="sheet-phases-track" id="sheet-phases-track">
                   <div class="sheet-track-step" data-phase="preparo">
-                    <span class="sheet-track-icon">🚜</span>
+                    <span class="sheet-track-icon"></span>
                     <span class="sheet-track-label">${translateCropPhase('preparo')}</span>
                   </div>
                   <div class="sheet-track-arrow">➔</div>
                   <div class="sheet-track-step" data-phase="plantio">
-                    <span class="sheet-track-icon">🌱</span>
+                    <span class="sheet-track-icon"></span>
                     <span class="sheet-track-label">${translateCropPhase('plantio')}</span>
                   </div>
                   <div class="sheet-track-arrow">➔</div>
                   <div class="sheet-track-step" data-phase="crescimento">
-                    <span class="sheet-track-icon">🌿</span>
+                    <span class="sheet-track-icon"></span>
                     <span class="sheet-track-label">${translateCropPhase('crescimento')}</span>
                   </div>
                   <div class="sheet-track-arrow">➔</div>
                   <div class="sheet-track-step" data-phase="floracao">
-                    <span class="sheet-track-icon">🌸</span>
+                    <span class="sheet-track-icon"></span>
                     <span class="sheet-track-label">${translateCropPhase('floracao')}</span>
                   </div>
                   <div class="sheet-track-arrow">➔</div>
                   <div class="sheet-track-step" data-phase="enchimento">
-                    <span class="sheet-track-icon">🌾</span>
+                    <span class="sheet-track-icon"></span>
                     <span class="sheet-track-label">${translateCropPhase('enchimento')}</span>
                   </div>
                   <div class="sheet-track-arrow">➔</div>
                   <div class="sheet-track-step" data-phase="colheita">
-                    <span class="sheet-track-icon">🚜</span>
+                    <span class="sheet-track-icon"></span>
                     <span class="sheet-track-label">${translateCropPhase('colheita')}</span>
                   </div>
                 </div>
@@ -453,14 +453,14 @@ export class FarmGameView {
               </div>
 
               <div class="sheet-history-box" id="sheet-history-box">
-                <div class="history-title" id="lbl-sheet-history-title">📜 ${t('harvestHistoryTitle')}</div>
+                <div class="history-title" id="lbl-sheet-history-title">${t('harvestHistoryTitle')}</div>
                 <div id="sheet-history-list" class="history-items-list"></div>
               </div>
 
               <div class="sheet-nasa-box" id="sheet-nasa-box">
                 <div class="diary-head">
                   <div>
-                    <div class="history-title" id="lbl-sheet-nasa-title" style="margin:0">🛰️ ${t('nasaTitle')}</div>
+                    <div class="history-title" id="lbl-sheet-nasa-title" style="margin:0">${t('nasaTitle')}</div>
                     <div class="nasa-period" id="sheet-nasa-period"></div>
                   </div>
                   <button type="button" class="nasa-refresh-btn" id="btn-nasa-refresh">⟳ ${t('nasaRefresh')}</button>
@@ -471,11 +471,11 @@ export class FarmGameView {
               <div class="sheet-tiago-box" id="sheet-tiago-box" style="display:none"></div>
 
               <div class="sheet-forecast-box" id="sheet-forecast-box" style="display:none"></div>
-              <button type="button" class="diary-btn-ghost" id="btn-sheet-rotation" style="margin-top:10px;width:100%">🔄 ${rt('open')}</button>
+              <button type="button" class="diary-btn-ghost" id="btn-sheet-rotation" style="margin-top:10px;width:100%">${rt('open')}</button>
 
               <div class="sheet-diary-box" id="sheet-diary-box">
                 <div class="diary-head">
-                  <div class="history-title" id="lbl-sheet-diary-title" style="margin:0">📒 ${t('diaryTitle')}</div>
+                  <div class="history-title" id="lbl-sheet-diary-title" style="margin:0">${t('diaryTitle')}</div>
                   <button type="button" class="diary-add-btn" id="btn-diary-add">＋ ${t('diaryAdd')}</button>
                 </div>
                 <div id="sheet-diary-form" class="diary-form" style="display:none"></div>
@@ -487,10 +487,10 @@ export class FarmGameView {
 
             <div class="sheet-footer">
               <button class="btn btn-outline btn-lg" id="btn-sheet-view-real-map">
-                <span>🗺️</span> <span id="lbl-btn-view-map">${t('viewOnRealMap')}</span>
+                <span></span> <span id="lbl-btn-view-map">${t('viewOnRealMap')}</span>
               </button>
               <button class="btn btn-primary btn-xl" id="btn-sheet-open-calendar">
-                <span>📅</span> <span id="lbl-btn-crop-cal">${t('cropCalendar')}</span>
+                <span></span> <span id="lbl-btn-crop-cal">${t('cropCalendar')}</span>
               </button>
             </div>
           </div>
@@ -991,7 +991,7 @@ export class FarmGameView {
     const applyPanel = () => {
       if (leftContent) leftContent.style.display = this.isLeftPanelCollapsed ? 'none' : 'block';
       if (toggleBtn) {
-        toggleBtn.innerText = this.isLeftPanelCollapsed ? '▶' : '◀';
+        toggleBtn.innerText = this.isLeftPanelCollapsed ? '›' : '‹';
         toggleBtn.title = this.isLeftPanelCollapsed ? 'Expandir painel' : 'Recolher painel';
       }
     };
@@ -1004,7 +1004,7 @@ export class FarmGameView {
         leftContent.style.display = this.isLeftPanelCollapsed ? 'none' : 'block';
       }
       if (toggleBtn) {
-        toggleBtn.innerText = this.isLeftPanelCollapsed ? '▶' : '◀';
+        toggleBtn.innerText = this.isLeftPanelCollapsed ? '›' : '‹';
         toggleBtn.title = this.isLeftPanelCollapsed ? 'Expandir painel' : 'Recolher painel';
       }
     });
@@ -1197,7 +1197,7 @@ export class FarmGameView {
     if (!el) return;
     if (this.draggingMoved) {
       this.callbacks.onElementMoved?.(el);
-      this.showHint(`✅ ${t('elemMoved')}`);
+      this.showHint(`${t('elemMoved')}`);
     } else {
       // toque sem arrastar no modo mover: abre o cartão
       this.callbacks.onElementSelect(el);
@@ -1218,7 +1218,7 @@ export class FarmGameView {
     const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
     card.innerHTML = `
       <div class="elem-card-head">
-        <span class="elem-card-icon">${meta?.icon || '📍'}</span>
+        <span class="elem-card-icon">${meta?.icon || ''}</span>
         <div class="elem-card-titles">
           <strong>${esc(wp.name)}</strong>
           <small>${esc(meta?.label || wp.type)}</small>
@@ -1228,8 +1228,8 @@ export class FarmGameView {
       ${meta?.description ? `<p class="elem-card-desc">${esc(meta.description)}</p>` : ''}
       ${wp.notes ? `<p class="elem-card-notes">${esc(wp.notes)}</p>` : ''}
       <div class="elem-card-actions">
-        <button data-act="move">✋ ${t('elemMove')}</button>
-        <button data-act="walk">🚶 ${t('elemGoThere')}</button>
+        <button data-act="move">${t('elemMove')}</button>
+        <button data-act="walk">${t('elemGoThere')}</button>
       </div>`;
     card.style.display = 'block';
     card.onclick = (ev) => {
@@ -1628,7 +1628,7 @@ export class FarmGameView {
       ctx.stroke();
       ctx.restore();
 
-      // 4. Field Operation Badge over Talhão (e.g. Tractor 🚜)
+      // 4. Field Operation Badge over Talhão (e.g. Tractor )
       this.renderOperationBadge(screenPts, cropStatus, talhao);
     });
   }
@@ -1826,21 +1826,21 @@ export class FarmGameView {
     // Secondary line: Next operation with representative icon
     let secondaryText = '';
     if (isPasture) {
-      secondaryText = `🐂 ${t('opNextPasture')}`;
+      secondaryText = `${t('opNextPasture')}`;
     } else if (cropStatus.phase.key === 'colheita') {
-      secondaryText = `🌾 ${t('opNextHarvest')}`;
+      secondaryText = `${t('opNextHarvest')}`;
     } else if (cropStatus.phase.key === 'enchimento') {
-      secondaryText = `🚜 ${t('opNextFilling')}`;
+      secondaryText = `${t('opNextFilling')}`;
     } else if (cropStatus.phase.key === 'floracao') {
-      secondaryText = `🚜 ${t('opNextFlowering')}`;
+      secondaryText = `${t('opNextFlowering')}`;
     } else if (cropStatus.phase.key === 'crescimento') {
-      secondaryText = `🚜 ${t('opNextGrowth')}`;
+      secondaryText = `${t('opNextGrowth')}`;
     } else if (cropStatus.phase.key === 'emergencia' || cropStatus.phase.key === 'plantio') {
-      secondaryText = `🚜 ${t('opNextEmergence')}`;
+      secondaryText = `${t('opNextEmergence')}`;
     } else if (cropStatus.phase.key === 'preparo') {
-      secondaryText = `🚜 ${t('opNextPrep')}`;
+      secondaryText = `${t('opNextPrep')}`;
     } else {
-      secondaryText = `🚜 ${t('opNextPlanning')}`;
+      secondaryText = `${t('opNextPlanning')}`;
     }
 
     ctx.font = 'bold 12px sans-serif';
@@ -2248,7 +2248,7 @@ export class FarmGameView {
 
   private drawGenericPin(ctx: CanvasRenderingContext2D, type: string): void {
     const meta = FARM_ELEMENT_META[type as keyof typeof FARM_ELEMENT_META];
-    const icon = meta ? meta.icon : '📍';
+    const icon = meta ? meta.icon : '';
 
     ctx.font = '24px sans-serif';
     ctx.textAlign = 'center';
@@ -2339,7 +2339,7 @@ export class FarmGameView {
   private renderWeatherPanel(): void {
     const w = this.weather;
     if (!w) return;
-    const icon: Record<Condition, string> = { clear: '☀️', partly: '⛅', cloudy: '☁️', rain: '🌧️', storm: '⛈️' };
+    const icon: Record<Condition, string> = { clear: '', partly: '', cloudy: '', rain: '', storm: '' };
     const setText = (id: string, v: string) => { const el = document.getElementById(id); if (el) el.innerText = v; };
     setText('game-weather-icon', icon[w.cond]);
     setText('game-weather-temp', w.tempC !== null ? `${Math.round(w.tempC)}°C` : '--°C');
@@ -2351,7 +2351,7 @@ export class FarmGameView {
       metrics.innerHTML = `<span>${wt('rainLbl')}: <strong>${dash(w.rainMm, 'mm')}</strong></span> • <span>${wt('humLbl')}: <strong>${w.humidity === null ? '—' : Math.round(w.humidity) + '%'}</strong></span> • <span>${wt('windLbl')}: <strong>${dash(w.windKmh, 'km/h')}</strong></span>`;
     }
     const src = w.source === 'openmeteo' ? wt('srcOpenMeteo') : w.source === 'nasa' ? wt('srcNasa', { d: w.note || '' }) : w.source === 'manual' ? wt('srcManual') : wt('srcEstimate');
-    setText('game-weather-src', (w.source === 'nasa' ? '🛰️ ' : '') + src);
+    setText('game-weather-src', (w.source === 'nasa' ? '' : '') + src);
     const fixBtn = document.getElementById('btn-weather-fix');
     if (fixBtn) fixBtn.title = wt('fix');
     // chip sempre visível
@@ -2360,7 +2360,7 @@ export class FarmGameView {
     setText('chip-weather-desc', wt(w.cond));
     const cm = document.getElementById('chip-weather-metrics');
     if (cm && metrics) cm.innerHTML = metrics.innerHTML;
-    setText('chip-weather-src', (w.source === 'nasa' ? '🛰️ ' : '') + src);
+    setText('chip-weather-src', (w.source === 'nasa' ? '' : '') + src);
   }
 
   private toggleWeatherChip(): void {
@@ -2371,7 +2371,7 @@ export class FarmGameView {
     if (open) {
       const fx = document.getElementById('chip-weather-fix');
       if (fx) {
-        fx.innerHTML = '<div class="weather-fix-pop" id="chip-fix-inner" style="display:none;position:static;box-shadow:none;margin-top:6px"></div><button type="button" class="wfix-open" id="chip-fix-open">✏️ ' + wt('fix') + '</button>';
+        fx.innerHTML = '<div class="weather-fix-pop" id="chip-fix-inner" style="display:none;position:static;box-shadow:none;margin-top:6px"></div><button type="button" class="wfix-open" id="chip-fix-open">' + wt('fix') + '</button>';
         document.getElementById('chip-fix-open')?.addEventListener('click', () => this.openWeatherFix('chip-fix-inner'));
       }
     }
@@ -2381,7 +2381,7 @@ export class FarmGameView {
     const pop = document.getElementById(popId);
     if (!pop) return;
     if (pop.style.display !== 'none') { pop.style.display = 'none'; return; }
-    const opts: [Condition, string][] = [['clear', '☀️'], ['partly', '⛅'], ['cloudy', '☁️'], ['rain', '🌧️'], ['storm', '⛈️']];
+    const opts: [Condition, string][] = [['clear', ''], ['partly', ''], ['cloudy', ''], ['rain', ''], ['storm', '']];
     pop.innerHTML = `<div class="wfix-title">${wt('fixTitle')}</div>
       <div class="wfix-row">${opts.map(([c, i]) => `<button type="button" data-wx="${c}" title="${wt(c)}">${i}<span>${wt(c)}</span></button>`).join('')}</div>
       <button type="button" class="wfix-auto" data-wx="auto">↺ ${wt('auto')}</button>`;
@@ -2410,7 +2410,7 @@ export class FarmGameView {
       const wp = this.hoveredElement;
       const sp = this.worldToScreen(wp.coordinates[0], wp.coordinates[1]);
       const meta = FARM_ELEMENT_META[wp.type as keyof typeof FARM_ELEMENT_META];
-      const icon = meta ? meta.icon : '📍';
+      const icon = meta ? meta.icon : '';
       const label = `${icon} ${wp.name.replace(' [Exemplo]', '')}`;
 
       this.drawHighContrastTooltip(ctx, sp.x, sp.y - 36, label, t('tapForDetails'));
@@ -2515,10 +2515,10 @@ export class FarmGameView {
 
     if (iconEl) {
       const lower = (talhao.crop || '').toLowerCase();
-      if (lower.includes('soja')) iconEl.innerText = '🌿';
-      else if (lower.includes('milho')) iconEl.innerText = '🌽';
-      else if (lower.includes('pasto')) iconEl.innerText = '🐂';
-      else iconEl.innerText = '🌱';
+      if (lower.includes('soja')) iconEl.innerText = '';
+      else if (lower.includes('milho')) iconEl.innerText = '';
+      else if (lower.includes('pasto')) iconEl.innerText = '';
+      else iconEl.innerText = '';
     }
 
     // Hero highlights
@@ -2553,15 +2553,15 @@ export class FarmGameView {
           .map(
             (h) => `
           <div class="history-item-row">
-            <div style="font-weight: 700; color: #fff;">${h.season} • ${translateCropName(h.crop)}</div>
-            <div style="color: #94a3b8; font-size: 13px;">${t('harvestHistoryTitle')}: ${h.harvestDate} ${h.yieldText ? `• <strong>${h.yieldText}</strong>` : ''}</div>
-            ${h.notes ? `<div style="font-size: 12px; color: #cbd5e1; margin-top: 2px;">${h.notes}</div>` : ''}
+            <div style="font-weight: 700; color: #182b25;">${h.season} • ${translateCropName(h.crop)}</div>
+            <div style="color: #65756e; font-size: 13px;">${t('harvestHistoryTitle')}: ${h.harvestDate} ${h.yieldText ? `• <strong>${h.yieldText}</strong>` : ''}</div>
+            ${h.notes ? `<div style="font-size: 12px; color: #3d5249; margin-top: 2px;">${h.notes}</div>` : ''}
           </div>
         `
           )
           .join('');
       } else {
-        historyListEl.innerHTML = `<div style="color: #94a3b8; font-size: 13px;">${t('noHistoryYet')}</div>`;
+        historyListEl.innerHTML = `<div style="color: #65756e; font-size: 13px;">${t('noHistoryYet')}</div>`;
       }
     }
 
@@ -2573,7 +2573,7 @@ export class FarmGameView {
     // Notice
     const noticeEl = document.getElementById('sheet-simple-notice');
     if (noticeEl) {
-      noticeEl.innerText = `💡 ${cropStatus.statusText}`;
+      noticeEl.innerText = `${cropStatus.statusText}`;
     }
 
     // Phases Track in Sheet
@@ -2632,7 +2632,7 @@ export class FarmGameView {
     periodEl.textContent = '';
     const tiagoBox = document.getElementById('sheet-tiago-box');
     if (tiagoBox) tiagoBox.style.display = 'none';
-    body.innerHTML = `<div class="nasa-msg">⏳ ${t('nasaLoading')}</div>`;
+    body.innerHTML = `<div class="nasa-msg">${t('nasaLoading')}</div>`;
 
     const c = polygonCentroid(talhao.coordinates);
     const ref = this.farmData.referenceDate || '2026-11-09';
@@ -2693,7 +2693,7 @@ export class FarmGameView {
                   : `<span class="fc-err ${r.errorPct >= 0 ? 'fc-up' : 'fc-down'}">${tk(r.errorPct >= 0 ? 'fcErrorUp' : 'fcErrorDown', { pct: formatNumber(Math.abs(r.errorPct), 1) })}</span>`;
               const learned =
                 r.forecastBefore !== null
-                  ? `<div class="fc-learned">🔁 ${t('fcLearned', { from: formatNumber(r.forecastBefore, 1), to: formatNumber(r.baselineAfter, 1) })}</div>`
+                  ? `<div class="fc-learned">${t('fcLearned', { from: formatNumber(r.forecastBefore, 1), to: formatNumber(r.baselineAfter, 1) })}</div>`
                   : '';
               return `<div class="fc-row">
                 <div class="fc-row-top"><strong>${formatDateI18n(r.point.date)}</strong> • ${t('fcActual')}: <strong>${formatNumber(r.point.value, 1)} sc/ha</strong>${r.forecastBefore !== null ? ` • ${t('fcPredicted')}: ${formatNumber(r.forecastBefore, 1)} sc/ha` : ''}</div>
@@ -2704,7 +2704,7 @@ export class FarmGameView {
 
     box.style.display = 'block';
     box.innerHTML = `
-      <div class="history-title">🎯 ${t('fcTitle')}</div>
+      <div class="history-title">${t('fcTitle')}</div>
       <div class="diary-field-label" style="margin-top:0">${t('fcForecast')}</div>
       ${forecastHtml}
       <div class="diary-field-label">${t('fcResults')}</div>
@@ -2729,7 +2729,7 @@ export class FarmGameView {
     const inCycle = !!talhao.plantingDate && phase !== 'preparo';
     const a = assessPlanting(series, ref, talhao.diary, inCycle);
     const alerts = assessCrop(series, phase, talhao.diary, ref);
-    const icon = (s: Severity) => (s === 0 ? '✅' : s === 1 ? '⚠️' : '⛔');
+    const icon = (s: Severity) => `<i class="risk-dot risk-${s === 0 ? 'low' : s === 1 ? 'medium' : 'high'}" aria-hidden="true"></i>`;
     const adviceKey = inCycle
       ? a.level === 'low' ? 'agCropAdviceLow' : a.level === 'medium' ? 'agCropAdviceMedium' : 'agCropAdviceHigh'
       : a.level === 'low' ? 'agAdviceLow' : a.level === 'medium' ? 'agAdviceMedium' : 'agAdviceHigh';
@@ -2737,14 +2737,14 @@ export class FarmGameView {
     box.style.display = 'block';
     box.innerHTML = `
       <div class="tiago-head">
-        <div class="history-title" style="margin:0">🧑‍🌾 ${t(inCycle ? 'agTitleCrop' : 'agTitle')}</div>
+        <div class="history-title" style="margin:0">${t(inCycle ? 'agTitleCrop' : 'agTitle')}</div>
         <span class="tiago-badge tiago-${a.level}">${this.riskLevelLabel(a.level)}</span>
       </div>
       <div class="tiago-advice">${t(adviceKey)}</div>
       <ul class="tiago-factors">
         ${a.factors.map((f) => `<li>${icon(f.severity)} ${tk(f.key, f.params)}</li>`).join('')}
       </ul>
-      ${alerts.map((al) => `<div class="tiago-alert">🚨 ${tk(al.key, al.params)}</div>`).join('')}
+      ${alerts.map((al) => `<div class="tiago-alert">${tk(al.key, al.params)}</div>`).join('')}
       <div class="nasa-source">${t('agBasis')}</div>`;
   }
 
@@ -2814,14 +2814,14 @@ export class FarmGameView {
   // DIÁRIO DE SAFRA
   // ========================================================
   private static readonly DIARY_TYPES: { key: DiaryEntryType; icon: string; unit?: string }[] = [
-    { key: 'plantio', icon: '🌱' },
-    { key: 'adubacao', icon: '🧪', unit: 'kg/ha' },
-    { key: 'aplicacao', icon: '💧', unit: 'L/ha' },
-    { key: 'irrigacao', icon: '🚿', unit: 'mm' },
-    { key: 'chuva', icon: '🌧️', unit: 'mm' },
-    { key: 'monitoramento', icon: '🔍' },
-    { key: 'colheita', icon: '🚜', unit: 'sc/ha' },
-    { key: 'observacao', icon: '📝' },
+    { key: 'plantio', icon: '' },
+    { key: 'adubacao', icon: '', unit: 'kg/ha' },
+    { key: 'aplicacao', icon: '', unit: 'L/ha' },
+    { key: 'irrigacao', icon: '', unit: 'mm' },
+    { key: 'chuva', icon: '', unit: 'mm' },
+    { key: 'monitoramento', icon: '' },
+    { key: 'colheita', icon: '', unit: 'sc/ha' },
+    { key: 'observacao', icon: '' },
   ];
 
   private diaryTypeLabel(key: DiaryEntryType): string {
@@ -2854,7 +2854,7 @@ export class FarmGameView {
     // Lista (mais recente primeiro)
     const entries = [...(talhao.diary || [])].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
     if (entries.length === 0) {
-      listEl.innerHTML = `<div style="color:#94a3b8;font-size:13px;">${t('diaryEmpty')}</div>`;
+      listEl.innerHTML = `<div style="color:#65756e;font-size:13px;">${t('diaryEmpty')}</div>`;
     } else {
       listEl.innerHTML = entries
         .map((e) => {
@@ -2865,11 +2865,11 @@ export class FarmGameView {
           return `
           <div class="diary-row">
             <div class="diary-row-main">
-              <div class="diary-row-title">${meta?.icon || '📝'} ${this.diaryTypeLabel(e.type)}${amount}</div>
+              <div class="diary-row-title">${meta?.icon || ''} ${this.diaryTypeLabel(e.type)}${amount}</div>
               <div class="diary-row-date">${formatDateI18n(e.date)}</div>
               ${note}
             </div>
-            <button type="button" class="diary-del-btn" data-diary-del="${e.id}" title="${this.escapeHtmlText(t('diaryDelete'))}">🗑️</button>
+            <button type="button" class="diary-del-btn" data-diary-del="${e.id}" title="${this.escapeHtmlText(t('diaryDelete'))}" aria-label="${this.escapeHtmlText(t('diaryDelete'))}">×</button>
           </div>`;
         })
         .join('');
@@ -2885,7 +2885,7 @@ export class FarmGameView {
             if (btn.isConnected) {
               btn.dataset.armed = '';
               btn.classList.remove('armed');
-              btn.textContent = '🗑️';
+              btn.textContent = '×';
             }
           }, 3000);
           return;
@@ -2926,7 +2926,7 @@ export class FarmGameView {
       <input id="diary-note" class="diary-input" type="text" maxlength="160" placeholder="${this.escapeHtmlText(t('diaryNotePh'))}" />
       <div class="diary-actions">
         <button type="button" class="diary-btn-ghost" id="diary-cancel">${t('diaryCancel')}</button>
-        <button type="button" class="diary-btn-save" id="diary-save">✅ ${t('diarySave')}</button>
+        <button type="button" class="diary-btn-save" id="diary-save">${t('diarySave')}</button>
       </div>`;
 
     let selected: DiaryEntryType = 'plantio';
@@ -3064,7 +3064,7 @@ export class FarmGameView {
     if (lblCycle) lblCycle.innerText = `${t('cropCycle')}:`;
     if (lblHarvest) lblHarvest.innerText = `${t('harvestForecast')}:`;
     if (lblNext) lblNext.innerText = `${t('nextCrop')}:`;
-    if (lblHistory) lblHistory.innerText = `📜 ${t('harvestHistoryTitle')}`;
+    if (lblHistory) lblHistory.innerText = `${t('harvestHistoryTitle')}`;
     if (lblBtnMap) lblBtnMap.innerText = t('viewOnRealMap');
     if (lblBtnCal) lblBtnCal.innerText = t('cropCalendar');
 

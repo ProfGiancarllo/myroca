@@ -143,7 +143,7 @@ export class RotationPlanner {
   private findingHtml(f: Finding): string {
     const params: Record<string, string | number> = { ...f.params };
     const text = rt(f.key, params);
-    const src = f.source === 'NASA POWER' ? `<span class="rot-nasa">🛰️ ${rt('nasaBadge')}</span>` : f.source === 'Embrapa' ? '<span class="rot-src">Embrapa</span>' : '';
+    const src = f.source === 'NASA POWER' ? `<span class="rot-nasa">${rt('nasaBadge')}</span>` : f.source === 'Embrapa' ? '<span class="rot-src">Embrapa</span>' : '';
     return `<li class="rot-f sev${f.sev}">${esc(text)} ${src}</li>`;
   }
 
@@ -197,7 +197,7 @@ export class RotationPlanner {
     const stressTxt = sv === 0 ? '0%' : `${sv > 0 ? '+' : ''}${sv}%`;
     return `
       <div class="mk-panel">
-        <div class="mk-head"><strong>💹 ${mt('title')}</strong> ${badge}${hasOverrides() ? `<button class="mk-reset" data-act="mk-reset">${mt('reset')}</button>` : ''}</div>
+        <div class="mk-head"><strong>${mt('title')}</strong> ${badge}${hasOverrides() ? `<button class="mk-reset" data-act="mk-reset">${mt('reset')}</button>` : ''}</div>
         <p class="mk-note">${esc(note)}</p>
         <div class="mk-tbl-wrap"><table class="mk-tbl"><thead><tr><th>${mt('crop')}</th><th>${mt('price')}</th><th>${mt('trend')}</th><th>${mt('cost')}</th></tr></thead><tbody>${rows}</tbody></table></div>
         <div class="mk-stress">
@@ -224,24 +224,24 @@ export class RotationPlanner {
     const cover = [ev.summer.crop, ev.second?.crop].includes('cobertura') ? `<div class="mk-cover">${mt('cover')}</div>` : '';
     return `
       <div class="mk-margin ${best ? 'best' : ''}">
-        <div class="mk-m-head"><strong>💹 ${mt('margin')}</strong> <span>${mt('perHa')} • <em>${mt('total', { ha: area.toFixed(1).replace('.', ',') })}</em></span>${best ? `<span class="mk-best">🏆 ${mt('best')}</span>` : ''}</div>
+        <div class="mk-m-head"><strong>${mt('margin')}</strong> <span>${mt('perHa')} • <em>${mt('total', { ha: area.toFixed(1).replace('.', ',') })}</em></span>${best ? `<span class="mk-best">${mt('best')}</span>` : ''}</div>
         <div class="mk-cells">${cells}</div>
-        ${mg.perHa.pess < 0 ? `<div class="mk-loss">⚠️ ${mt('loss')}</div>` : ''}
-        <div class="mk-adj">${esc(adj)}</div><div class="mk-adj">📈 ${esc(basis)}</div>${cover}
+        ${mg.perHa.pess < 0 ? `<div class="mk-loss">${mt('loss')}</div>` : ''}
+        <div class="mk-adj">${esc(adj)}</div><div class="mk-adj">${esc(basis)}</div>${cover}
       </div>`;
   }
 
 
-  private static ICON: Record<string, string> = { soja: '🌱', milho: '🌽', sorgo: '🌾', feijao: '🫘', algodao: '☁️', trigo: '🌾', cana: '🎋', pasto: '🐄', cobertura: '🍃', pousio: '⬜' };
-  private ic(c: CropKey): string { return RotationPlanner.ICON[c] || '🌱'; }
+  private static ICON: Record<string, string> = { soja: '', milho: '', sorgo: '', feijao: '', algodao: '', trigo: '', cana: '', pasto: '', cobertura: '', pousio: '' };
+  private ic(c: CropKey): string { return RotationPlanner.ICON[c] || ''; }
 
   private decisionBanner(d: Decision, area: number): string {
-    if (d.bestIdx < 0) return `<div class="mk-decision none">⚠️ ${mt('decisionNone')}</div>`;
+    if (d.bestIdx < 0) return `<div class="mk-decision none">${mt('decisionNone')}</div>`;
     const ev = d.evals[d.bestIdx];
     const m = d.margins[d.bestIdx].perHa.base;
-    if (m < 0) return `<div class="mk-decision none">⚠️ <strong>${mt('decision')}</strong><div>${esc(mt('decisionLoss', { name: this.strategyName(ev), m: this.money(m) }))}</div></div>`;
+    if (m < 0) return `<div class="mk-decision none"><strong>${mt('decision')}</strong><div>${esc(mt('decisionLoss', { name: this.strategyName(ev), m: this.money(m) }))}</div></div>`;
     const text = mt('decisionText', { name: this.strategyName(ev), m: this.money(m), risk: this.riskLabel(ev.level), t: this.money(m * area) });
-    return `<div class="mk-decision">🎯 <strong>${mt('decision')}</strong><div>${esc(text)}</div></div>`;
+    return `<div class="mk-decision"><strong>${mt('decision')}</strong><div>${esc(text)}</div></div>`;
   }
 
   /** Ranking visual: barra = margem base por hectare; traço = pessimista a otimista. */
@@ -267,7 +267,7 @@ export class RotationPlanner {
           </div>
           <div class="sf-val ${base < 0 ? 'neg' : ''}"><strong>${this.money(base)}</strong><small>${mt('perHa')}</small></div>
           <span class="rot-level lvl-${ev.level}">${this.riskLabel(ev.level)}</span>
-          <button class="rot-adopt sf-adopt" data-act="adopt" data-id="${esc(s.id)}">${best ? '🏆 ' : ''}${sf('adopt')}</button>
+          <button class="rot-adopt sf-adopt" data-act="adopt" data-id="${esc(s.id)}">${best ? '' : ''}${sf('adopt')}</button>
         </div>`;
     }).join('');
     return `<div class="sf-chart"><h3>${sf('chartTitle')}</h3><p class="sf-sub">${sf('chartSub')}</p>${rows}</div>`;
@@ -308,7 +308,7 @@ export class RotationPlanner {
     const todayPct = pct(ref).toFixed(2);
     const area = rows.reduce((s, r) => s + (Number(r.t.areaHectares) || 0), 0);
     const upcoming = rows.filter((r) => r.hv && !r.st.isPasture && diffDays(ref, r.hv) >= 0).sort((x, y) => diffDays(ref, x.hv!) - diffDays(ref, y.hv!))[0];
-    const chips = `<div class="sf-chips"><span>🌾 ${sf('chipFields', { n: rows.length })}</span><span>📐 ${sf('chipArea', { ha: Math.round(area).toLocaleString() })}</span><span>🚜 ${upcoming ? sf(diffDays(ref, upcoming.hv!) === 0 ? 'chipHarvestToday' : 'chipHarvest', { name: esc(upcoming.t.name.replace(/\s*\[[^\]]*\]\s*/, '')), d: diffDays(ref, upcoming.hv!) }) : sf('chipNone')}</span></div>`;
+    const chips = `<div class="sf-chips"><span>${sf('chipFields', { n: rows.length })}</span><span>${sf('chipArea', { ha: Math.round(area).toLocaleString() })}</span><span>${upcoming ? sf(diffDays(ref, upcoming.hv!) === 0 ? 'chipHarvestToday' : 'chipHarvest', { name: esc(upcoming.t.name.replace(/\s*\[[^\]]*\]\s*/, '')), d: diffDays(ref, upcoming.hv!) }) : sf('chipNone')}</span></div>`;
     const over = (r: Row) => (r.hv && diffDays(r.hv, ref) > 0 ? 1 : 0);
     rows.sort((x, y) => over(x) - over(y) || (x.hv || '9999').localeCompare(y.hv || '9999'));
     const html = rows.map((r) => {
@@ -343,7 +343,7 @@ export class RotationPlanner {
           <div class="sf-tname"><span class="sf-dot" style="background:${color}"></span><div><strong>${nm}</strong><small>${this.ic(key)} ${crop} · ${esc(st.stageBadgeText)}</small></div></div>
           <div class="sf-track">${bar}<span class="sf-now" style="left:${todayPct}%"></span></div>
           <div class="sf-meta">${esc(meta)}${esc(fcTxt)}</div>
-          <button class="sf-go" data-act="decide" data-id="${esc(t.id)}">🔄 ${sf('decide')}</button>
+          <button class="sf-go" data-act="decide" data-id="${esc(t.id)}">${sf('decide')}</button>
         </div>`;
     }).join('');
     return `
@@ -385,16 +385,16 @@ export class RotationPlanner {
           </label>
         </div>
         <div class="rot-timeline">
-          ${ev.summer.crop !== 'pousio' ? `<div>🌱 ${esc(this.cropName(ev.summer.crop))}: ${rt('sow')} ${fmtDate(ev.summer.sow)} → ${rt('harvest')} ${fmtDate(ev.summer.harvest)}</div>` : ''}
-          ${sec ? `<div>🌾 ${esc(this.cropName(sec.crop))}: ${rt('sow')} ${fmtDate(sec.sow)} → ${rt('harvest')} ${fmtDate(sec.harvest)}</div>` : ''}
+          ${ev.summer.crop !== 'pousio' ? `<div>${esc(this.cropName(ev.summer.crop))}: ${rt('sow')} ${fmtDate(ev.summer.sow)} → ${rt('harvest')} ${fmtDate(ev.summer.harvest)}</div>` : ''}
+          ${sec ? `<div>${esc(this.cropName(sec.crop))}: ${rt('sow')} ${fmtDate(sec.sow)} → ${rt('harvest')} ${fmtDate(sec.harvest)}</div>` : ''}
         </div>
         ${this.yieldLine(ev.summer.crop, ev.yields.summer)}
         ${sec ? this.yieldLine(sec.crop, ev.yields.second) : ''}
         <div class="rot-evs">${this.evidenceChip(ev.summer.crop, ev.evidence.summer)}${sec ? this.evidenceChip(sec.crop, ev.evidence.second) : ''}</div>
         ${marketHtml}
-        <div class="rot-sec ben"><h4>✅ ${rt('benefits')}</h4>${list(ben)}</div>
-        <div class="rot-sec risk"><h4>⚠️ ${rt('risks')}</h4>${list(risk)}</div>
-        <div class="rot-sec gap"><h4>ℹ️ ${rt('gaps')}</h4>${list(gaps)}</div>
+        <div class="rot-sec ben"><h4>${rt('benefits')}</h4>${list(ben)}</div>
+        <div class="rot-sec risk"><h4>${rt('risks')}</h4>${list(risk)}</div>
+        <div class="rot-sec gap"><h4>${rt('gaps')}</h4>${list(gaps)}</div>
         <div class="rot-actions">
           <button class="rot-adopt" data-act="adopt" data-id="${esc(s.id)}">${rt('adopt')}</button>
           ${s.kind === 'custom' || idx > 2 ? `<button class="rot-rm" data-act="remove" data-id="${esc(s.id)}">${rt('remove')}</button>` : ''}
@@ -409,8 +409,8 @@ export class RotationPlanner {
     const plan = this.plan();
     const ref = this.opts.getRefDate();
     const tabs = `<div class="sf-tabs" role="tablist">
-        <button role="tab" class="sf-tab ${this.tab === 'current' ? 'on' : ''}" data-act="tab" data-tab="current">🌾 ${sf('tabCurrent')}</button>
-        <button role="tab" class="sf-tab ${this.tab === 'switch' ? 'on' : ''}" data-act="tab" data-tab="switch">🔄 ${sf('tabSwitch')}</button>
+        <button role="tab" class="sf-tab ${this.tab === 'current' ? 'on' : ''}" data-act="tab" data-tab="current">${sf('tabCurrent')}</button>
+        <button role="tab" class="sf-tab ${this.tab === 'switch' ? 'on' : ''}" data-act="tab" data-tab="switch">${sf('tabSwitch')}</button>
       </div>`;
     let body = '';
     if (this.tab === 'current') {
@@ -421,8 +421,8 @@ export class RotationPlanner {
       const usedCrops = Array.from(new Set(d.evals.flatMap((ev) => [ev.summer.crop, ev.second?.crop].filter(Boolean) as CropKey[]))).filter((c) => c !== 'pousio');
       const nasaBox =
         this.nasaState === 'ok' && this.nasa
-          ? `<div class="rot-nasa-box">🛰️ <strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${rt('nasaLine', { mm: this.nasa.rain15, risk: this.riskLabel(this.nasa.level) })}</div></div>`
-          : `<div class="rot-nasa-box">🛰️ <strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${this.nasaState === 'loading' ? rt('nasaLoading') : rt('nasaFail')}</div></div>`;
+          ? `<div class="rot-nasa-box"><strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${rt('nasaLine', { mm: this.nasa.rain15, risk: this.riskLabel(this.nasa.level) })}</div></div>`
+          : `<div class="rot-nasa-box"><strong>${rt('nasaTitle')}</strong> <span class="rot-nasa">${rt('nasaBadge')}</span><div>${this.nasaState === 'loading' ? rt('nasaLoading') : rt('nasaFail')}</div></div>`;
       body = `
         <div class="rot-controls">
           <label>${rt('talhao')}
@@ -436,7 +436,7 @@ export class RotationPlanner {
         ${this.chart(plan, d)}
         ${nasaBox}
         <details class="sf-details" ${this.detailsOpen ? 'open' : ''}>
-          <summary>⚙️ ${sf('details')}</summary>
+          <summary>${sf('details')}</summary>
           ${this.marketPanel(usedCrops)}
           <div class="rot-grid">${plan.strategies.map((s, i) => this.card(s, d.evals[i], i, this.marginBlock(d.margins[i], area, i === d.bestIdx, d.evals[i]))).join('')}</div>
           <div class="rot-bottom">
@@ -449,7 +449,7 @@ export class RotationPlanner {
     this.root.innerHTML = `
       <div class="rot-card" role="dialog" aria-label="${sf('hub')}">
         <div class="rot-head">
-          <div><h2>🌾 ${sf('hub')}</h2></div>
+          <div><h2>${sf('hub')}</h2></div>
           <button class="rot-x" data-act="close" aria-label="${rt('close')}">&times;</button>
         </div>
         ${tabs}

@@ -1,6 +1,12 @@
-// Intermediário da Estrela (Cloudflare Worker). A chave da Anthropic fica SÓ aqui, como segredo.
-// Segredos/variáveis: ANTHROPIC_API_KEY (segredo), ALLOWED_ORIGIN (ex.: https://seusite.com), MODEL (opcional)
+// Intermediário da Estrela (Cloudflare Worker). As chaves ficam SÓ aqui, como segredos.
+// Segredos/variáveis:
+//   ANTHROPIC_API_KEY (segredo)  respostas da Estrela (rota /)
+//   OPENAI_API_KEY    (segredo)  voz natural da Estrela (rota /tts)
+//   ALLOWED_ORIGIN               ex.: https://seusite.com
+//   MODEL (opcional)             modelo do Claude
+//   TTS_VOICE (opcional)         voz da OpenAI, padrão "coral"
 const MAX_PER_IP_PER_DAY = 40;
+const MAX_TTS_PER_IP_PER_DAY = 200;
 const hits = new Map(); // limite simples por IP (reinicia quando o worker reinicia)
 
 export default {
@@ -18,6 +24,7 @@ export default {
 
     const ip = req.headers.get('CF-Connecting-IP') || 'x';
     const day = new Date().toISOString().slice(0, 10);
+    if (new URL(req.url).pathname.replace(/\/+$/, '').endsWith('/tts')) return tts(req, env, cors, ip + day + ':tts');
     const key = ip + day;
     const n = (hits.get(key) || 0) + 1;
     hits.set(key, n);
@@ -30,7 +37,7 @@ export default {
     if (!question) return json({ answer: '' }, cors, 400);
 
     const system =
-      'Você é a Estrela, engenheira agrônoma virtual do app MyRoça (Rio Verde-GO). ' +
+      'Você é a Estrela, engenheira agrônoma virtual do app SpaceAgro (Rio Verde-GO). ' +
       'Responda de forma curta, simples e prática para o produtor rural, no idioma da pergunta. ' +
       'Use os dados da fazenda fornecidos. Não invente números; se não souber, diga que falta informação ' +
       'e sugira consultar o agrônomo responsável. Não dê receita de defensivos nem dose.';
@@ -50,6 +57,32 @@ export default {
     return json({ answer }, cors);
   },
 };
+
+/** Voz natural da Estrela: transforma o texto da resposta em áudio (voz de IA da OpenAI). */
+async function tts(req, env, cors, key) {
+  if (!env.OPENAI_API_KEY) return new Response('voz não configurada', { status: 501, headers: cors });
+  const n = (hits.get(key) || 0) + 1;
+  hits.set(key, n);
+  if (n > MAX_TTS_PER_IP_PER_DAY) return new Response('limite diário de voz atingido', { status: 429, headers: cors });
+  let body;
+  try { body = await req.json(); } catch { return new Response('', { status: 400, headers: cors }); }
+  const text = String(body.text || '').replace(/\s+/g, ' ').trim().slice(0, 600);
+  const lang = String(body.lang || 'pt-BR');
+  if (!text) return new Response('', { status: 400, headers: cors });
+  const r = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${env.OPENAI_API_KEY}` },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini-tts',
+      voice: env.TTS_VOICE || 'coral',
+      input: text,
+      instructions: `Fale no idioma ${lang}, com sotaque natural desse idioma (em português, sotaque brasileiro). Tom caloroso, calmo e confiante, como uma agrônoma conversando com um produtor rural. Ritmo de conversa, sem soar como locução.`,
+      response_format: 'mp3',
+    }),
+  });
+  if (!r.ok) return new Response('', { status: 502, headers: cors });
+  return new Response(r.body, { headers: { ...cors, 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store' } });
+}
 
 function json(o, cors, status = 200) {
   return new Response(JSON.stringify(o), { status, headers: { ...cors, 'Content-Type': 'application/json' } });

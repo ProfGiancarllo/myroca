@@ -5,7 +5,7 @@ type D = Record<string, string>;
 const pt: D = {
   chipHarvestToday: 'Colheita hoje: {name}',
   hub: 'Safra e decisões', tabCurrent: 'Safra atual', tabSwitch: 'Trocar de safra',
-  curTitle: 'Como está a safra da fazenda', curSub: 'Cada barra vai do plantio à colheita. A linha branca é hoje. Toque em um talhão para decidir a próxima safra.',
+  curTitle: 'Como está a safra da fazenda', curSub: 'Cada barra vai do plantio à colheita. A linha escura é hoje. Toque em um talhão para decidir a próxima safra.',
   chipFields: '{n} talhões', chipArea: '{ha} ha', chipHarvest: 'Próxima colheita: {name}, em {d} dia(s)', chipNone: 'Nenhuma colheita à vista',
   today: 'Hoje', dayOf: 'dia {d} de {t}', harvestOn: 'colheita {date}', daysLeft: 'faltam {d} dia(s)', done: 'colhido', pasture: 'Pastagem contínua', noCrop: 'Sem safra cadastrada',
   next: 'Próxima: {crop}', forecast: 'previsão {v} sc/ha', decide: 'Decidir', noFields: 'Cadastre um talhão para ver a safra.',
@@ -18,7 +18,7 @@ const pt: D = {
 const en: D = {
   chipHarvestToday: 'Harvest today: {name}',
   hub: 'Season and decisions', tabCurrent: 'Current season', tabSwitch: 'Switch crop',
-  curTitle: 'How the farm season is going', curSub: 'Each bar runs from planting to harvest. The white line is today. Tap a field to decide the next season.',
+  curTitle: 'How the farm season is going', curSub: 'Each bar runs from planting to harvest. The dark line is today. Tap a field to decide the next season.',
   chipFields: '{n} fields', chipArea: '{ha} ha', chipHarvest: 'Next harvest: {name}, in {d} day(s)', chipNone: 'No harvest ahead',
   today: 'Today', dayOf: 'day {d} of {t}', harvestOn: 'harvest {date}', daysLeft: '{d} day(s) left', done: 'harvested', pasture: 'Continuous pasture', noCrop: 'No season registered',
   next: 'Next: {crop}', forecast: 'forecast {v} sc/ha', decide: 'Decide', noFields: 'Add a field to see the season.',
@@ -31,7 +31,7 @@ const en: D = {
 const es: D = {
   chipHarvestToday: 'Cosecha hoy: {name}',
   hub: 'Cosecha y decisiones', tabCurrent: 'Cosecha actual', tabSwitch: 'Cambiar de cultivo',
-  curTitle: 'Cómo va la cosecha de la finca', curSub: 'Cada barra va de la siembra a la cosecha. La línea blanca es hoy. Toque un lote para decidir la próxima.',
+  curTitle: 'Cómo va la cosecha de la finca', curSub: 'Cada barra va de la siembra a la cosecha. La línea oscura es hoy. Toque un lote para decidir la próxima.',
   chipFields: '{n} lotes', chipArea: '{ha} ha', chipHarvest: 'Próxima cosecha: {name}, en {d} día(s)', chipNone: 'Ninguna cosecha a la vista',
   today: 'Hoy', dayOf: 'día {d} de {t}', harvestOn: 'cosecha {date}', daysLeft: 'faltan {d} día(s)', done: 'cosechado', pasture: 'Pastura continua', noCrop: 'Sin cosecha registrada',
   next: 'Próxima: {crop}', forecast: 'previsión {v} sc/ha', decide: 'Decidir', noFields: 'Registre un lote para ver la cosecha.',
@@ -44,7 +44,7 @@ const es: D = {
 const de: D = {
   chipHarvestToday: 'Ernte heute: {name}',
   hub: 'Saison und Entscheidungen', tabCurrent: 'Aktuelle Saison', tabSwitch: 'Kultur wechseln',
-  curTitle: 'Wie die Saison der Farm läuft', curSub: 'Jeder Balken geht von der Aussaat bis zur Ernte. Die weiße Linie ist heute. Tippen Sie auf einen Schlag, um die nächste Saison zu entscheiden.',
+  curTitle: 'Wie die Saison der Farm läuft', curSub: 'Jeder Balken geht von der Aussaat bis zur Ernte. Die dunkle Linie ist heute. Tippen Sie auf einen Schlag, um die nächste Saison zu entscheiden.',
   chipFields: '{n} Schläge', chipArea: '{ha} ha', chipHarvest: 'Nächste Ernte: {name}, in {d} Tag(en)', chipNone: 'Keine Ernte in Sicht',
   today: 'Heute', dayOf: 'Tag {d} von {t}', harvestOn: 'Ernte {date}', daysLeft: 'noch {d} Tag(e)', done: 'geerntet', pasture: 'Dauerweide', noCrop: 'Keine Saison eingetragen',
   next: 'Nächste: {crop}', forecast: 'Prognose {v} sc/ha', decide: 'Entscheiden', noFields: 'Legen Sie einen Schlag an, um die Saison zu sehen.',
@@ -57,7 +57,7 @@ const de: D = {
 const zh: D = {
   chipHarvestToday: '今天收获：{name}',
   hub: '季节与决策', tabCurrent: '当前季节', tabSwitch: '更换作物',
-  curTitle: '农场当前季节进展', curSub: '每条横条从播种到收获。白线表示今天。点按地块来决定下一季。',
+  curTitle: '农场当前季节进展', curSub: '每条横条从播种到收获。深色线表示今天。点按地块来决定下一季。',
   chipFields: '{n} 块地', chipArea: '{ha} 公顷', chipHarvest: '最近收获：{name}，{d} 天后', chipNone: '近期没有收获',
   today: '今天', dayOf: '第 {d} 天 / 共 {t} 天', harvestOn: '收获 {date}', daysLeft: '还剩 {d} 天', done: '已收获', pasture: '常年牧场', noCrop: '未登记季节',
   next: '下一季：{crop}', forecast: '预测 {v} sc/ha', decide: '决策', noFields: '添加地块后即可查看季节。',
@@ -70,7 +70,7 @@ const zh: D = {
 const fr: D = {
   chipHarvestToday: 'Récolte aujourd’hui : {name}',
   hub: 'Saison et décisions', tabCurrent: 'Saison en cours', tabSwitch: 'Changer de culture',
-  curTitle: 'Où en est la saison de la ferme', curSub: 'Chaque barre va du semis à la récolte. La ligne blanche est aujourd’hui. Touchez une parcelle pour décider de la prochaine saison.',
+  curTitle: 'Où en est la saison de la ferme', curSub: 'Chaque barre va du semis à la récolte. La ligne foncée est aujourd’hui. Touchez une parcelle pour décider de la prochaine saison.',
   chipFields: '{n} parcelles', chipArea: '{ha} ha', chipHarvest: 'Prochaine récolte : {name}, dans {d} jour(s)', chipNone: 'Aucune récolte en vue',
   today: 'Aujourd’hui', dayOf: 'jour {d} sur {t}', harvestOn: 'récolte {date}', daysLeft: 'il reste {d} jour(s)', done: 'récolté', pasture: 'Pâturage continu', noCrop: 'Aucune saison enregistrée',
   next: 'Suivante : {crop}', forecast: 'prévision {v} sc/ha', decide: 'Décider', noFields: 'Ajoutez une parcelle pour voir la saison.',

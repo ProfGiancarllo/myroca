@@ -8,12 +8,12 @@ export interface LanguageOption {
 }
 
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
-  { code: 'pt', label: 'Português', flag: '🇧🇷', shortLabel: 'PT' },
-  { code: 'es', label: 'Español', flag: '🇪🇸', shortLabel: 'ES' },
-  { code: 'en', label: 'English', flag: '🇺🇸', shortLabel: 'EN' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪', shortLabel: 'DE' },
-  { code: 'zh', label: '简体中文', flag: '🇨🇳', shortLabel: 'ZH' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷', shortLabel: 'FR' },
+  { code: 'pt', label: 'Português', flag: '', shortLabel: 'PT' },
+  { code: 'es', label: 'Español', flag: '', shortLabel: 'ES' },
+  { code: 'en', label: 'English', flag: '', shortLabel: 'EN' },
+  { code: 'de', label: 'Deutsch', flag: '', shortLabel: 'DE' },
+  { code: 'zh', label: '简体中文', flag: '', shortLabel: 'ZH' },
+  { code: 'fr', label: 'Français', flag: '', shortLabel: 'FR' },
 ];
 
 export interface TranslationDictionary {

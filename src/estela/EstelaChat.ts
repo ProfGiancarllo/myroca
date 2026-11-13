@@ -1,6 +1,7 @@
 import { FarmData, Talhao, DiaryEntry, DiaryEntryType } from '../types';
 import { getCurrentLanguage, t, translateCropName } from '../i18n';
 import { et } from './estelaText';
+import { playEstelaIntro, shouldShowIntro } from './EstelaIntro';
 import { calculateTalhaoCropStatus, addDaysToDate } from '../utils/cropCalendar';
 import { fetchNasaSeries, polygonCentroid } from '../utils/nasaPower';
 import { assessPlanting } from '../utils/agronomyRules';
@@ -37,6 +38,13 @@ const DIARY_RULES: [DiaryEntryType, RegExp, string | null][] = [
   ['monitoramento', /monitor|vistori|scout|inspec|巡查/, null],
   ['observacao', /observa|anota|nota\b|note\b|remarque|notiz|备注/, null],
 ];
+/** Endereço da voz natural: a rota /tts do mesmo Worker da Estrela (VITE_ESTELA_URL). */
+function voiceUrl(): string | null {
+  const base = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESTELA_URL;
+  return base ? base.replace(/\/+$/, '') + '/tts' : null;
+}
+
+const CANCEL_RE = /cancel|desist|anula|abbrech|annul|取消/;
 const SKIP_RE = /pular|depois|skip|later|omitir|despues|passer|plus tard|ueberspringen|spaeter|跳过|稍后|nao sei|no se|i do not know|i don't know|weiss nicht|je ne sais pas|不知道|ainda nao|todavia no|not yet|pas encore|noch nicht|还没有/;
 const NOTHING_RE = /sem novidade|nada de novo|sem ocorrencia|nenhuma|nothing new|sin novedades|rien de neuf|nichts neues|没有新情况|^nada$|^nothing$/;
 const CROP_RE: [string, RegExp][] = [['soja', /soja|soy|大豆/], ['milho', /milho|corn|maiz|\bmais\b|玉米/], ['pasto', /pasto|pastagem|pasture|braquiaria|pâturage|pature|weide|牧草/], ['sorgo', /sorgo|sorghum|高粱/], ['feijao', /feijao|bean|frijol|haricot|bohne|豆/], ['algodao', /algodao|cotton|algodon|coton|baumwolle|棉/], ['trigo', /trigo|wheat|ble\b|weizen|小麦/], ['cana', /cana|sugarcane|caña|canne|zuckerrohr|甘蔗/]];
@@ -48,6 +56,9 @@ const MONTHS: string[][] = [
 ];
 const RECORD_VERB = /registr|anot|lanc|record|log\b|enregistr|eintrag|记录|grav|apunt|note\b/;
 
+const SPK_ON = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg>';
+const SPK_OFF = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+
 export class EstelaChat {
   private root!: HTMLElement;
   private panel!: HTMLElement;
@@ -58,6 +69,10 @@ export class EstelaChat {
   private recog: any = null;
   private listening = false;
   private speak = false;
+  private audio: HTMLAudioElement | null = null;
+  private voiceQueue: Promise<void> = Promise.resolve();
+  private voiceGen = 0;
+  private painted = 0;
   private pendingDiary: { type: DiaryEntryType; amount?: number; date: string; talhaoId?: string; note?: string } | null = null;
   private fromVoice = false;
   private ask: Pending | null = null;
@@ -83,22 +98,25 @@ export class EstelaChat {
   private mount(): void {
     this.root = document.createElement('div');
     this.root.id = 'estela-root';
-    document.body.appendChild(this.root);
+    const dock = document.getElementById('estela-dock');
+    (dock || document.body).appendChild(this.root);
     this.renderShell();
+    // Na tela larga o chat fica fixo na lateral direita da visão geral, já aberto.
+    if (dock && window.matchMedia('(min-width: 1100px)').matches) { document.body.classList.add('estela-docked'); this.toggle(true); }
   }
 
   private renderShell(): void {
     this.root.innerHTML = `
       <button class="estela-fab" id="estela-fab" aria-label="${et('fab')}">
-        <span class="estela-fab-ico">🧑‍🌾</span><span class="estela-fab-txt">${et('fab')}</span><span class="estela-badge" id="estela-badge" style="display:none">0</span>
+        <span class="estela-fab-ico"><img class="estela-ico" src="./assets/brand/spaceagro-icon.svg" alt="" /></span><span class="estela-fab-txt">${et('fab')}</span><span class="estela-badge" id="estela-badge" style="display:none">0</span>
       </button>
-      <button class="estela-fab-mic" id="estela-fab-mic" title="${et('mic')}" aria-label="${et('mic')}">🎤</button>
+      <button class="estela-fab-mic" id="estela-fab-mic" title="${et('mic')}" aria-label="${et('mic')}"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
       <div class="estela-panel" id="estela-panel" style="display:none" role="dialog" aria-label="${et('title')}">
         <div class="estela-head">
-          <div class="estela-title">🌱 ${et('title')}</div>
+          <div class="estela-title"><img class="estela-ico" src="./assets/brand/spaceagro-icon.svg" alt="" /><span>${et('title')}</span></div>
           <div class="estela-head-btns">
-            <button id="estela-speak" title="${this.speak ? et('speakOn') : et('speakOff')}">${this.speak ? '🔊' : '🔈'}</button>
-            <button id="estela-clear" title="${et('clear')}">🗑️</button>
+            ${voiceUrl() ? `<button id="estela-speak" title="${this.speak ? et('speakOn') : et('speakOff')}" aria-label="${this.speak ? et('speakOn') : et('speakOff')}">${this.speak ? SPK_ON : SPK_OFF}</button>` : ''}
+            <button id="estela-clear" title="${et('clear')}">${et('clear')}</button>
             <button id="estela-close" title="${et('close')}">&times;</button>
           </div>
         </div>
@@ -108,7 +126,7 @@ export class EstelaChat {
           ${['chip1', 'chip2', 'chip3', 'chip4'].map((k) => `<button type="button" data-chip="${k}">${et(k)}</button>`).join('')}
         </div>
         <form class="estela-form" id="estela-form">
-          <button type="button" class="estela-mic" id="estela-mic" title="${et('mic')}">🎤</button>
+          <button type="button" class="estela-mic" id="estela-mic" title="${et('mic')}" aria-label="${et('mic')}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
           <input id="estela-input" type="text" autocomplete="off" placeholder="${et('placeholder')}" />
           <button type="submit" class="estela-send" title="${et('send')}">➤</button>
         </form>
@@ -119,8 +137,8 @@ export class EstelaChat {
     this.root.querySelector('#estela-fab')!.addEventListener('click', () => this.toggle());
     this.root.querySelector('#estela-fab-mic')!.addEventListener('click', () => { this.fromVoice = true; this.toggle(true); if (!this.listening) this.toggleMic(); });
     this.root.querySelector('#estela-close')!.addEventListener('click', () => this.toggle(false));
-    this.root.querySelector('#estela-clear')!.addEventListener('click', () => { this.msgs = []; this.pendingDiary = null; this.hello(); });
-    this.root.querySelector('#estela-speak')!.addEventListener('click', () => this.toggleSpeak());
+    this.root.querySelector('#estela-clear')!.addEventListener('click', () => { this.msgs = []; this.painted = 0; this.pendingDiary = null; this.hello(); });
+    this.root.querySelector('#estela-speak')?.addEventListener('click', () => this.toggleSpeak());
     this.root.querySelector('#estela-mic')!.addEventListener('click', () => this.toggleMic());
     this.root.querySelectorAll<HTMLButtonElement>('[data-chip]').forEach((b) => (b.onclick = () => (b.dataset.chip === 'pend' ? (this.fromVoice = false, this.msgs.push({ who: 'me', html: esc(pq('chipPend')) }), this.startPending()) : this.submit(et(b.dataset.chip!)))));
     this.root.querySelector<HTMLFormElement>('#estela-form')!.onsubmit = (e) => {
@@ -149,11 +167,19 @@ export class EstelaChat {
     this.root.querySelector('#estela-fab')!.classList.toggle('hidden', this.open && window.innerWidth < 640);
     this.root.querySelector('#estela-fab-mic')!.classList.toggle('hidden', this.open);
     if (this.open) {
+      // Primeira conversa do dia: a Estrela se apresenta com animação; a saudação entra quando a apresentação some
+      if (shouldShowIntro()) {
+        playEstelaIntro(this.panel, {
+          speak: this.speak ? (t) => this.speakOut(t) : undefined,
+          onDone: () => { if (!this.msgs.length) this.hello(); this.input.focus(); },
+        });
+        return;
+      }
       if (!this.msgs.length) this.hello();
       setTimeout(() => this.input.focus(), 50);
     } else {
       this.stopMic();
-      window.speechSynthesis?.cancel();
+      this.stopVoice();
     }
   }
 
@@ -161,7 +187,7 @@ export class EstelaChat {
     this.say(esc(et('hello')));
     const n = computePending(this.opts.getFarm(), this.ref(), this.skipped).length;
     if (n) this.say(esc(pq('intro', { n })), [
-      { label: '✅ ' + pq('go'), run: () => this.startPending() },
+      { label: '' + pq('go'), run: () => this.startPending() },
       { label: pq('later'), run: () => { /* nada */ } },
     ]);
   }
@@ -198,7 +224,7 @@ export class EstelaChat {
     if (!this.fromVoice) return;
     const go = () => { if (!this.listening && this.open) this.toggleMic(); };
     const wait = () => {
-      if (window.speechSynthesis?.speaking) setTimeout(wait, 300); else setTimeout(go, 400);
+      if (this.isSpeaking()) setTimeout(wait, 300); else setTimeout(go, 400);
     };
     setTimeout(wait, 500);
   }
@@ -252,8 +278,8 @@ export class EstelaChat {
     const reAsk = () => { this.say(esc(pq('noparse')), [{ label: pq('skip'), run: () => this.skipCurrent() }]); this.listenSoon(); return true; };
     const confirmSet = (what: string, apply: () => void): boolean => {
       this.say(esc(pq('confirm', { what })), [
-        { label: '✅ ' + et('yes'), run: () => { apply(); this.opts.onDiaryAdded(tl); this.say(esc(pq('saved'))); this.ask = null; this.nextPending(); } },
-        { label: '✖ ' + et('no'), run: () => { this.say(esc(et('cancelled'))); this.ask = null; this.nextPending(); } },
+        { label: '' + et('yes'), run: () => { apply(); this.opts.onDiaryAdded(tl); this.say(esc(pq('saved'))); this.ask = null; this.nextPending(); } },
+        { label: '' + et('no'), run: () => { this.say(esc(et('cancelled'))); this.ask = null; this.nextPending(); } },
       ]);
       return true;
     };
@@ -308,9 +334,12 @@ export class EstelaChat {
 
   private paint(): void {
     this.list.innerHTML = '';
-    this.msgs.forEach((m) => {
+    const fresh = this.painted;
+    this.msgs.forEach((m, i) => {
       const el = document.createElement('div');
       el.className = `estela-msg ${m.who}`;
+      // só as mensagens novas entram com animação (em cascata quando chegam juntas)
+      if (i >= fresh) { el.classList.add('enter'); el.style.animationDelay = `${Math.min(i - fresh, 4) * 0.12}s`; }
       el.innerHTML = m.html;
       if (m.actions?.length) {
         const row = document.createElement('div');
@@ -326,6 +355,7 @@ export class EstelaChat {
       }
       this.list.appendChild(el);
     });
+    this.painted = this.msgs.length;
     this.list.scrollTop = this.list.scrollHeight;
   }
 
@@ -336,6 +366,7 @@ export class EstelaChat {
   }
 
   private submit(text: string): void {
+    this.stopVoice();
     this.input.value = '';
     this.msgs.push({ who: 'me', html: esc(text) });
     this.paint();
@@ -348,20 +379,51 @@ export class EstelaChat {
     this.speak = !this.speak;
     try { localStorage.setItem('myroca_estela_voice_v1', this.speak ? '1' : '0'); } catch { /* ignora */ }
     const b = this.root.querySelector<HTMLButtonElement>('#estela-speak')!;
-    b.textContent = this.speak ? '🔊' : '🔈';
+    b.innerHTML = this.speak ? SPK_ON : SPK_OFF;
     b.title = this.speak ? et('speakOn') : et('speakOff');
-    if (!this.speak) window.speechSynthesis?.cancel();
+    b.setAttribute('aria-label', b.title);
+    if (!this.speak) this.stopVoice();
   }
 
+  /**
+   * Voz natural da Estrela: o texto vai para a rota /tts do Worker (voz de IA da OpenAI) e volta como áudio.
+   * Sem Worker configurado não há voz (o narrador robótico do navegador foi removido).
+   * As falas tocam em fila, na ordem em que aparecem no chat.
+   */
   private speakOut(text: string): void {
-    const synth = window.speechSynthesis;
-    if (!synth) return;
-    synth.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = LANG_TAG[getCurrentLanguage()] || 'pt-BR';
-    const v = synth.getVoices().find((x) => x.lang.toLowerCase().startsWith(u.lang.slice(0, 2).toLowerCase()));
-    if (v) u.voice = v;
-    synth.speak(u);
+    const url = voiceUrl();
+    const clean = text.replace(/\s+/g, ' ').trim().slice(0, 600);
+    if (!url || !clean) return;
+    const gen = this.voiceGen;
+    // já começa a gerar o áudio enquanto a fala anterior toca
+    const audio = fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: clean, lang: LANG_TAG[getCurrentLanguage()] || 'pt-BR' }),
+    }).then((r) => (r.ok ? r.blob() : null)).catch(() => null);
+    this.voiceQueue = this.voiceQueue.then(async () => {
+      const blob = await audio;
+      if (!blob || gen !== this.voiceGen) return;
+      await new Promise<void>((done) => {
+        const src = URL.createObjectURL(blob);
+        const a = new Audio(src);
+        this.audio = a;
+        const end = () => { URL.revokeObjectURL(src); if (this.audio === a) this.audio = null; done(); };
+        a.onended = end; a.onerror = end; a.onpause = () => { if (a.ended || gen !== this.voiceGen) end(); };
+        void a.play().catch(end);
+      });
+    });
+  }
+
+  /** Para a fala atual e descarta as que estavam na fila. */
+  private stopVoice(): void {
+    this.voiceGen++;
+    if (this.audio) { this.audio.pause(); this.audio = null; }
+    this.voiceQueue = Promise.resolve();
+  }
+
+  private isSpeaking(): boolean {
+    return !!this.audio && !this.audio.paused;
   }
 
   private toggleMic(): void {
@@ -448,6 +510,18 @@ export class EstelaChat {
       if (this.pendingDiary && !this.pendingDiary.talhaoId) {
         const tl = this.findTalhao(text);
         if (tl) { this.pendingDiary.talhaoId = tl.id; return this.continueDiary(); }
+        if (CANCEL_RE.test(n) || SKIP_RE.test(n)) {
+          this.pendingDiary = null; this.amountAsked = false;
+          return void this.say(esc(et('cancelled')));
+        }
+        // Repetiu o pedido (ex.: "irrigação" de novo) sem dizer o talhão: aproveita o que veio e pergunta só o talhão, com dica
+        const rule = DIARY_RULES.find(([, re]) => re.test(n));
+        if (rule) {
+          this.pendingDiary.type = rule[0];
+          const am = n.replace(/(?:talhao|field|campo|lote|parcela|parcelle|feld|地块)\s*\d+/g, ' ').match(/(\d+(?:[.,]\d+)?)/);
+          if (rule[2] && am) this.pendingDiary.amount = Number(am[1].replace(',', '.'));
+          return void this.say(esc(et('talhaoHint', { n: farm.talhoes.length })), this.talhaoButtons());
+        }
       }
       // 2) Registro no diário
       if (this.parseDiary(text)) return;
@@ -507,6 +581,14 @@ export class EstelaChat {
     return true;
   }
 
+  /** Botões de escolha de talhão para o registro pendente (os 6 primeiros; os demais pelo número). */
+  private talhaoButtons(): Msg['actions'] {
+    return this.opts.getFarm().talhoes.slice(0, 6).map((x) => ({
+      label: this.tName(x),
+      run: () => { if (this.pendingDiary) { this.pendingDiary.talhaoId = x.id; this.continueDiary(); } },
+    }));
+  }
+
   /** Completa o registro: talhão, quantidade (quando faz sentido) e confirmação. */
   private continueDiary(): void {
     const p = this.pendingDiary;
@@ -516,8 +598,11 @@ export class EstelaChat {
     if (!p.talhaoId) {
       if (farm.talhoes.length === 1) p.talhaoId = farm.talhoes[0].id;
       else {
-        this.say(esc(et('askTalhao', { list: farm.talhoes.map((x) => this.tName(x)).join(', ') })),
-          farm.talhoes.slice(0, 6).map((x) => ({ label: this.tName(x), run: () => { if (this.pendingDiary) { this.pendingDiary.talhaoId = x.id; this.continueDiary(); } } })));
+        // Com muitos talhões, a lista completa no texto fica ilegível: pede o número e mostra os primeiros como botões
+        const ask = farm.talhoes.length > 6
+          ? et('askTalhaoMany', { n: farm.talhoes.length })
+          : et('askTalhao', { list: farm.talhoes.map((x) => this.tName(x)).join(', ') });
+        this.say(esc(ask), this.talhaoButtons());
         return;
       }
     }
@@ -571,8 +656,8 @@ export class EstelaChat {
     const amount = p.amount !== undefined && unit ? ` ${p.amount} ${unit}` : '';
     const d = `${p.date.slice(8, 10)}/${p.date.slice(5, 7)}/${p.date.slice(0, 4)}`;
     this.say(esc(et('confirmDiary', { type: et('diary_' + p.type), amount, name: this.tName(tl), date: d })), [
-      { label: '✅ ' + et('yes'), run: () => this.saveDiary() },
-      { label: '✖ ' + et('no'), run: () => { this.pendingDiary = null; this.amountAsked = false; this.say(esc(et('cancelled'))); if (this.ask) { const a = this.ask; this.ask = null; this.skipped.add(`${a.kind}:${a.talhaoId}`); this.nextPending(); } } },
+      { label: '' + et('yes'), run: () => this.saveDiary() },
+      { label: '' + et('no'), run: () => { this.pendingDiary = null; this.amountAsked = false; this.say(esc(et('cancelled'))); if (this.ask) { const a = this.ask; this.ask = null; this.skipped.add(`${a.kind}:${a.talhaoId}`); this.nextPending(); } } },
     ]);
   }
 
@@ -617,7 +702,7 @@ export class EstelaChat {
         lines.push(`<strong>${esc(this.tName(tl))}</strong> — ${esc(et('nasaFail'))}`);
       }
     }
-    this.say(`${esc(et('plantTitle'))}<br>${lines.join('<br><br>')}<br><br><span class="estela-src">🛰️ ${esc(et('nasaSrc'))}</span>`, undefined, lines.join('. ').replace(/<[^>]+>/g, ' '));
+    this.say(`${esc(et('plantTitle'))}<br>${lines.join('<br><br>')}<br><br><span class="estela-src">${esc(et('nasaSrc'))}</span>`, undefined, lines.join('. ').replace(/<[^>]+>/g, ' '));
   }
 
   private fieldStatus(only: Talhao | null): void {
@@ -666,10 +751,10 @@ export class EstelaChat {
       const j = await res.json();
       const ans = String(j.answer || '').trim();
       if (!ans) throw new Error('empty');
-      this.msgs.pop();
+      this.msgs.pop(); this.painted = Math.min(this.painted, this.msgs.length);
       this.say(esc(ans).replace(/\n/g, '<br>') + `<br><span class="estela-src">${esc(et('extNotice'))}</span>`, undefined, ans);
     } catch {
-      this.msgs.pop();
+      this.msgs.pop(); this.painted = Math.min(this.painted, this.msgs.length);
       this.say(esc(et('extFail')));
     } finally {
       clearTimeout(timer);

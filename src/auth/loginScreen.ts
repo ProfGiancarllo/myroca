@@ -3,8 +3,8 @@ import { AuthError, currentUser, deleteAccount, enterAsGuest, login, signup } fr
 import { at } from './authText';
 
 const LANGS: [LanguageCode, string][] = [
-  ['pt', '🇧🇷 Português'], ['es', '🇪🇸 Español'], ['en', '🇺🇸 English'],
-  ['de', '🇩🇪 Deutsch'], ['zh', '🇨🇳 简体中文'], ['fr', '🇫🇷 Français'],
+  ['pt', 'Português'], ['es', 'Español'], ['en', 'English'],
+  ['de', 'Deutsch'], ['zh', '简体中文'], ['fr', 'Français'],
 ];
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -30,7 +30,7 @@ export function requireAuth(): Promise<void> {
       root.innerHTML = `
         <div class="auth-card">
           <div class="auth-top">
-            <img src="./assets/aistudio/image_5d97730a.png" alt="" class="auth-logo" />
+            <span class="brand-mark brand-mark-auth" role="img" aria-label="SpaceAgro"><img src="./assets/brand/spaceagro-logo.svg" alt="" /></span>
             <select id="auth-lang" aria-label="Language">
               ${LANGS.map(([c, n]) => `<option value="${c}" ${c === getCurrentLanguage() ? 'selected' : ''}>${n}</option>`).join('')}
             </select>

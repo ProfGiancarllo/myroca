@@ -14,6 +14,8 @@ import { SimpleHome } from './simple/SimpleHome';
 import { playIntro } from './intro/IntroVideo';
 import { rt } from './i18n/rotationText';
 import { sf } from './i18n/safraText';
+import { HomeSide } from './components/HomeSide';
+import { ht } from './i18n/homeText';
 import { dj } from './i18n/diarioText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
@@ -39,6 +41,7 @@ class AgroApp {
   private mapManager!: MapManager;
   private rotationPlanner!: RotationPlanner;
   private marketPanel!: MarketPanel;
+  private homeSide?: HomeSide;
   private diaryPanel!: DiaryPanel;
   private estela!: EstelaChat;
   private simpleHome!: SimpleHome;
@@ -83,13 +86,15 @@ class AgroApp {
       },
     });
     this.renderDOM();
+    if (!document.getElementById('home-layout')) {
     const fab = document.createElement('div');
     fab.id = 'safra-fab';
-    fab.innerHTML = `<button type="button" id="fab-cur">🌾 <span>${sf('fabCur')}</span></button><button type="button" id="fab-sw" class="primary">🔄 <span>${sf('fabSwitch')}</span></button><button type="button" id="fab-dia">📓 <span>${dj('btn')}</span></button>`;
+    fab.innerHTML = `<button type="button" id="fab-cur"><span>${sf('fabCur')}</span></button><button type="button" id="fab-sw" class="primary"><span>${sf('fabSwitch')}</span></button><button type="button" id="fab-dia"><span>${dj('btn')}</span></button>`;
     document.body.appendChild(fab);
     fab.querySelector('#fab-cur')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
     fab.querySelector('#fab-sw')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'switch'));
     fab.querySelector('#fab-dia')!.addEventListener('click', () => this.diaryPanel.open());
+    }
     this.diaryPanel = new DiaryPanel({
       getFarm: () => this.farmData,
       getRefDate: () => this.referenceDate,
@@ -103,6 +108,7 @@ class AgroApp {
       },
       openEstela: () => this.estela.openChat(),
     });
+    this.homeSide = new HomeSide({ getFarm: () => this.farmData, getRefDate: () => this.referenceDate });
     this.marketPanel = new MarketPanel({ getFarm: () => this.farmData, getRefDate: () => this.referenceDate, openRotation: () => this.rotationPlanner.open(undefined, 'switch') });
     this.initMap();
     this.initGameMode();
@@ -121,7 +127,7 @@ class AgroApp {
         this.mapManager.renderTalhoes(this.farmData.talhoes, this.referenceDate);
         this.estela?.refreshBadge();
         this.simpleHome?.refresh();
-        this.showToast(`📒 ${t('diarySaved')}`);
+        this.showToast(`${t('diarySaved')}`);
       },
     });
     this.simpleHome = new SimpleHome({
@@ -154,33 +160,30 @@ class AgroApp {
         <!-- Top Navigation Bar -->
         <header class="top-nav">
           <div class="brand-section">
-            <div class="brand-logo-wrapper">
-              <img src="./assets/aistudio/image_5d97730a.png" alt="MyRoça Logo" class="brand-logo-img" />
-            </div>
-            <div class="brand-text-group">
-              <div class="brand-title">
-                <span class="brand-my">My</span><span class="brand-roca">Roça</span>
-              </div>
-              <div class="brand-subtitle">Rio Verde • GO</div>
-            </div>
+            <span class="brand-mark brand-mark-nav" role="img" aria-label="SpaceAgro"><img src="./assets/brand/spaceagro-logo.svg" alt="" /></span>
           </div>
 
           <!-- Mode Switcher: Mapa Real vs Minha Fazenda -->
           <div class="mode-switcher-container">
             <button class="mode-switch-btn ${this.activeViewMode === 'mapa' ? 'active' : ''}" id="btn-mode-mapa" title="${t('realMap')}">
-              <span>🗺️</span> <span class="btn-text" id="lbl-mode-mapa">${t('realMap')}</span>
+              <span></span> <span class="btn-text" id="lbl-mode-mapa">${t('realMap')}</span>
             </button>
             <button class="mode-switch-btn fazenda-mode ${this.activeViewMode === 'fazenda' ? 'active' : ''}" id="btn-mode-fazenda" title="${t('myFarm')}">
-              <span>🚜</span> <span class="btn-text" id="lbl-mode-fazenda">${t('myFarm')}</span>
+              <span></span> <span class="btn-text" id="lbl-mode-fazenda">${t('myFarm')}</span>
             </button>
           </div>
 
-          <button class="btn btn-safra-main" id="btn-rotation" title="${sf('hub')}">
-              <span>🌾</span> <span class="btn-text">${sf('hub')}</span>
-            </button>
-          <button class="btn btn-diary-main" id="btn-diary" title="${dj('btn')}">
-              <span>📓</span> <span class="btn-text">${dj('btn')}</span>
-            </button>
+          <!-- Menu Safra: planejamento e registros -->
+          <div class="dropdown-container nav-group">
+            <button class="btn nav-trigger" id="btn-safra-dropdown" aria-haspopup="true">${ht('navSafra')} <span class="nav-caret">▾</span></button>
+            <div class="dropdown-menu" id="safra-menu">
+              <div class="menu-head">${ht('secPlan')}</div>
+              <button class="dropdown-item" id="btn-rotation">${sf('fabCur')}</button>
+              <button class="dropdown-item" id="btn-rotation-switch">${sf('fabSwitch')}</button>
+              <div class="menu-head">${ht('secRecords')}</div>
+              <button class="dropdown-item" id="btn-diary">${dj('btn')}</button>
+            </div>
+          </div>
 
           <!-- Metric Pills -->
           <div class="stats-group">
@@ -201,120 +204,140 @@ class AgroApp {
           <!-- Action Buttons -->
           <div class="nav-actions">
             <div class="dropdown-container">
-              <button class="btn btn-primary" id="btn-talhao-dropdown" title="${t('newField')}">
-                <span>🌱</span> <span class="btn-text" id="lbl-btn-new-field">${t('newField')} ▾</span>
+              <button class="btn nav-trigger" id="btn-talhao-dropdown" aria-haspopup="true">
+                <span class="btn-text" id="lbl-btn-new-field">${ht('navFields')}</span> <span class="nav-caret">▾</span>
               </button>
               <div class="dropdown-menu" id="talhao-menu">
+                <div class="menu-head">${t('newField')}</div>
                 <button class="dropdown-item" id="opt-draw-talhao">
-                  <span>✏️</span> <span id="lbl-opt-draw-talhao">${t('drawOnMap')}</span>
+                  <span></span> <span id="lbl-opt-draw-talhao">${t('drawOnMap')}</span>
                 </button>
                 <button class="dropdown-item" id="opt-type-coords-talhao">
-                  <span>🔢</span> <span id="lbl-opt-type-coords">${t('typeCoords')}</span>
+                  <span></span> <span id="lbl-opt-type-coords">${t('typeCoords')}</span>
                 </button>
               </div>
             </div>
 
             <div class="dropdown-container">
-              <button class="btn btn-water" id="btn-water-dropdown" title="${t('structures')}">
-                <span>📍</span> <span class="btn-text" id="lbl-btn-structures">${t('structures')} ▾</span>
+              <button class="btn nav-trigger" id="btn-water-dropdown" aria-haspopup="true">
+                <span class="btn-text" id="lbl-btn-structures">${ht('navStruct')}</span> <span class="nav-caret">▾</span>
               </button>
               <div class="dropdown-menu" id="water-menu" style="min-width: 250px;">
-                <div style="font-size: 11px; font-weight: 800; color: #94a3b8; padding: 6px 12px; text-transform: uppercase;" id="lbl-header-rural-struct">${t('ruralStructures')}</div>
-                <button class="dropdown-item" data-type="sede"><span>🏠</span> <span class="water-menu-item-text">${t('markSede')}</span></button>
-                <button class="dropdown-item" data-type="curral"><span>🐂</span> <span class="water-menu-item-text">${t('markCurral')}</span></button>
-                <button class="dropdown-item" data-type="silo"><span>🏭</span> <span class="water-menu-item-text">${t('markSilo')}</span></button>
-                <button class="dropdown-item" data-type="estrada"><span>🛣️</span> <span class="water-menu-item-text">${t('markEstrada')}</span></button>
-                <button class="dropdown-item" data-type="reserva"><span>🌳</span> <span class="water-menu-item-text">${t('markReserva')}</span></button>
-                <button class="dropdown-item" data-type="pivo"><span>🔄</span> <span class="water-menu-item-text">${t('markPivo')}</span></button>
-                <button class="dropdown-item" data-type="estacao_meteo"><span>📡</span> <span class="water-menu-item-text">${t('markEstacao')}</span></button>
-                <div style="font-size: 11px; font-weight: 800; color: #38bdf8; padding: 6px 12px; text-transform: uppercase; border-top: 1px solid var(--border-color); margin-top: 4px;" id="lbl-header-water-res">${t('waterResources')}</div>
-                <button class="dropdown-item" data-type="nascente"><span>💧</span> <span class="water-menu-item-text">${t('markNascente')}</span></button>
-                <button class="dropdown-item" data-type="acude"><span>🌊</span> <span class="water-menu-item-text">${t('markAcude')}</span></button>
-                <button class="dropdown-item" data-type="poco"><span>🚰</span> <span class="water-menu-item-text">${t('markPoco')}</span></button>
-                <button class="dropdown-item" data-type="rio"><span>🏞️</span> <span class="water-menu-item-text">${t('markRio')}</span></button>
-                <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
-                <button class="dropdown-item" id="opt-type-coords-water"><span>🔢</span> <span id="lbl-opt-type-coords-water">${t('typePointCoords')}</span></button>
+                <div class="menu-head" id="lbl-header-rural-struct">${t('ruralStructures')}</div>
+                <button class="dropdown-item" data-type="sede"><span></span> <span class="water-menu-item-text">${t('markSede')}</span></button>
+                <button class="dropdown-item" data-type="curral"><span></span> <span class="water-menu-item-text">${t('markCurral')}</span></button>
+                <button class="dropdown-item" data-type="silo"><span></span> <span class="water-menu-item-text">${t('markSilo')}</span></button>
+                <button class="dropdown-item" data-type="estrada"><span></span> <span class="water-menu-item-text">${t('markEstrada')}</span></button>
+                <button class="dropdown-item" data-type="reserva"><span></span> <span class="water-menu-item-text">${t('markReserva')}</span></button>
+                <button class="dropdown-item" data-type="pivo"><span></span> <span class="water-menu-item-text">${t('markPivo')}</span></button>
+                <button class="dropdown-item" data-type="estacao_meteo"><span></span> <span class="water-menu-item-text">${t('markEstacao')}</span></button>
+                <div class="menu-head" id="lbl-header-water-res">${t('waterResources')}</div>
+                <button class="dropdown-item" data-type="nascente"><span></span> <span class="water-menu-item-text">${t('markNascente')}</span></button>
+                <button class="dropdown-item" data-type="acude"><span></span> <span class="water-menu-item-text">${t('markAcude')}</span></button>
+                <button class="dropdown-item" data-type="poco"><span></span> <span class="water-menu-item-text">${t('markPoco')}</span></button>
+                <button class="dropdown-item" data-type="rio"><span></span> <span class="water-menu-item-text">${t('markRio')}</span></button>
+                <div class="menu-head">${ht('secCoords')}</div>
+                <button class="dropdown-item" id="opt-type-coords-water"><span></span> <span id="lbl-opt-type-coords-water">${t('typePointCoords')}</span></button>
               </div>
             </div>
 
             <!-- Secondary Actions Grouped in 'Mais ▾' Dropdown -->
             <div class="dropdown-container">
-              <button class="btn btn-outline" id="btn-more-dropdown" title="${t('more')}">
-                <span>⚙️</span> <span class="btn-text" id="lbl-btn-more">${t('more')} ▾</span>
+              <button class="btn nav-trigger" id="btn-more-dropdown" aria-haspopup="true">
+                <span class="btn-text" id="lbl-btn-more">${ht('navFarm')}</span> <span class="nav-caret">▾</span>
               </button>
-              <div class="dropdown-menu dropdown-menu-right" id="more-menu" style="min-width: 220px;">
+              <div class="dropdown-menu" id="more-menu" style="min-width: 220px;">
+                <div class="menu-head">${ht('secFiles')}</div>
                 <button class="dropdown-item" id="btn-open-import" title="${t('uploadMapFile')}">
-                  <span>📂</span> <span id="lbl-opt-import">${t('uploadMapFile')}</span>
+                  <span></span> <span id="lbl-opt-import">${t('uploadMapFile')}</span>
                 </button>
                 <button class="dropdown-item" id="btn-open-export" title="${t('exportData')}">
-                  <span>💾</span> <span id="lbl-opt-export">${t('exportData')}</span>
+                  <span></span> <span id="lbl-opt-export">${t('exportData')}</span>
                 </button>
+                <div class="menu-head">${ht('secView')}</div>
                 <button class="dropdown-item" id="btn-toggle-drawer" title="${t('farmDashboard')}">
-                  <span>📋</span> <span id="lbl-opt-drawer">${t('farmDashboard')}</span>
+                  <span></span> <span id="lbl-opt-drawer">${t('farmDashboard')}</span>
                 </button>
                 <button class="dropdown-item" id="btn-center-farm" title="${t('centerMap')}">
-                  <span>🎯</span> <span id="lbl-opt-center">${t('centerMap')}</span>
+                  <span></span> <span id="lbl-opt-center">${t('centerMap')}</span>
                 </button>
               </div>
             </div>
 
 
             <button class="btn btn-outline btn-logout-user" id="btn-logout" title="${at('logout')}">
-              <span>👤</span> <span class="btn-text">${(currentUser()?.id === 'guest' ? at('guestName') : (currentUser()?.name || '')).split(' ')[0].replace(/[&<>"']/g, '')}</span> <span>⎋</span>
+              <span></span> <span class="btn-text">${(currentUser()?.id === 'guest' ? at('guestName') : (currentUser()?.name || '')).split(' ')[0].replace(/[&<>"']/g, '')}</span> <span>⎋</span>
             </button>
 
             <!-- Language Selector Dropdown -->
             <div class="dropdown-container">
               <button class="btn btn-outline" id="btn-lang-dropdown" title="${t('language')}">
-                <span>🌐</span> <span class="btn-text" id="current-lang-code">${getCurrentLanguage().toUpperCase()}</span> ▾
+                <span></span> <span class="btn-text" id="current-lang-code">${getCurrentLanguage().toUpperCase()}</span> ▾
               </button>
               <div class="dropdown-menu dropdown-menu-right" id="lang-menu" style="min-width: 145px;">
-                <button class="dropdown-item lang-item" data-lang="pt">🇧🇷 Português</button>
-                <button class="dropdown-item lang-item" data-lang="es">🇪🇸 Español</button>
-                <button class="dropdown-item lang-item" data-lang="en">🇺🇸 English</button>
-                <button class="dropdown-item lang-item" data-lang="de">🇩🇪 Deutsch</button>
-                <button class="dropdown-item lang-item" data-lang="zh">🇨🇳 简体中文</button>
-                <button class="dropdown-item lang-item" data-lang="fr">🇫🇷 Français</button>
+                <button class="dropdown-item lang-item" data-lang="pt">Português</button>
+                <button class="dropdown-item lang-item" data-lang="es">Español</button>
+                <button class="dropdown-item lang-item" data-lang="en">English</button>
+                <button class="dropdown-item lang-item" data-lang="de">Deutsch</button>
+                <button class="dropdown-item lang-item" data-lang="zh">简体中文</button>
+                <button class="dropdown-item lang-item" data-lang="fr">Français</button>
               </div>
             </div>
           </div>
         </header>
 
-        <!-- Agricultural Calendar Bar (Reference Date: "Hoje") -->
-        <div class="calendar-time-bar" id="calendar-time-bar">
-          <div class="calendar-today-box">
-            <div class="today-calendar-icon">📅</div>
-            <div>
-              <div class="today-title-label" id="lbl-calendar-title">${t('cropCalendar')} • ${t('referenceDate')}</div>
-              <div class="today-date-value" id="lbl-calendar-today-row">
-                ${t('today')}: <span id="calendar-today-display">${formatDateWithWeekdayI18n(this.referenceDate)}</span>
-                <span class="badge-exemplo">${t('exampleBadge')}</span>
-              </div>
-            </div>
-          </div>
+        <!-- Faixa de mercado (preenchida pelo MarketPanel com os mesmos dados do painel) -->
+        <div class="market-strip" id="market-strip"></div>
 
-          <div class="calendar-actions-group">
-            <button class="btn-advance-time" id="btn-advance-time-main" title="${t('advanceTimeWeek')}">
-              <span>⏩</span> <span class="cal-btn-text" id="lbl-btn-advance-time">${t('advanceTimeWeek')}</span>
-            </button>
-            <div class="dropdown-container">
-              <button class="btn btn-outline" id="btn-calendar-more-options" title="${t('options')}">
-                <span>⏱️</span> <span class="cal-btn-text" id="lbl-btn-calendar-options">${t('options')} ▾</span>
-              </button>
-              <div class="dropdown-menu" id="calendar-options-menu">
-                <button class="dropdown-item" id="opt-advance-1w"><span>⏩</span> <span id="lbl-opt-adv-1w">${t('plus1Week')}</span></button>
-                <button class="dropdown-item" id="opt-advance-2w"><span>⏩</span> <span id="lbl-opt-adv-2w">${t('plus2Weeks')}</span></button>
-                <button class="dropdown-item" id="opt-advance-4w"><span>⏩</span> <span id="lbl-opt-adv-4w">${t('plus4Weeks')}</span></button>
-                <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
-                <button class="dropdown-item" id="opt-rewind-1w"><span>⏪</span> <span id="lbl-opt-rewind-1w">${t('rewind1Week')}</span></button>
-                <button class="dropdown-item" id="opt-reset-date"><span>🔄</span> <span id="lbl-opt-reset-date">${t('resetToDefaultDate')}</span></button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Main Viewport Area: Starts strictly below top-nav-stack, fills 100% remaining space -->
+      <!-- Tela inicial: visão geral (mapa em cartão, clima e mercado ao lado, chat da Estrela à direita) -->
+      <div class="home-layout" id="home-layout">
+      <main class="home-main">
+        <div class="home-head">
+          <div><h1 id="home-title"></h1><div class="home-sub" id="home-sub"></div></div>
+          <div class="home-head-actions" id="home-head-actions">
+          <!-- Agricultural Calendar Bar (Reference Date: "Hoje") -->
+          <div class="calendar-time-bar" id="calendar-time-bar">
+            <div class="calendar-today-box">
+              <div class="today-calendar-icon"></div>
+              <div>
+                <div class="today-title-label" id="lbl-calendar-title">${t('cropCalendar')} • ${t('referenceDate')}</div>
+                <div class="today-date-value" id="lbl-calendar-today-row">
+                  ${t('today')}: <span id="calendar-today-display">${formatDateWithWeekdayI18n(this.referenceDate)}</span>
+                  <span class="badge-exemplo">${t('exampleBadge')}</span>
+                </div>
+              </div>
+            </div>
+  
+            <div class="calendar-actions-group">
+              <button class="btn-advance-time" id="btn-advance-time-main" title="${t('advanceTimeWeek')}">
+                <span class="cal-btn-text" id="lbl-btn-advance-time">${ht('advShort')}</span>
+              </button>
+              <div class="dropdown-container">
+                <button class="btn btn-outline" id="btn-calendar-more-options" title="${t('options')}">
+                  <span></span> <span class="cal-btn-text" id="lbl-btn-calendar-options">${t('options')} ▾</span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right" id="calendar-options-menu">
+                  <button class="dropdown-item" id="opt-advance-1w"><span></span> <span id="lbl-opt-adv-1w">${t('plus1Week')}</span></button>
+                  <button class="dropdown-item" id="opt-advance-2w"><span></span> <span id="lbl-opt-adv-2w">${t('plus2Weeks')}</span></button>
+                  <button class="dropdown-item" id="opt-advance-4w"><span></span> <span id="lbl-opt-adv-4w">${t('plus4Weeks')}</span></button>
+                  <div style="border-top: 1px solid var(--border-color); margin: 4px 0;"></div>
+                  <button class="dropdown-item" id="opt-rewind-1w"><span></span> <span id="lbl-opt-rewind-1w">${t('rewind1Week')}</span></button>
+                  <button class="dropdown-item" id="opt-reset-date"><span></span> <span id="lbl-opt-reset-date">${t('resetToDefaultDate')}</span></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+        <div class="home-content">
+        <div class="home-col">
+        <section class="panel home-map-panel">
+          <div class="panelhead">
+            <h2 id="home-map-title"></h2>
+            <div class="home-map-actions"><button type="button" class="btn btn-secondary" id="home-btn-center"></button><button type="button" class="btn btn-secondary" id="home-btn-max" aria-pressed="false"></button></div>
+          </div>
       <div class="main-viewport-container" id="main-viewport-container">
         <!-- Real Satellite Map View -->
         <div id="map"></div>
@@ -324,17 +347,17 @@ class AgroApp {
 
         <!-- Prominent Farm Guidance Banner -->
         <div class="farm-guidance-banner" id="farm-guidance-banner">
-        <span class="guidance-icon">🌾</span>
+        <span class="guidance-icon"></span>
         <div class="guidance-text-content">
           <div class="guidance-headline" id="lbl-guidance-headline">${t('guidanceHeadline')}</div>
           <div class="guidance-subline" id="lbl-guidance-subline">${t('guidanceSubline')}</div>
         </div>
         <div class="guidance-actions">
           <button class="btn btn-primary" id="guidance-btn-talhao">
-            <span>➕</span> <span id="lbl-guidance-btn-talhao">${t('newField')}</span>
+            <span></span> <span id="lbl-guidance-btn-talhao">${t('newField')}</span>
           </button>
           <button class="btn btn-water" id="guidance-btn-elemento">
-            <span>📍</span> <span id="lbl-guidance-btn-elemento">${t('farmElements')}</span>
+            <span></span> <span id="lbl-guidance-btn-elemento">${t('farmElements')}</span>
           </button>
           <button class="btn btn-outline" id="guidance-btn-dismiss" title="${t('close')}" style="padding: 6px 12px;">
             ✕
@@ -346,7 +369,7 @@ class AgroApp {
       <div class="drawing-hud" id="drawing-hud" style="display: none;">
         <div class="drawing-info">
           <div class="drawing-title">
-            <span>✏️</span> <span id="lbl-drawing-title">${t('drawingTitle')}</span>
+            <span></span> <span id="lbl-drawing-title">${t('drawingTitle')}</span>
           </div>
           <div class="drawing-instruction" id="lbl-drawing-instruction">
             ${t('drawingInstruction')}
@@ -354,18 +377,18 @@ class AgroApp {
         </div>
 
         <div class="drawing-stats">
-          <span style="font-size: 12px; color: #94a3b8;" id="lbl-hud-vertices">${t('vertices')}:</span>
+          <span style="font-size: 12px; color: #65756e;" id="lbl-hud-vertices">${t('vertices')}:</span>
           <span class="drawing-stat-val" id="hud-point-count">0</span>
-          <span style="font-size: 12px; color: #94a3b8; margin-left: 8px;" id="lbl-hud-area">${t('area')}:</span>
-          <span class="drawing-stat-val" id="hud-live-area" style="color: #34d399;">0,00 ha</span>
+          <span style="font-size: 12px; color: #65756e; margin-left: 8px;" id="lbl-hud-area">${t('area')}:</span>
+          <span class="drawing-stat-val" id="hud-live-area" style="color: #245b43;">0,00 ha</span>
         </div>
 
         <button class="btn btn-secondary" id="btn-undo-point">
-          <span>↩️</span> <span id="lbl-btn-undo">${t('undoPoint')}</span>
+          <span></span> <span id="lbl-btn-undo">${t('undoPoint')}</span>
         </button>
 
         <button class="btn btn-primary" id="btn-finish-drawing" disabled>
-          <span>✅</span> <span id="lbl-btn-finish-draw">${t('finishDrawing')}</span>
+          <span></span> <span id="lbl-btn-finish-draw">${t('finishDrawing')}</span>
         </button>
 
         <button class="btn btn-outline" id="btn-cancel-drawing">
@@ -376,12 +399,12 @@ class AgroApp {
       <!-- Water HUD (shown while placing a marker) -->
       <div class="water-hud" id="water-hud" style="display: none;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 24px;" id="water-hud-icon">📍</span>
+          <span style="font-size: 24px;" id="water-hud-icon"></span>
           <div>
-            <div style="font-size: 14px; font-weight: 700; color: #38bdf8;" id="water-hud-text">
+            <div style="font-size: 14px; font-weight: 700; color: #2f6690;" id="water-hud-text">
               ${t('positioningElement')}
             </div>
-            <div style="font-size: 12px; color: #94a3b8;" id="water-hud-subtext">
+            <div style="font-size: 12px; color: #65756e;" id="water-hud-subtext">
               ${t('positioningElementDesc')}
             </div>
           </div>
@@ -392,6 +415,16 @@ class AgroApp {
         </button>
       </div>
     </div> <!-- /main-viewport-container -->
+        </section>
+        </div>
+        <div class="home-side">
+          <section class="panel home-commodities" id="home-commodities" aria-live="off"></section>
+          <section class="panel home-weather-mini" id="home-weather"></section>
+        </div>
+        </div>
+      </main>
+      <aside class="home-chat" id="estela-dock"></aside>
+      </div> <!-- /home-layout -->
 
       <!-- Modal: Digitar Coordenadas do Talhão -->
       <div class="modal-overlay" id="modal-coords-talhao">
@@ -399,9 +432,9 @@ class AgroApp {
           <div class="modal-header">
             <div>
               <h3 class="modal-title">
-                <span>🔢</span> <span id="lbl-coords-modal-title">${t('typeCoordsModalTitle')}</span>
+                <span></span> <span id="lbl-coords-modal-title">${t('typeCoordsModalTitle')}</span>
               </h3>
-              <p style="font-size: 13px; color: #94a3b8; margin-top: 2px;" id="lbl-coords-modal-sub">
+              <p style="font-size: 13px; color: #65756e; margin-top: 2px;" id="lbl-coords-modal-sub">
                 ${t('typeCoordsModalSubtitle')}
               </p>
             </div>
@@ -417,26 +450,26 @@ class AgroApp {
               </div>
               <div style="display: flex; gap: 24px; text-align: right;">
                 <div>
-                  <div style="font-size: 12px; color: #94a3b8;" id="lbl-coords-perim-label">${t('perimeter')}</div>
-                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #e2e8f0;" id="coords-live-perim">0,00 km</div>
+                  <div style="font-size: 12px; color: #65756e;" id="lbl-coords-perim-label">${t('perimeter')}</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #182b25;" id="coords-live-perim">0,00 km</div>
                 </div>
                 <div>
-                  <div style="font-size: 12px; color: #94a3b8;" id="lbl-coords-points-label">${t('validPoints')}</div>
-                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #34d399;" id="coords-live-valid-count">0 / 0</div>
+                  <div style="font-size: 12px; color: #65756e;" id="lbl-coords-points-label">${t('validPoints')}</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #245b43;" id="coords-live-valid-count">0 / 0</div>
                 </div>
               </div>
             </div>
 
             <!-- Brazil Missing Negative Banner -->
             <div class="alert-brazil-box" id="alert-brazil-negative" style="display: none;">
-              <span class="alert-brazil-icon">⚠️</span>
+              <span class="alert-brazil-icon"></span>
               <div style="flex: 1;">
                 <div class="alert-brazil-title" id="lbl-alert-brazil-title">${t('alertBrazilTitle')}</div>
                 <div class="alert-brazil-desc" id="lbl-alert-brazil-desc">
                   ${t('alertBrazilDesc')}
                 </div>
                 <button type="button" class="btn-fix-negative" id="btn-fix-brazil-negatives">
-                  <span>⚡</span> <span id="lbl-btn-fix-brazil">${t('fixBrazilNegative')}</span>
+                  <span></span> <span id="lbl-btn-fix-brazil">${t('fixBrazilNegative')}</span>
                 </button>
               </div>
             </div>
@@ -444,8 +477,8 @@ class AgroApp {
             <!-- Batch Paste Accordion / Card -->
             <div class="paste-box-wrapper">
               <div style="display: flex; align-items: center; justify-content: space-between;">
-                <span style="font-size: 13px; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 6px;">
-                  <span>📋</span> <span id="lbl-batch-paste-title">${t('batchPasteTitle')}</span>
+                <span style="font-size: 13px; font-weight: 700; color: #182b25; display: flex; align-items: center; gap: 6px;">
+                  <span></span> <span id="lbl-batch-paste-title">${t('batchPasteTitle')}</span>
                 </span>
                 <button type="button" class="btn btn-outline" id="btn-toggle-paste" style="padding: 4px 10px; font-size: 12px;">
                   <span id="lbl-btn-toggle-paste">${t('batchPasteBtn')} ▾</span>
@@ -455,7 +488,7 @@ class AgroApp {
                 <textarea class="paste-textarea" id="textarea-paste-coords" placeholder="${t('pasteTextareaPlaceholder')}"></textarea>
                 <div style="display: flex; justify-content: flex-end; gap: 8px;">
                   <button type="button" class="btn btn-primary" id="btn-apply-pasted-coords">
-                    <span>📥</span> <span id="lbl-btn-apply-pasted">${t('processLines')}</span>
+                    <span></span> <span id="lbl-btn-apply-pasted">${t('processLines')}</span>
                   </button>
                 </div>
               </div>
@@ -464,10 +497,10 @@ class AgroApp {
             <!-- Coordinate Rows Table -->
             <div class="form-group">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                <label class="form-label" style="font-size: 14px; color: #fff;" id="lbl-coords-table-header">
+                <label class="form-label" style="font-size: 14px; color: #182b25;" id="lbl-coords-table-header">
                   ${t('coordsTableInstructions')}
                 </label>
-                <button type="button" class="btn btn-outline" id="btn-clear-table" style="padding: 4px 10px; font-size: 12px; color: #f87171;">
+                <button type="button" class="btn btn-outline" id="btn-clear-table" style="padding: 4px 10px; font-size: 12px; color: #b34848;">
                   <span id="lbl-btn-clear-table">${t('clearTable')}</span>
                 </button>
               </div>
@@ -493,10 +526,10 @@ class AgroApp {
             <!-- Add Point Button -->
             <div style="display: flex; gap: 10px;">
               <button type="button" class="btn btn-secondary btn-lg" id="btn-add-coord-row" style="flex: 1; justify-content: center;">
-                <span>➕</span> <span id="lbl-btn-add-coord-row">${t('addPoint')}</span>
+                <span></span> <span id="lbl-btn-add-coord-row">${t('addPoint')}</span>
               </button>
               <button type="button" class="btn btn-outline" id="btn-load-coords-sample" title="${t('rioVerdeSample')}">
-                <span>📍</span> <span id="lbl-btn-load-sample">${t('rioVerdeSample')}</span>
+                <span></span> <span id="lbl-btn-load-sample">${t('rioVerdeSample')}</span>
               </button>
             </div>
           </div>
@@ -515,7 +548,7 @@ class AgroApp {
         <div class="modal-card">
           <div class="modal-header">
             <h3 class="modal-title" id="modal-talhao-title">
-              <span>🌾</span> <span id="lbl-talhao-modal-title">${t('saveFieldModalTitle')}</span>
+              <span></span> <span id="lbl-talhao-modal-title">${t('saveFieldModalTitle')}</span>
             </h3>
             <button class="modal-close-btn" id="btn-close-talhao-modal">&times;</button>
           </div>
@@ -527,8 +560,8 @@ class AgroApp {
                 <div class="area-hero-val" id="modal-talhao-area">0,00 ha</div>
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 12px; color: #94a3b8;" id="lbl-talhao-perim-label">${t('perimeter')}</div>
-                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #e2e8f0;" id="modal-talhao-perimeter">0,00 km</div>
+                <div style="font-size: 12px; color: #65756e;" id="lbl-talhao-perim-label">${t('perimeter')}</div>
+                <div style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #182b25;" id="modal-talhao-perimeter">0,00 km</div>
               </div>
             </div>
 
@@ -540,7 +573,7 @@ class AgroApp {
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
               <div class="form-group">
                 <label class="form-label" id="lbl-talhao-crop-label">${t('mainCrop')} *</label>
-                <select class="form-select" id="select-talhao-crop" style="width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 14px; font-weight: 600;">
+                <select class="form-select" id="select-talhao-crop" style="width: 100%; background: #fff; border: 1px solid #dfe6e1; border-radius: 8px; padding: 10px 12px; color: #182b25; font-size: 14px; font-weight: 600;">
                   <option value="">${t('selectCropPlaceholder')}</option>
                   <option value="Soja">${t('cropOptionSoja')}</option>
                   <option value="Milho">${t('cropOptionMilho')}</option>
@@ -570,7 +603,7 @@ class AgroApp {
               <div class="form-group">
                 <label class="form-label" id="lbl-talhao-cycle-label">${t('cropCycleDays')}</label>
                 <input type="number" class="form-input" id="input-talhao-cycle-days" placeholder="${t('exPrefix')} 115 ${t('orWord')} 120" min="0" max="400" />
-                <span id="cycle-days-hint" style="font-size: 11px; color: #94a3b8; margin-top: 3px; display: block;">${t('cycleAutoFilled')}</span>
+                <span id="cycle-days-hint" style="font-size: 11px; color: #65756e; margin-top: 3px; display: block;">${t('cycleAutoFilled')}</span>
               </div>
             </div>
 
@@ -595,9 +628,9 @@ class AgroApp {
           <div class="modal-header">
             <div>
               <h3 class="modal-title">
-                <span>📅</span> <span id="lbl-cal-modal-title">${t('cropCalendar')}</span>
+                <span></span> <span id="lbl-cal-modal-title">${t('cropCalendar')}</span>
               </h3>
-              <p style="font-size: 13px; color: #94a3b8; margin-top: 2px;" id="calendar-modal-subtitle">
+              <p style="font-size: 13px; color: #65756e; margin-top: 2px;" id="calendar-modal-subtitle">
                 ${t('calendarModalSubtitle')}
               </p>
             </div>
@@ -607,7 +640,7 @@ class AgroApp {
           <div class="modal-body" style="gap: 16px;">
             <!-- Overlap Warning Banner -->
             <div class="overlap-warning-box" id="overlap-warning-banner" style="display: none;">
-              <span class="overlap-warning-icon">⛔</span>
+              <span class="overlap-warning-icon"></span>
               <div>
                 <div class="overlap-warning-title" id="lbl-overlap-title">${t('overlapWarningTitle')}</div>
                 <div id="overlap-warning-text">
@@ -619,7 +652,7 @@ class AgroApp {
             <!-- Current Crop Card -->
             <div class="calendar-cycle-box">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="font-size: 15px; color: #4ade80;" id="lbl-cal-current-crop-title">🌱 ${t('currentSeasonInField')}</strong>
+                <strong style="font-size: 15px; color: #245b43;" id="lbl-cal-current-crop-title">${t('currentSeasonInField')}</strong>
                 <span id="cal-current-phase-pill" class="coord-status-tag valid">Calculando...</span>
               </div>
 
@@ -645,14 +678,14 @@ class AgroApp {
                 </div>
                 <div class="form-group">
                   <label class="form-label" id="lbl-cal-harvest-input">${t('harvestForecast')}</label>
-                  <input type="text" class="form-input" id="cal-expected-harvest-display" readonly style="background: rgba(15,23,42,0.6); color: #a3e635; font-weight: 700;" />
+                  <input type="text" class="form-input" id="cal-expected-harvest-display" readonly style="background: #fff; color: #245b43; font-weight: 700;" />
                 </div>
               </div>
             </div>
 
             <!-- Next Planned Crop Card -->
-            <div class="calendar-cycle-box" style="border-color: #0284c7;">
-              <strong style="font-size: 15px; color: #38bdf8;" id="lbl-cal-next-season-title">🌾 ${t('nextPlannedSeason')}</strong>
+            <div class="calendar-cycle-box" style="border-color: #2f6690;">
+              <strong style="font-size: 15px; color: #2f6690;" id="lbl-cal-next-season-title">${t('nextPlannedSeason')}</strong>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                 <div class="form-group">
                   <label class="form-label" id="lbl-cal-next-crop">${t('plannedCrop')}</label>
@@ -668,7 +701,7 @@ class AgroApp {
             <!-- Past Harvests History -->
             <div class="calendar-cycle-box">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="font-size: 15px; color: #e2e8f0;" id="lbl-cal-history-box-title">📜 ${t('harvestHistoryTitle')}</strong>
+                <strong style="font-size: 15px; color: #182b25;" id="lbl-cal-history-box-title">${t('harvestHistoryTitle')}</strong>
                 <button type="button" class="btn btn-outline" id="btn-add-history-item" style="padding: 4px 10px; font-size: 12px;">
                   <span id="lbl-btn-add-history">+ ${t('addToHistory')}</span>
                 </button>
@@ -691,7 +724,7 @@ class AgroApp {
         <div class="modal-card modal-card-lg">
           <div class="modal-header">
             <h3 class="modal-title">
-              <span>📍</span> <span id="lbl-water-modal-title">${t('registerFarmElement')}</span>
+              <span></span> <span id="lbl-water-modal-title">${t('registerFarmElement')}</span>
             </h3>
             <button class="modal-close-btn" id="btn-close-water-modal">&times;</button>
           </div>
@@ -700,92 +733,92 @@ class AgroApp {
               <label class="form-label" id="lbl-water-type-label">${t('selectElementType')}</label>
 
               <!-- Group 1: Estruturas e Infraestrutura -->
-              <div style="font-size: 12px; font-weight: 800; color: #4ade80; text-transform: uppercase; margin: 6px 0 4px 0;" id="lbl-water-group1-title">
+              <div style="font-size: 12px; font-weight: 700; color: #245b43; text-transform: uppercase; margin: 6px 0 4px 0;" id="lbl-water-group1-title">
                 ${t('ruralInfrastructure')}
               </div>
               <div class="water-type-grid" id="element-type-selector-estruturas">
                 <div class="water-type-card" data-type="sede">
-                  <span class="icon">🏠</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('sede')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markSede')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markSede')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="curral">
-                  <span class="icon">🐂</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('curral')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markCurral')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markCurral')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="silo">
-                  <span class="icon">🏭</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('silo')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markSilo')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markSilo')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="estrada">
-                  <span class="icon">🛣️</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('estrada')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markEstrada')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markEstrada')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="reserva">
-                  <span class="icon">🌳</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('reserva')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markReserva')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markReserva')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="pivo">
-                  <span class="icon">🔄</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('pivo')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markPivo')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markPivo')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="estacao_meteo">
-                  <span class="icon">📡</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('estacao_meteo')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markEstacao')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markEstacao')}</div>
                   </div>
                 </div>
               </div>
 
               <!-- Group 2: Recursos Hídricos -->
-              <div style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin: 12px 0 4px 0;" id="lbl-water-group2-title">
+              <div style="font-size: 12px; font-weight: 700; color: #2f6690; text-transform: uppercase; margin: 12px 0 4px 0;" id="lbl-water-group2-title">
                 ${t('waterResources')}
               </div>
               <div class="water-type-grid" id="element-type-selector-agua">
                 <div class="water-type-card selected" data-type="nascente">
-                  <span class="icon">💧</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('nascente')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markNascente')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markNascente')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="acude">
-                  <span class="icon">🌊</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('acude')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markAcude')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markAcude')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="poco">
-                  <span class="icon">🚰</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('poco')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markPoco')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markPoco')}</div>
                   </div>
                 </div>
                 <div class="water-type-card" data-type="rio">
-                  <span class="icon">🏞️</span>
+                  <span class="icon"></span>
                   <div>
                     <div class="title">${translateStructureType('rio')}</div>
-                    <div style="font-size: 11px; color: #94a3b8;">${t('markRio')}</div>
+                    <div style="font-size: 11px; color: #65756e;">${t('markRio')}</div>
                   </div>
                 </div>
               </div>
@@ -800,16 +833,16 @@ class AgroApp {
             <div class="form-group">
               <label class="form-label" style="display: flex; justify-content: space-between; align-items: baseline;">
                 <span id="lbl-water-coords-label">${t('geoCoordinates')} *</span>
-                <span style="font-size: 11px; font-weight: normal; color: #94a3b8;" id="lbl-water-coords-hint">${t('coordsFormatHint')}</span>
+                <span style="font-size: 11px; font-weight: normal; color: #65756e;" id="lbl-water-coords-hint">${t('coordsFormatHint')}</span>
               </label>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div>
-                  <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;" id="lbl-water-lat">${t('latitude')}</label>
+                  <label style="font-size: 12px; color: #65756e; display: block; margin-bottom: 4px;" id="lbl-water-lat">${t('latitude')}</label>
                   <input type="text" class="coord-input" id="input-water-lat" placeholder="${t('exPrefix')} -17.8050 ${t('orWord')} 17°48'18&quot;S" />
                 </div>
                 <div>
-                  <label style="font-size: 12px; color: #94a3b8; display: block; margin-bottom: 4px;" id="lbl-water-lng">${t('longitude')}</label>
+                  <label style="font-size: 12px; color: #65756e; display: block; margin-bottom: 4px;" id="lbl-water-lng">${t('longitude')}</label>
                   <input type="text" class="coord-input" id="input-water-lng" placeholder="${t('exPrefix')} -51.0850 ${t('orWord')} 51°05'06&quot;W" />
                 </div>
               </div>
@@ -819,14 +852,14 @@ class AgroApp {
 
               <!-- Brazil negative warning for water -->
               <div class="alert-brazil-box" id="alert-brazil-water-negative" style="display: none; margin-top: 8px; padding: 10px 14px;">
-                <span class="alert-brazil-icon" style="font-size: 20px;">⚠️</span>
+                <span class="alert-brazil-icon" style="font-size: 20px;"></span>
                 <div style="flex: 1;">
                   <div class="alert-brazil-title" style="font-size: 13px;">${t('alertBrazilTitle')}</div>
                   <div class="alert-brazil-desc" style="font-size: 12px;">
                     ${t('alertBrazilDesc')}
                   </div>
                   <button type="button" class="btn-fix-negative" id="btn-fix-water-negative" style="margin-top: 6px; padding: 4px 10px; font-size: 11px;">
-                    <span>⚡</span> <span>${t('fixBrazilNegative')}</span>
+                    <span></span> <span>${t('fixBrazilNegative')}</span>
                   </button>
                 </div>
               </div>
@@ -849,26 +882,26 @@ class AgroApp {
         <div class="modal-card">
           <div class="modal-header">
             <h3 class="modal-title">
-              <span>📂</span> <span id="lbl-import-modal-title">${t('importFieldsTitle')}</span>
+              <span></span> <span id="lbl-import-modal-title">${t('importFieldsTitle')}</span>
             </h3>
             <button class="modal-close-btn" id="btn-close-import-modal">&times;</button>
           </div>
           <div class="modal-body">
             <div class="dropzone" id="file-dropzone">
-              <div class="dropzone-icon">🛰️</div>
+              <div class="dropzone-icon"></div>
               <div class="dropzone-text" id="lbl-dropzone-text">${t('dropzoneText')}</div>
               <div class="dropzone-subtext" id="lbl-dropzone-subtext">${t('dropzoneSubtext')}</div>
               <input type="file" id="file-input" accept=".kml,.geojson,.json" style="display: none;" />
             </div>
 
-            <div style="background: rgba(15, 23, 42, 0.5); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; font-size: 12px; color: #cbd5e1; line-height: 1.5;">
-              <strong style="color: #34d399;" id="lbl-import-tip-title">💡 ${t('compatibilityTip')}:</strong><br />
+            <div style="background: #fff; border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; font-size: 12px; color: #3d5249; line-height: 1.5;">
+              <strong style="color: #245b43;" id="lbl-import-tip-title">${t('compatibilityTip')}:</strong><br />
               <span id="lbl-import-tip-desc">${t('compatibilityDesc')}</span>
             </div>
 
             <div class="form-group" style="display: flex; flex-direction: row; align-items: center; gap: 8px;">
               <input type="checkbox" id="check-keep-existing" checked style="accent-color: #10b981; width: 16px; height: 16px; cursor: pointer;" />
-              <label for="check-keep-existing" id="lbl-keep-existing" style="font-size: 13px; color: #e2e8f0; cursor: pointer;">
+              <label for="check-keep-existing" id="lbl-keep-existing" style="font-size: 13px; color: #182b25; cursor: pointer;">
                 ${t('keepExistingData')}
               </label>
             </div>
@@ -885,28 +918,28 @@ class AgroApp {
         <div class="modal-card">
           <div class="modal-header">
             <h3 class="modal-title">
-              <span>💾</span> <span id="lbl-export-modal-title">${t('exportMappingTitle')}</span>
+              <span></span> <span id="lbl-export-modal-title">${t('exportMappingTitle')}</span>
             </h3>
             <button class="modal-close-btn" id="btn-close-export-modal">&times;</button>
           </div>
           <div class="modal-body">
-            <p style="font-size: 13px; color: #cbd5e1;" id="lbl-export-desc">
+            <p style="font-size: 13px; color: #3d5249;" id="lbl-export-desc">
               ${t('chooseExportFormat')}
             </p>
 
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 6px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--border-color); border-radius: 9px; padding: 14px 16px;">
                 <div>
-                  <div style="font-size: 15px; font-weight: 700; color: #fff;">GeoJSON (.geojson)</div>
-                  <div style="font-size: 12px; color: #94a3b8;" id="lbl-export-geojson-desc">${t('geojsonDesc')}</div>
+                  <div style="font-size: 15px; font-weight: 700; color: #182b25;">GeoJSON (.geojson)</div>
+                  <div style="font-size: 12px; color: #65756e;" id="lbl-export-geojson-desc">${t('geojsonDesc')}</div>
                 </div>
                 <button class="btn btn-primary" id="btn-export-geojson"><span id="lbl-btn-export-geojson">${t('downloadGeoJSON')}</span></button>
               </div>
 
-              <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 12px; padding: 14px 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--border-color); border-radius: 9px; padding: 14px 16px;">
                 <div>
-                  <div style="font-size: 15px; font-weight: 700; color: #fff;">KML (.kml)</div>
-                  <div style="font-size: 12px; color: #94a3b8;" id="lbl-export-kml-desc">${t('kmlDesc')}</div>
+                  <div style="font-size: 15px; font-weight: 700; color: #182b25;">KML (.kml)</div>
+                  <div style="font-size: 12px; color: #65756e;" id="lbl-export-kml-desc">${t('kmlDesc')}</div>
                 </div>
                 <button class="btn btn-water" id="btn-export-kml"><span id="lbl-btn-export-kml">${t('downloadKML')}</span></button>
               </div>
@@ -922,10 +955,9 @@ class AgroApp {
       <div class="sidebar-drawer" id="sidebar-drawer">
         <div class="drawer-header">
           <div class="drawer-title">
-            <img src="./assets/aistudio/image_5d97730a.png" alt="MyRoça" class="drawer-logo-thumb" />
+            <span class="brand-mark brand-mark-sm" role="img" aria-label="SpaceAgro"><img src="./assets/brand/spaceagro-logo.svg" alt="" /></span>
             <div>
-              <span class="brand-my" style="font-size: 17px;">My</span><span class="brand-roca" style="font-size: 17px;">Roça</span>
-              <span style="font-size: 13px; color: #94a3b8; font-weight: 500; margin-left: 6px;" id="lbl-drawer-title">| ${t('farmDashboard')}</span>
+              <span style="font-size: 13px; color: #65756e; font-weight: 500; margin-left: 6px;" id="lbl-drawer-title">| ${t('farmDashboard')}</span>
             </div>
           </div>
           <button class="modal-close-btn" id="btn-close-drawer">&times;</button>
@@ -948,12 +980,12 @@ class AgroApp {
           <!-- Farm Elements list rendered dynamically -->
         </div>
 
-        <div style="padding: 16px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; background: rgba(15, 23, 42, 0.9);">
+        <div style="padding: 16px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px; background: #fff;">
           <button class="btn btn-outline" id="btn-load-demo" style="width: 100%; justify-content: center;">
-            <span>🔄</span> <span id="lbl-btn-load-demo">${t('restoreDemo')}</span>
+            <span></span> <span id="lbl-btn-load-demo">${t('restoreDemo')}</span>
           </button>
-          <button class="btn btn-outline" id="btn-clear-all" style="width: 100%; justify-content: center; color: #f87171; border-color: rgba(239, 68, 68, 0.3);">
-            <span>🗑️</span> <span id="lbl-btn-clear-all">${t('clearAllData')}</span>
+          <button class="btn btn-outline" id="btn-clear-all" style="width: 100%; justify-content: center; color: #b34848; border-color: #e6c4c4;">
+            <span></span> <span id="lbl-btn-clear-all">${t('clearAllData')}</span>
           </button>
         </div>
       </div>
@@ -1060,10 +1092,10 @@ class AgroApp {
         const mine = this.farmData.talhoes.find((x) => x.id === talhao.id);
         if (mine && mine !== talhao) mine.diary = talhao.diary;
         saveFarmData(this.farmData);
-        this.showToast(`📒 ${t('diarySaved')}`);
+        this.showToast(`${t('diarySaved')}`);
       },
       onAvatarSaved: () => {
-        this.showToast(`🧑‍🌾 ${t('avSaved')}`);
+        this.showToast(`${t('avSaved')}`);
       },
       onOpenRotation: (talhaoId: string) => this.rotationPlanner.open(talhaoId),
       onElementMoved: (elem: WaterPoint) => {
@@ -1101,7 +1133,7 @@ class AgroApp {
         this.farmGameView?.fitToBounds(0.08);
       }, 60);
 
-      this.showToast(`🚜 ${t('toastModeMyFarm')}`);
+      this.showToast(`${t('toastModeMyFarm')}`);
       setTimeout(() => this.farmGameView?.promptAvatarIfNeeded(), 700);
     } else {
       btnFazenda?.classList.remove('active');
@@ -1113,7 +1145,7 @@ class AgroApp {
         this.mapManager.invalidateSize();
       }, 50);
 
-      this.showToast(`🗺️ ${t('toastModeRealMap')}`);
+      this.showToast(`${t('toastModeRealMap')}`);
     }
   }
 
@@ -1162,7 +1194,7 @@ class AgroApp {
 
     const weeks = Math.abs(days / 7);
     this.showToast(
-      `📅 ${t('toastDateAdvanced', {
+      `${t('toastDateAdvanced', {
         date: formatBrDateShort(this.referenceDate),
         days: days >= 0 ? `+${days}` : `${days}`,
         weeks: days >= 0 ? `+${weeks}` : `-${weeks}`,
@@ -1185,7 +1217,7 @@ class AgroApp {
     this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
     this.renderDrawerLists();
 
-    this.showToast(`📅 ${t('toastDateReset')}`);
+    this.showToast(`${t('toastDateReset')}`);
   }
 
   // ==========================================
@@ -1309,7 +1341,7 @@ class AgroApp {
 
     if (items.length === 0) {
       container.innerHTML = `
-        <div style="font-size: 13px; color: #94a3b8; padding: 8px 12px; background: rgba(15,23,42,0.4); border-radius: 8px;">
+        <div style="font-size: 13px; color: #65756e; padding: 8px 12px; background: #fff; border-radius: 8px;">
           Nenhuma safra anterior registrada ainda. Clique em <strong>+ Adicionar ao Histórico</strong> para incluir colheitas passadas.
         </div>
       `;
@@ -1319,14 +1351,14 @@ class AgroApp {
     container.innerHTML = items
       .map(
         (item, idx) => `
-        <div class="history-item-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: center; background: rgba(15,23,42,0.5); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+        <div class="history-item-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: center; background: #fff; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
           <div style="flex: 1; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
             <input type="text" class="form-input form-input-sm history-season" value="${item.season}" placeholder="${t('exPrefix')} 2025/26" />
             <input type="text" class="form-input form-input-sm history-crop" value="${item.crop}" placeholder="${t('exPrefix')} ${t('phHistCropEx')}" />
             <input type="text" class="form-input form-input-sm history-date" value="${item.harvestDate || ''}" placeholder="${t('exPrefix')} ${t('phHistDateEx')}" />
           </div>
           <button type="button" class="btn-remove-row btn-remove-history" data-index="${idx}" title="${t('tipRemoveItem')}" style="padding: 4px 8px;">
-            🗑️
+            
           </button>
         </div>
       `
@@ -1533,6 +1565,22 @@ class AgroApp {
     });
 
     document.getElementById('btn-rotation')?.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
+    document.getElementById('btn-rotation-switch')?.addEventListener('click', () => this.rotationPlanner.open(undefined, 'switch'));
+    // Menu Safra
+    const safraMenu = document.getElementById('safra-menu');
+    document.getElementById('btn-safra-dropdown')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      safraMenu?.classList.toggle('show');
+    });
+    safraMenu?.querySelectorAll('.dropdown-item').forEach((item) => item.addEventListener('click', () => safraMenu.classList.remove('show')));
+    document.addEventListener('click', () => safraMenu?.classList.remove('show'));
+    // Só um menu do cabeçalho aberto por vez
+    document.querySelector('.top-nav')?.addEventListener('click', (e) => {
+      const trig = (e.target as HTMLElement).closest('.nav-trigger, #btn-lang-dropdown');
+      if (!trig) return;
+      const own = trig.parentElement?.querySelector('.dropdown-menu');
+      document.querySelectorAll('.top-nav .dropdown-menu.show').forEach((m) => { if (m !== own) m.classList.remove('show'); });
+    }, true);
     document.getElementById('btn-diary')?.addEventListener('click', () => this.diaryPanel.open());
     document.getElementById('btn-logout')?.addEventListener('click', () => {
       logout();
@@ -1882,6 +1930,29 @@ class AgroApp {
     });
 
     // Center Farm on Map / Game
+    document.getElementById('home-btn-center')?.addEventListener('click', () => document.getElementById('btn-center-farm')?.click());
+    // Maximizar o mapa: o cartão ocupa a tela inteira; Esc ou o mesmo botão voltam
+    const mapPanel = document.querySelector<HTMLElement>('.home-map-panel');
+    const maxBtn = document.getElementById('home-btn-max');
+    const MAX_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+    const MIN_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+    const setMax = (on: boolean, refit = true) => {
+      if (!mapPanel || !maxBtn) return;
+      mapPanel.classList.toggle('is-max', on);
+      document.body.classList.toggle('map-max', on);
+      maxBtn.setAttribute('aria-pressed', String(on));
+      maxBtn.innerHTML = (on ? MIN_ICON : MAX_ICON) + '<span>' + ht(on ? 'mapRestore' : 'mapMax') + '</span>';
+      // o Leaflet recalcula o tamanho do mapa no evento de redimensionar
+      // recalcula o tamanho do mapa e enquadra a propriedade inteira, sem sobrar borda sem imagem
+      if (refit) window.setTimeout(() => this.mapManager.refitAfterResize(this.farmData.talhoes, this.farmData.waterPoints), 30);
+    };
+    setMax(false, false);
+    maxBtn?.addEventListener('click', () => setMax(!mapPanel?.classList.contains('is-max')));
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape' || !mapPanel?.classList.contains('is-max')) return;
+      if (document.querySelector('.modal-overlay.show, .mkp-overlay[style*="flex"], .wx-overlay[style*="flex"]')) return;
+      setMax(false);
+    });
     document.getElementById('btn-center-farm')?.addEventListener('click', () => {
       if (this.activeViewMode === 'fazenda') {
         this.farmGameView?.fitToBounds(0.08);
@@ -1965,9 +2036,9 @@ class AgroApp {
 
     if (titleEl) {
       if (this.importedTalhoesQueue.length > 0) {
-        titleEl.innerHTML = `<span>📂</span> ${t('modalTitleImported', { n: this.importedTalhoesQueue.length })}`;
+        titleEl.innerHTML = `<span></span> ${t('modalTitleImported', { n: this.importedTalhoesQueue.length })}`;
       } else {
-        titleEl.innerHTML = this.editingTalhaoId ? `<span>✏️</span> ${t('modalTitleEdit')}` : `<span>🌾</span> ${t('modalTitleNew')}`;
+        titleEl.innerHTML = this.editingTalhaoId ? `<span></span> ${t('modalTitleEdit')}` : `<span></span> ${t('modalTitleNew')}`;
       }
     }
 
@@ -2243,14 +2314,14 @@ class AgroApp {
   private getCoordRowStatusHtml(row: CoordinateRow): string {
     if (row.isValid && row.parsedLat !== undefined && row.parsedLng !== undefined) {
       if (row.isBrazilMissingNegative) {
-        return `<span class="coord-status-tag warning" title="${t('coordNoSignTip')}">⚠️ ${t('coordNoSign')}</span>`;
+        return `<span class="coord-status-tag warning" title="${t('coordNoSignTip')}">${t('coordNoSign')}</span>`;
       }
       return `<span class="coord-status-tag valid">✓ ${row.parsedLat.toFixed(4)}, ${row.parsedLng.toFixed(4)}</span>`;
     }
     if (row.error && (row.latStr.trim() || row.lngStr.trim())) {
       return `<span class="coord-status-tag invalid" title="${row.error}">✕ ${row.error}</span>`;
     }
-    return `<span style="font-size: 11px; color: #64748b;">${t('coordWaiting')}</span>`;
+    return `<span style="font-size: 11px; color: #65756e;">${t('coordWaiting')}</span>`;
   }
 
   private updateCoordRowFromInput(rowId: string): void {
@@ -2380,7 +2451,7 @@ class AgroApp {
         <td class="coord-status-cell">${statusHtml}</td>
         <td style="text-align: center;">
           <button type="button" class="btn-remove-row" data-id="${row.id}" title="${t('tipRemovePoint')}">
-            🗑️
+            
           </button>
         </td>
       `;
@@ -2579,7 +2650,7 @@ class AgroApp {
     if (parsed.isValid && parsed.parsedLat !== undefined && parsed.parsedLng !== undefined) {
       this.pendingWaterCoords = [parsed.parsedLat, parsed.parsedLng];
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: #4ade80; font-weight: 600;">✓ ${t('coordValid')}: ${parsed.parsedLat.toFixed(5)}, ${parsed.parsedLng.toFixed(5)}</span>`;
+        statusEl.innerHTML = `<span style="color: #245b43; font-weight: 600;">✓ ${t('coordValid')}: ${parsed.parsedLat.toFixed(5)}, ${parsed.parsedLng.toFixed(5)}</span>`;
       }
       // Live map preview for the water point!
       this.mapManager.previewTypedWaterPoint(parsed.parsedLat, parsed.parsedLng, this.selectedWaterType);
@@ -2587,7 +2658,7 @@ class AgroApp {
     } else {
       this.pendingWaterCoords = null;
       if (statusEl) {
-        statusEl.innerHTML = `<span style="color: #f87171; font-weight: 600;">✕ ${parsed.error || 'Coordenada incompleta ou fora dos limites.'}</span>`;
+        statusEl.innerHTML = `<span style="color: #b34848; font-weight: 600;">✕ ${parsed.error || 'Coordenada incompleta ou fora dos limites.'}</span>`;
       }
       return false;
     }
@@ -2685,7 +2756,7 @@ class AgroApp {
     const liveCount = document.getElementById('coords-live-valid-count');
     if (liveCount) {
       liveCount.textContent = '0 / 0';
-      liveCount.style.color = '#34d399';
+      liveCount.style.color = '#245b43';
     }
     const btnProceed = document.getElementById('btn-proceed-coords-talhao') as HTMLButtonElement | null;
     if (btnProceed) btnProceed.disabled = true;
@@ -2791,6 +2862,7 @@ class AgroApp {
 
   private updateUI(): void {
     this.marketPanel?.refresh();
+    this.homeSide?.refresh();
     const totalTalhoes = this.farmData.talhoes.length;
     const totalHectares = this.farmData.talhoes.reduce((sum, t) => sum + t.areaHectares, 0);
     const totalWater = this.farmData.waterPoints.length;
@@ -2829,7 +2901,7 @@ class AgroApp {
     if (talhoesContent) {
       if (this.farmData.talhoes.length === 0) {
         talhoesContent.innerHTML = `
-          <div style="text-align: center; padding: 32px 16px; color: #94a3b8; font-size: 13px;">
+          <div style="text-align: center; padding: 32px 16px; color: #65756e; font-size: 13px;">
             Nenhum talhão cadastrado ainda.<br />
             Clique em <strong>+ Novo Talhão</strong> para desenhar ou digitar coordenadas.
           </div>
@@ -2849,7 +2921,7 @@ class AgroApp {
                     ${t.isExample ? `<span class="badge-exemplo">${exampleTag}</span>` : ''}
                   </div>
                   <div style="display: flex; gap: 6px; align-items: center; margin-top: 3px;">
-                    <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 1px 7px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+                    <span style="background: #e8f0eb; border: 1px solid #b9cfc1; color: #245b43; padding: 1px 7px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
                       ${cropStatus.phase.icon} ${cropStatus.stageBadgeText}
                     </span>
                   </div>
@@ -2858,15 +2930,15 @@ class AgroApp {
               <div class="drawer-card-ha">${formatHectares(t.areaHectares)}</div>
             </div>
             <div class="drawer-card-meta">
-              <span>🌾 ${translateCropName(t.crop)} ${t.cultivar ? `(${t.cultivar})` : ''}</span>
-              <span>📏 ${t.perimeterKm.toFixed(2)} km</span>
+              <span>${translateCropName(t.crop)} ${t.cultivar ? `(${t.cultivar})` : ''}</span>
+              <span>${t.perimeterKm.toFixed(2)} km</span>
             </div>
-            ${t.nextCropPlan ? `<div style="font-size: 11px; color: #38bdf8; margin: 4px 0;">🔜 ${nextCropText(t.nextCropPlan.crop, t.nextCropPlan.plannedPlanting)}</div>` : ''}
+            ${t.nextCropPlan ? `<div style="font-size: 11px; color: #2f6690; margin: 4px 0;">${nextCropText(t.nextCropPlan.crop, t.nextCropPlan.plannedPlanting)}</div>` : ''}
             <div class="drawer-card-actions">
-              <button class="drawer-btn btn-calendar" data-id="${t.id}" style="color: #38bdf8; font-weight: 700;">📅 Calendário</button>
-              <button class="drawer-btn btn-focus" data-id="${t.id}">🎯 Focar</button>
-              <button class="drawer-btn btn-edit" data-id="${t.id}">✏️ Editar</button>
-              <button class="drawer-btn btn-delete" data-id="${t.id}" style="color: #f87171;">🗑️</button>
+              <button class="drawer-btn btn-calendar" data-id="${t.id}" style="color: #2f6690; font-weight: 700;">Calendário</button>
+              <button class="drawer-btn btn-focus" data-id="${t.id}">Focar</button>
+              <button class="drawer-btn btn-edit" data-id="${t.id}">Editar</button>
+              <button class="drawer-btn btn-delete" data-id="${t.id}" style="color: #b34848;" aria-label="Excluir">Excluir</button>
             </div>
           </div>
         `;
@@ -2938,16 +3010,16 @@ class AgroApp {
     if (waterContent) {
       if (this.farmData.waterPoints.length === 0) {
         waterContent.innerHTML = `
-          <div style="text-align: center; padding: 32px 16px; color: #94a3b8; font-size: 13px;">
+          <div style="text-align: center; padding: 32px 16px; color: #65756e; font-size: 13px;">
             Nenhum elemento cadastrado.<br />
-            Clique em <strong>📍 Estruturas e Água</strong> para marcar.
+            Clique em <strong>Estruturas e Água</strong> para marcar.
           </div>
         `;
       } else {
         waterContent.innerHTML = this.farmData.waterPoints
           .map((wp) => {
             const meta = FARM_ELEMENT_META[wp.type] || WATER_POINT_META[wp.type] || {
-              icon: '📍',
+              icon: '',
               label: 'Elemento',
               color: '#38bdf8',
               badgeBg: 'rgba(56, 189, 248, 0.2)',
@@ -2972,11 +3044,11 @@ class AgroApp {
                 <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px;">
                   ${wp.coordinates[0].toFixed(4)}, ${wp.coordinates[1].toFixed(4)}
                 </span>
-                ${wp.notes ? `<span title="${wp.notes}">📝 ${t('drawerNote')}</span>` : ''}
+                ${wp.notes ? `<span title="${wp.notes}">${t('drawerNote')}</span>` : ''}
               </div>
               <div class="drawer-card-actions">
-                <button class="drawer-btn btn-focus-water" data-id="${wp.id}">🎯 ${t('drawerLocate')}</button>
-                <button class="drawer-btn btn-delete-water" data-id="${wp.id}" style="color: #f87171;">🗑️ ${t('drawerDelete')}</button>
+                <button class="drawer-btn btn-focus-water" data-id="${wp.id}">${t('drawerLocate')}</button>
+                <button class="drawer-btn btn-delete-water" data-id="${wp.id}" style="color: #b34848;">${t('drawerDelete')}</button>
               </div>
             </div>
           `;

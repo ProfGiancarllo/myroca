@@ -71,7 +71,7 @@ export function openAvatarCreator(opts: CreatorOptions): void {
     <div class="av-card" role="dialog" aria-modal="true" aria-label="${escapeHtml(t('avTitle'))}">
       <div class="av-header">
         <div>
-          <div class="av-title">🧑‍🌾 ${t('avTitle')}</div>
+          <div class="av-title">${t('avTitle')}</div>
           <div class="av-subtitle">${t('avSubtitle')}</div>
         </div>
       </div>
@@ -80,7 +80,7 @@ export function openAvatarCreator(opts: CreatorOptions): void {
           <div class="av-preview-stage"><canvas id="av-preview" width="240" height="300"></canvas></div>
           <label class="av-label" for="av-name-input">${t('avName')}</label>
           <input id="av-name-input" class="av-name-input" type="text" maxlength="16" placeholder="${escapeHtml(t('avNamePh'))}" value="${escapeHtml(cfg.name)}" />
-          <button type="button" class="av-btn av-btn-secondary" id="av-random">🎲 ${t('avRandom')}</button>
+          <button type="button" class="av-btn av-btn-secondary" id="av-random">${t('avRandom')}</button>
         </div>
         <div class="av-controls-col">
           <div class="av-section-title">${t('avSecBody')}</div>
@@ -116,7 +116,7 @@ export function openAvatarCreator(opts: CreatorOptions): void {
       </div>
       <div class="av-footer">
         <button type="button" class="av-btn av-btn-ghost" id="av-cancel">${t('avCancel')}</button>
-        <button type="button" class="av-btn av-btn-primary" id="av-save">✅ ${t('avSave')}</button>
+        <button type="button" class="av-btn av-btn-primary" id="av-save">${t('avSave')}</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);

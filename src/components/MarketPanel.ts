@@ -9,6 +9,7 @@ import { CROP_STANDARD_NAME, CropKey, asCropKey } from '../utils/rotation';
 import { CropMarket, cropMarket, currentMarket, forwardFactor, loadMarket, slotMargin } from '../utils/market';
 import { fmtMoney, switchHeadline } from './RotationPlanner';
 import { mk2 } from '../i18n/mercadoText';
+import { ht } from '../i18n/homeText';
 
 export interface MarketPanelOptions {
   getFarm: () => FarmData;
@@ -19,9 +20,11 @@ export interface MarketPanelOptions {
 const LOCALES: Record<string, string> = { pt: 'pt-BR', es: 'es', en: 'en-US', de: 'de-DE', zh: 'zh-CN', fr: 'fr-FR' };
 const loc = () => LOCALES[getCurrentLanguage()] || 'pt-BR';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
-const ICON: Record<string, string> = { soja: '🌱', milho: '🌽', sorgo: '🌾', feijao: '🫘', algodao: '☁️', trigo: '🌾', cana: '🎋', pasto: '🐄' };
+const ICON: Record<string, string> = { soja: '', milho: '', sorgo: '', feijao: '', algodao: '', trigo: '', cana: '', pasto: '' };
 const COLOR: Record<string, string> = { soja: '#22c55e', milho: '#eab308', sorgo: '#f97316', feijao: '#a78bfa', algodao: '#38bdf8', trigo: '#fb923c', cana: '#84cc16', pasto: '#10b981' };
 const ALT: CropKey[] = ['soja', 'milho', 'sorgo', 'algodao', 'trigo', 'feijao', 'cana', 'pasto'];
+const PAUSE_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const PLAY_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M7 5v14l12-7z"/></svg>';
 const HORIZON = 5; // meses até a colheita usados na comparação de margens
 
 const cropLabel = (c: CropKey) => translateCropName(CROP_STANDARD_NAME[c]);
@@ -35,7 +38,7 @@ function spark(vals: number[] | undefined, up: boolean, w = 70, h = 22): string 
   if (!vals || vals.length < 2) return '';
   const mn = Math.min(...vals), mx = Math.max(...vals), r = mx - mn || 1;
   const pts = vals.map((v, i) => `${((i / (vals.length - 1)) * w).toFixed(1)},${(h - 2 - ((v - mn) / r) * (h - 4)).toFixed(1)}`).join(' ');
-  return `<svg class="mkp-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><polyline fill="none" stroke="${up ? '#4ade80' : '#f87171'}" stroke-width="1.8" stroke-linejoin="round" points="${pts}"/></svg>`;
+  return `<svg class="mkp-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><polyline fill="none" stroke="${up ? '#16744d' : '#b34848'}" stroke-width="1.8" stroke-linejoin="round" points="${pts}"/></svg>`;
 }
 
 /** Gráfico de linha em SVG (grade, eixos e último valor). */
@@ -51,7 +54,7 @@ function lineChart(pts: Array<{ x: string; y: number }>, color: string, opts: { 
   const xl = pts.map((p, i) => (i % every === 0 || i === pts.length - 1 ? `<text x="${X(i)}" y="${H - 8}" text-anchor="${i === 0 ? 'start' : i === pts.length - 1 ? 'end' : 'middle'}" class="mkp-ax">${esc(p.x)}</text>` : '')).join('');
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(p.y).toFixed(1)}`).join('');
   const area = `${line}L${X(pts.length - 1)},${H - B}L${X(0)},${H - B}Z`;
-  const dots = opts.dots ? pts.map((p, i) => `<circle cx="${X(i)}" cy="${Y(p.y)}" r="4" fill="${color}" stroke="#0b1220" stroke-width="1.5"><title>${esc(p.x)}: ${num(p.y, 2)}</title></circle>`).join('') : '';
+  const dots = opts.dots ? pts.map((p, i) => `<circle cx="${X(i)}" cy="${Y(p.y)}" r="4" fill="${color}" stroke="#fff" stroke-width="1.5"><title>${esc(p.x)}: ${num(p.y, 2)}</title></circle>`).join('') : '';
   const lastI = pts.length - 1, ref = opts.ref ? `<line x1="${L}" x2="${W - R}" y1="${Y(opts.ref)}" y2="${Y(opts.ref)}" class="mkp-ref"/>` : '';
   return `<svg class="mkp-chart" viewBox="0 0 ${W} ${H}" role="img">${grid}${ref}<path d="${area}" fill="${color}" opacity=".14"/><path d="${line}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}<circle cx="${X(lastI)}" cy="${Y(pts[lastI].y)}" r="4.5" fill="${color}"/>${xl}</svg>`;
 }
@@ -65,7 +68,11 @@ export class MarketPanel {
     this.card = document.createElement('button');
     this.card.type = 'button'; this.card.id = 'mkt-card'; this.card.setAttribute('aria-haspopup', 'dialog');
     this.card.addEventListener('click', () => this.open());
-    document.body.appendChild(this.card);
+    const strip = document.getElementById('market-strip');
+    // Na tela inicial o mercado aparece como carrossel no topo; o cartão flutuante só é usado sem ele.
+    if (strip) this.initTicker(strip); else document.body.appendChild(this.card);
+    const cmBox = document.getElementById('home-commodities');
+    if (cmBox) this.initCommodities(cmBox);
     this.refresh();
     void loadMarket().then(() => { this.refresh(); if (this.overlay) this.renderPanel(); });
   }
@@ -94,10 +101,122 @@ export class MarketPanel {
     const b = this.badge();
     const rows = crops.map(({ crop }) => {
       const m = cropMarket(crop)!.m;
-      return `<div class="mkc-row"><span class="mkc-n">${ICON[crop] || '🌱'} ${esc(cropLabel(crop))}</span><span class="mkc-p">${money2(m.price)}<small>/${m.unit}</small></span><span class="mkc-t ${m.trend12m >= 0 ? 'up' : 'dn'}">${m.trend12m >= 0 ? '▲' : '▼'} ${pct(m.trend12m)}</span></div>`;
+      return `<div class="mkc-row"><span class="mkc-n">${ICON[crop] || ''} ${esc(cropLabel(crop))}</span><span class="mkc-p">${money2(m.price)}<small>/${m.unit}</small></span><span class="mkc-t ${m.trend12m >= 0 ? 'up' : 'dn'}">${m.trend12m >= 0 ? '▲' : '▼'} ${pct(m.trend12m)}</span></div>`;
     }).join('');
-    this.card.innerHTML = `<div class="mkc-head"><strong>📈 ${mk2('card')}</strong><span class="mkc-badge ${b.cls}">${esc(b.txt)}</span></div>${rows}<div class="mkc-hint">${mk2('cardHint')} ›</div>`;
+    this.card.innerHTML = `<div class="mkc-head"><strong>${mk2('card')}</strong><span class="mkc-badge ${b.cls}">${esc(b.txt)}</span></div>${rows}<div class="mkc-hint">${mk2('cardHint')} ›</div>`;
     this.card.setAttribute('aria-label', `${mk2('title')}: ${mk2('cardHint')}`);
+    this.renderStrip();
+    this.renderCommodities();
+  }
+
+  /** Culturas com cotação mostradas na tela inicial: primeiro as da fazenda, depois as demais. */
+  private tickerCrops(): Array<{ crop: CropKey; mine: boolean }> {
+    const farm = this.farmCrops().map((f) => f.crop);
+    const others = ALT.filter((c) => !farm.includes(c) && cropMarket(c) && cropMarket(c)!.m.price > 0);
+    return [...farm.map((crop) => ({ crop, mine: true })), ...others.map((crop) => ({ crop, mine: false }))];
+  }
+
+  /** Faixa de cotações que passa sozinha (pausa ao passar o mouse, focar ou no botão); clique abre o painel na cultura. */
+  private initTicker(strip: HTMLElement): void {
+    strip.addEventListener('click', (e) => {
+      const el = e.target as HTMLElement;
+      if (el.closest('[data-tk-pause]')) {
+        const on = strip.classList.toggle('tk-paused');
+        const b = el.closest('[data-tk-pause]') as HTMLElement;
+        b.setAttribute('aria-pressed', String(on));
+        b.innerHTML = on ? PLAY_SVG : PAUSE_SVG;
+        b.setAttribute('aria-label', on ? ht('play') : ht('pause'));
+        return;
+      }
+      const b = el.closest('[data-strip-crop]') as HTMLElement | null;
+      if (!b) return;
+      const c = b.dataset.stripCrop;
+      if (c && c !== 'all') this.sel = c as CropKey;
+      this.open();
+    });
+  }
+
+  private stripKey = '';
+
+  private renderStrip(): void {
+    const strip = document.getElementById('market-strip');
+    if (!strip) return;
+    const md = currentMarket();
+    const b = this.badge();
+    const items = this.tickerCrops().map(({ crop }) => {
+      const m = cropMarket(crop)!.m;
+      const up = m.trend12m >= 0;
+      return `<button type="button" class="tk-item" data-strip-crop="${crop}" title="${esc(mk2('cardHint'))}"><span class="tk-n">${esc(cropLabel(crop))}</span><b>${money2(m.price)}</b><small>/${esc(unitName(m.unit))}</small><span class="ms-t ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${pct(m.trend12m)}</span></button>`;
+    });
+    if (md.fx) items.push(`<span class="tk-item tk-static"><span class="tk-n">${esc(ht('fx'))}</span><b>R$ ${num(md.fx.last, 4)}</b><small>${esc(ht('fxNote'))}</small></span>`);
+    const key = items.join('') + b.txt;
+    if (key === this.stripKey) return;
+    this.stripKey = key;
+    const run = items.join('');
+    const paused = strip.classList.contains('tk-paused');
+    strip.style.setProperty('--tk-dur', `${Math.max(20, items.length * 5)}s`);
+    strip.innerHTML = `<div class="mc-head"><button type="button" class="mc-title" data-strip-crop="all">${esc(ht('mkTitle'))}</button><span class="mkc-badge ${b.cls}" title="${esc(ht('base12'))}">${esc(b.txt)}</span></div>
+      <div class="tk-viewport" role="region" aria-label="${esc(ht('mkTitle'))} (${esc(ht('base12'))})"><div class="tk-track"><div class="tk-run">${run}</div><div class="tk-run" aria-hidden="true" inert>${run}</div></div></div>
+      <button type="button" class="tk-pause" data-tk-pause aria-pressed="${paused}" aria-label="${esc(paused ? ht('play') : ht('pause'))}">${paused ? PLAY_SVG : PAUSE_SVG}</button>`;
+  }
+
+  // ---- Cartão "Commodities do agro": uma cultura em destaque por vez, troca sozinha
+  private cmIdx = 0;
+  private cmPaused = false;
+  private cmKey = '';
+
+  private initCommodities(box: HTMLElement): void {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.cmPaused = !!reduce;
+    box.addEventListener('click', (e) => {
+      const el = e.target as HTMLElement;
+      if (el.closest('[data-cm-pause]')) { this.cmPaused = !this.cmPaused; this.cmKey = ''; this.renderCommodities(); return; }
+      const pick = el.closest('[data-cm-i]') as HTMLElement | null;
+      if (pick) { this.cmIdx = Number(pick.dataset.cmI); this.cmKey = ''; this.renderCommodities(); return; }
+      if (el.closest('[data-cm-open]')) { this.sel = this.tickerCrops()[this.cmIdx]?.crop || null; this.open(); }
+    });
+    box.addEventListener('animationend', (e) => {
+      if ((e.target as HTMLElement).classList.contains('cm-prog-bar')) { this.cmIdx++; this.cmKey = ''; this.renderCommodities(); }
+    });
+  }
+
+  private renderCommodities(): void {
+    const box = document.getElementById('home-commodities');
+    if (!box) return;
+    const list = this.tickerCrops();
+    if (!list.length) { box.innerHTML = `<div class="panelhead"><h2>${esc(ht('cmTitle'))}</h2></div><div class="panelbody"><p class="home-empty">${esc(ht('cmNone'))}</p></div>`; return; }
+    this.cmIdx = ((this.cmIdx % list.length) + list.length) % list.length;
+    const { crop } = list[this.cmIdx];
+    const md = currentMarket();
+    const m = cropMarket(crop)!.m;
+    const up = m.trend12m >= 0;
+    const key = `${crop}|${m.price}|${m.trend12m}|${this.cmPaused}|${list.length}`;
+    if (key === this.cmKey) return;
+    this.cmKey = key;
+    const src = m.example !== false || md.example ? mk2('example') : (m.source || md.source || '');
+    const info = `${src}${m.asOf || md.asOf ? ' · ' + (m.asOf || md.asOf) : ''} · ${ht('base12')}`;
+    const pts = (m.history && m.history.length >= 4 ? m.history.slice(-24).map((h) => h.p) : (m.series || []));
+    const spark = pts.length >= 2 ? (() => {
+      const W = 300, H = 56, mn = Math.min(...pts), mx = Math.max(...pts), r = mx - mn || 1;
+      const xy = pts.map((v, i) => [(i / (pts.length - 1)) * (W - 8) + 2, H - 4 - ((v - mn) / r) * (H - 10)]);
+      const line = xy.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join('');
+      const col = up ? '#16744d' : '#b34848';
+      const [lx, ly] = xy[xy.length - 1];
+      return `<svg class="cm-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(ht('cmHist'))}"><path d="${line}L${lx},${H}L2,${H}Z" fill="${col}" opacity=".08"/><path d="${line}" fill="none" stroke="${col}" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="${lx}" cy="${ly}" r="3" fill="${col}"/></svg>`;
+    })() : '';
+    const rows = list.map(({ crop: c }, i) => {
+      const cm = cropMarket(c)!.m;
+      return `<button type="button" class="cm-row${i === this.cmIdx ? ' on' : ''}" data-cm-i="${i}" aria-pressed="${i === this.cmIdx}"><span>${esc(cropLabel(c))}</span><b class="ms-t ${cm.trend12m >= 0 ? 'up' : 'dn'}">${pct(cm.trend12m)}</b></button>`;
+    }).join('');
+    box.innerHTML = `<div class="panelhead"><h2>${esc(ht('cmTitle'))}</h2><div class="cm-tools"><span class="cm-info" tabindex="0" title="${esc(info)}" aria-label="${esc(info)}">i</span><span class="cm-count">${this.cmIdx + 1}/${list.length}</span><button type="button" class="cm-btn" data-cm-pause aria-pressed="${this.cmPaused}" aria-label="${esc(this.cmPaused ? ht('play') : ht('pause'))}">${this.cmPaused ? PLAY_SVG : PAUSE_SVG}</button></div></div>
+      <div class="cm-prog${this.cmPaused ? ' paused' : ''}"><i class="cm-prog-bar"></i></div>
+      <div class="cm-feat">
+        <div class="cm-feat-head"><div><strong>${esc(cropLabel(crop))}</strong><small>${esc(src)} · R$ ${esc(ht('per'))} ${esc(unitName(m.unit))}</small></div><span class="cm-chg ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${pct(m.trend12m)}</span></div>
+        <div class="cm-price">${money2(m.price)} <small>/ ${esc(unitName(m.unit))}</small></div>
+        ${spark}
+        <button type="button" class="cm-open" data-cm-open>${esc(ht('mkOpen'))} ›</button>
+      </div>
+      <div class="cm-list">${rows}</div>`;
   }
 
   open(): void {
@@ -135,19 +254,19 @@ export class MarketPanel {
       const m = cropMarket(crop)!.m;
       const real = m.example === false;
       return `<button type="button" class="mkp-crop ${this.sel === crop ? 'on' : ''}" data-crop="${crop}" style="--c:${COLOR[crop] || '#22c55e'}">
-        <div class="mkp-crop-h"><span>${ICON[crop] || '🌱'} <strong>${esc(cropLabel(crop))}</strong></span><i class="mkc-badge ${real ? 'real' : 'ex'}">${real ? mk2('real') : mk2('example')}</i></div>
+        <div class="mkp-crop-h"><span>${ICON[crop] || ''} <strong>${esc(cropLabel(crop))}</strong></span><i class="mkc-badge ${real ? 'real' : 'ex'}">${real ? mk2('real') : mk2('example')}</i></div>
         <div class="mkp-crop-p">${money2(m.price)} <small>${mk2('perUnit', { u: m.unit })}</small></div>
         <div class="mkp-crop-t ${m.trend12m >= 0 ? 'up' : 'dn'}">${m.trend12m >= 0 ? '▲' : '▼'} ${pct(m.trend12m)} <em>${mk2('trend')}</em> ${spark(m.series, m.trend12m >= 0)}</div>
         <div class="mkp-crop-f">${mk2('fields', { n, ha: num(ha, 0) })}</div></button>`;
     }).join('');
 
     const detail = this.sel ? this.detail(this.sel) : `<p class="mkp-note">${mk2('noData')}</p>`;
-    const alts = list.map((c) => `<button type="button" class="mkp-alt ${this.sel === c ? 'on' : ''}" data-crop="${c}">${ICON[c] || '🌱'} ${esc(cropLabel(c))}</button>`).join('');
-    const fx = md.fx ? `<div class="mkp-fx"><div class="mkp-fx-h"><strong>💵 ${mk2('fxTitle')}</strong><span>R$ ${num(md.fx.last, 2)}</span></div>${lineChart(md.fx.history.map((h) => ({ x: monthLbl(h.d), y: h.p })), '#60a5fa', { every: 6 })}</div>` : '';
+    const alts = list.map((c) => `<button type="button" class="mkp-alt ${this.sel === c ? 'on' : ''}" data-crop="${c}">${ICON[c] || ''} ${esc(cropLabel(c))}</button>`).join('');
+    const fx = md.fx ? `<div class="mkp-fx"><div class="mkp-fx-h"><strong>${mk2('fxTitle')}</strong><span>R$ ${num(md.fx.last, 2)}</span></div>${lineChart(md.fx.history.map((h) => ({ x: monthLbl(h.d), y: h.p })), '#3d5249', { every: 6 })}</div>` : '';
 
     this.overlay.innerHTML = `<div class="mkp-card">
-      <div class="mkp-head"><div><h2>📈 ${mk2('title')}</h2><p>${mk2('sub')}</p></div>
-        <div class="mkp-meta"><span class="mkc-badge ${b.cls}">${esc(b.txt)}</span>${md.asOf ? `<span>${mk2('updated', { d: new Date(md.asOf.slice(0, 10) + 'T12:00:00Z').toLocaleDateString(loc(), { timeZone: 'UTC' }) })}</span>` : ''}${md.fx ? `<span>💵 R$ ${num(md.fx.last, 2)}</span>` : ''}</div>
+      <div class="mkp-head"><div><h2>${mk2('title')}</h2><p>${mk2('sub')}</p></div>
+        <div class="mkp-meta"><span class="mkc-badge ${b.cls}">${esc(b.txt)}</span>${md.asOf ? `<span>${mk2('updated', { d: new Date(md.asOf.slice(0, 10) + 'T12:00:00Z').toLocaleDateString(loc(), { timeZone: 'UTC' }) })}</span>` : ''}${md.fx ? `<span>R$ ${num(md.fx.last, 2)}</span>` : ''}</div>
         <button type="button" class="mkp-x" data-act="close" aria-label="${esc(mk2('close'))}">&times;</button></div>
       <div class="mkp-body">
         <h3>${mk2('farmCrops')}</h3><div class="mkp-crops">${cards || `<p class="mkp-note">${mk2('noData')}</p>`}</div>
@@ -162,7 +281,7 @@ export class MarketPanel {
   /** Detalhe da cultura escolhida: indicadores, histórico e curva de futuros. */
   private detail(c: CropKey): string {
     const cm = cropMarket(c); if (!cm) return '';
-    const m = cm.m, color = COLOR[c] || '#22c55e';
+    const m = cm.m, color = '#245b43';
     const fw = forwardFactor(c, HORIZON);
     const proj = m.price * (fw ? fw.factor : 1 + Math.max(-10, Math.min(10, m.trend12m / 2)) / 100);
     const sm = slotMargin(c, 'low', null, 0, 1, HORIZON);
@@ -177,8 +296,8 @@ export class MarketPanel {
     const hist = (m.history && m.history.length >= 4) ? m.history.map((h) => ({ x: monthLbl(h.d), y: h.p })) : (m.series || []).map((v, i, a) => ({ x: `${i - a.length + 1}`, y: v }));
     const hist2 = hist.length > 60 ? hist.filter((_, i) => i % 2 === 0 || i === hist.length - 1) : hist;
     const fut = m.futures && m.futures.length >= 2 ? lineChart(m.futures.map((f) => ({ x: f.label, y: f.brl })), color, { ref: m.price, dots: true, every: 1 }) : `<p class="mkp-note">${mk2('noFut')}</p>`;
-    const ex = m.example !== false ? `<p class="mkp-warn">⚠️ ${mk2('exampleCrop')}</p>` : '';
-    return `<div class="mkp-detail"><h3 style="--c:${color}">${ICON[c] || '🌱'} ${esc(cropLabel(c))} <small>${esc(unitName(m.unit))}${m.native ? ` · ${num(m.native.price, 1)} ${esc(m.native.unit)}` : ''}</small></h3>${ex}
+    const ex = m.example !== false ? `<p class="mkp-warn">${mk2('exampleCrop')}</p>` : '';
+    return `<div class="mkp-detail"><h3 style="--c:${color}">${ICON[c] || ''} ${esc(cropLabel(c))} <small>${esc(unitName(m.unit))}${m.native ? ` · ${num(m.native.price, 1)} ${esc(m.native.unit)}` : ''}</small></h3>${ex}
       <div class="mkp-kpis">${kpis}</div>
       <div class="mkp-charts"><div class="mkp-chartbox"><h4>${mk2('histTitle')}</h4>${lineChart(hist2, color)}</div>
       <div class="mkp-chartbox"><h4>${mk2('futTitle')}</h4>${fut}<p class="mkp-help">${mk2('futHelp')}</p></div></div></div>`;
@@ -195,31 +314,31 @@ export class MarketPanel {
     const X = (v: number) => L + ((v - mn) / (mx - mn || 1)) * (W - L - R);
     const zero = X(0);
     const rows = items.map(({ c, s }, i) => {
-      const y = 12 + i * rowH, base = s.margin.base, col = COLOR[c] || '#22c55e';
+      const y = 12 + i * rowH, base = s.margin.base, col = inFarm.has(c) ? '#3d7a5c' : '#b5c0ba';
       const x1 = Math.min(zero, X(base)), w = Math.abs(X(base) - zero);
-      return `<g opacity="${inFarm.has(c) ? 1 : 0.6}"><text x="${L - 8}" y="${y + 15}" text-anchor="end" class="mkp-ax lbl">${esc(cropLabel(c))}${cropMarket(c)?.m.example !== false ? ' *' : ''}</text>
-        <rect x="${x1}" y="${y + 3}" width="${Math.max(2, w)}" height="18" rx="4" fill="${base >= 0 ? col : '#f87171'}"/>
-        <line x1="${X(s.margin.pess)}" x2="${X(s.margin.opt)}" y1="${y + 12}" y2="${y + 12}" stroke="#e2e8f0" stroke-width="2"/>
-        <line x1="${X(s.margin.pess)}" x2="${X(s.margin.pess)}" y1="${y + 7}" y2="${y + 17}" stroke="#e2e8f0" stroke-width="2"/><line x1="${X(s.margin.opt)}" x2="${X(s.margin.opt)}" y1="${y + 7}" y2="${y + 17}" stroke="#e2e8f0" stroke-width="2"/>
+      return `<g><text x="${L - 8}" y="${y + 15}" text-anchor="end" class="mkp-ax lbl">${esc(cropLabel(c))}${cropMarket(c)?.m.example !== false ? ' *' : ''}</text>
+        <rect x="${x1}" y="${y + 3}" width="${Math.max(2, w)}" height="18" rx="4" fill="${base >= 0 ? col : '#b34848'}"/>
+        <line x1="${X(s.margin.pess)}" x2="${X(s.margin.opt)}" y1="${y + 12}" y2="${y + 12}" stroke="#182b25" stroke-width="1.5"/>
+        <line x1="${X(s.margin.pess)}" x2="${X(s.margin.pess)}" y1="${y + 7}" y2="${y + 17}" stroke="#182b25" stroke-width="1.5"/><line x1="${X(s.margin.opt)}" x2="${X(s.margin.opt)}" y1="${y + 7}" y2="${y + 17}" stroke="#182b25" stroke-width="1.5"/>
         <text x="${W - R + 6}" y="${y + 16}" class="mkp-ax val">${fmtMoney(base)}</text><title>${esc(cropLabel(c))}: ${mk2('pess')} ${fmtMoney(s.margin.pess)} · ${mk2('base')} ${fmtMoney(base)} · ${mk2('opt')} ${fmtMoney(s.margin.opt)}</title></g>`;
     }).join('');
-    return `<div class="mkp-rank"><h3>💹 ${mk2('rankTitle')}</h3><p class="mkp-help">${mk2('rankHelp')}</p>
+    return `<div class="mkp-rank"><h3>${mk2('rankTitle')}</h3><p class="mkp-help">${mk2('rankHelp')}</p>
       <svg class="mkp-chart" viewBox="0 0 ${W} ${H}" role="img"><line x1="${zero}" x2="${zero}" y1="4" y2="${H - 22}" class="mkp-zero"/>${rows}</svg><p class="mkp-help">* ${mk2('example')}</p></div>`;
   }
 
   private impact(): string {
     const farm = this.opts.getFarm();
     let now = '';
-    try { const h = switchHeadline(farm, this.opts.getRefDate()); if (h) now = `<p class="mkp-now">🎯 ${esc(mk2('impactNow', { t: h.text }))}</p>`; } catch { /* sem decisão */ }
+    try { const h = switchHeadline(farm, this.opts.getRefDate()); if (h) now = `<p class="mkp-now">${esc(mk2('impactNow', { t: h.text }))}</p>`; } catch { /* sem decisão */ }
     let basis = '';
     if (this.sel) {
       const cm = cropMarket(this.sel);
       if (cm) {
         const fw = forwardFactor(this.sel, HORIZON);
-        basis = fw ? `<p class="mkp-basis">📅 ${esc(mk2('basisFut', { c: fw.label, p: money2(cm.m.price * fw.factor) }))}</p>`
-          : `<p class="mkp-basis">📅 ${esc(mk2('basisTrend', { p: money2(cm.m.price * (1 + Math.max(-10, Math.min(10, cm.m.trend12m / 2)) / 100)) }))}</p>`;
+        basis = fw ? `<p class="mkp-basis">${esc(mk2('basisFut', { c: fw.label, p: money2(cm.m.price * fw.factor) }))}</p>`
+          : `<p class="mkp-basis">${esc(mk2('basisTrend', { p: money2(cm.m.price * (1 + Math.max(-10, Math.min(10, cm.m.trend12m / 2)) / 100)) }))}</p>`;
       }
     }
-    return `<div class="mkp-impact"><h3>🔗 ${mk2('impactTitle')}</h3><p>${esc(mk2('impactText'))}</p>${basis}${now}<button type="button" class="mkp-go" data-act="rotation">🔄 ${mk2('impactBtn')}</button></div>`;
+    return `<div class="mkp-impact"><h3>${mk2('impactTitle')}</h3><p>${esc(mk2('impactText'))}</p>${basis}${now}<button type="button" class="mkp-go" data-act="rotation">${mk2('impactBtn')}</button></div>`;
   }
 }

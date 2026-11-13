@@ -24,3 +24,19 @@ Depois gere o app de novo (`npm run build`). Pronto: perguntas livres vão para 
 
 Custo: o modelo pequeno (Haiku) custa centavos por centenas de perguntas; o limite de gasto protege você.
 O app envia só dados da lavoura (talhões, culturas, datas), nunca nome, telefone ou e-mail.
+
+## 4) Voz natural da Estrela (opcional)
+A Estrela fala com uma voz de IA natural (a mesma família de voz do ChatGPT), gerada pela OpenAI.
+O app não usa mais a voz robótica do navegador: sem esta etapa, a Estrela só escreve, e o botão de som não aparece.
+
+1. Entre em https://platform.openai.com, em **Billing** coloque um crédito pequeno e ative um **limite de gasto**.
+2. Em **API keys** → **Create new secret key** → nome "spaceagro-voz". Copie a chave (começa com `sk-`).
+3. No Worker `estela` (Cloudflare) → **Settings → Variables and Secrets**:
+   - **Add** tipo **Secret**: nome `OPENAI_API_KEY`, valor = a chave copiada.
+   - (Opcional) **Add** tipo **Text**: nome `TTS_VOICE` para trocar a voz. Padrão: `coral`.
+     Outras vozes femininas que soam bem em português: `nova`, `shimmer`, `sage`.
+4. Cole de novo o conteúdo de `worker/estela-worker.js` (ele ganhou a rota `/tts`) e clique **Deploy**.
+
+Não precisa mudar o `.env`: a voz usa o mesmo endereço (`VITE_ESTELA_URL`) com `/tts` no final.
+Custo aproximado: cerca de US$ 0,015 por minuto de fala (modelo `gpt-4o-mini-tts`). O Worker limita 200 falas por pessoa por dia.
+O texto falado é só a resposta da Estrela; nenhum dado pessoal vai para a OpenAI.

@@ -2,12 +2,12 @@ import { getCurrentLanguage } from '../i18n';
 
 type Dict = Record<string, string>;
 const en: Dict = {
-  title: 'Access to MyRoça', subtitle: 'Sign in or create your account to manage your farm.',
+  title: 'Access to SpaceAgro', subtitle: 'Sign in or create your account to manage your farm.',
   tabLogin: 'Sign in', tabSignup: 'Create account',
   name: 'Full name', email: 'E-mail', phone: 'Phone (optional)', farm: 'Farm name', city: 'City / State',
   password: 'Password', password2: 'Repeat password', passwordHint: 'At least 8 characters, with letters and numbers.',
   keep: 'Keep me signed in on this device',
-  consent: 'I agree that MyRoça stores my data on this device to run the app (LGPD).',
+  consent: 'I agree that SpaceAgro stores my data on this device to run the app (LGPD).',
   btnLogin: 'Sign in', btnSignup: 'Create account and enter', guest: 'Explore without an account (demo)',
   forgot: 'Forgot my password', forgotMsg: 'In this demo version the account lives only on this device, so the password cannot be recovered. You can delete this account and its data and create it again.',
   forgotDelete: 'Delete this account and its data', forgotDone: 'Account deleted. You can create it again.',
@@ -19,12 +19,12 @@ const en: Dict = {
   logout: 'Sign out', guestName: 'Guest',
 };
 const pt: Dict = {
-  title: 'Acesso ao MyRoça', subtitle: 'Entre ou crie sua conta para gerenciar sua fazenda.',
+  title: 'Acesso ao SpaceAgro', subtitle: 'Entre ou crie sua conta para gerenciar sua fazenda.',
   tabLogin: 'Entrar', tabSignup: 'Criar conta',
   name: 'Nome completo', email: 'E-mail', phone: 'Telefone (opcional)', farm: 'Nome da fazenda', city: 'Cidade / UF',
   password: 'Senha', password2: 'Repita a senha', passwordHint: 'Pelo menos 8 caracteres, com letras e números.',
   keep: 'Manter conectado neste aparelho',
-  consent: 'Concordo que o MyRoça guarde meus dados neste aparelho para funcionar (LGPD).',
+  consent: 'Concordo que o SpaceAgro guarde meus dados neste aparelho para funcionar (LGPD).',
   btnLogin: 'Entrar', btnSignup: 'Criar conta e entrar', guest: 'Conhecer sem conta (demonstração)',
   forgot: 'Esqueci minha senha', forgotMsg: 'Nesta versão de demonstração a conta existe só neste aparelho, então a senha não pode ser recuperada. Você pode apagar esta conta e os dados dela e criar de novo.',
   forgotDelete: 'Apagar esta conta e os dados', forgotDone: 'Conta apagada. Você pode criar de novo.',
@@ -36,12 +36,12 @@ const pt: Dict = {
   logout: 'Sair', guestName: 'Visitante',
 };
 const es: Dict = {
-  title: 'Acceso a MyRoça', subtitle: 'Inicia sesión o crea tu cuenta para gestionar tu finca.',
+  title: 'Acceso a SpaceAgro', subtitle: 'Inicia sesión o crea tu cuenta para gestionar tu finca.',
   tabLogin: 'Entrar', tabSignup: 'Crear cuenta',
   name: 'Nombre completo', email: 'Correo electrónico', phone: 'Teléfono (opcional)', farm: 'Nombre de la finca', city: 'Ciudad / Estado',
   password: 'Contraseña', password2: 'Repite la contraseña', passwordHint: 'Al menos 8 caracteres, con letras y números.',
   keep: 'Mantener la sesión en este dispositivo',
-  consent: 'Acepto que MyRoça guarde mis datos en este dispositivo para funcionar (LGPD).',
+  consent: 'Acepto que SpaceAgro guarde mis datos en este dispositivo para funcionar (LGPD).',
   btnLogin: 'Entrar', btnSignup: 'Crear cuenta y entrar', guest: 'Conocer sin cuenta (demostración)',
   forgot: 'Olvidé mi contraseña', forgotMsg: 'En esta versión de demostración la cuenta existe solo en este dispositivo, por lo que la contraseña no se puede recuperar. Puedes borrar esta cuenta y sus datos y crearla de nuevo.',
   forgotDelete: 'Borrar esta cuenta y sus datos', forgotDone: 'Cuenta borrada. Puedes crearla de nuevo.',
@@ -53,12 +53,12 @@ const es: Dict = {
   logout: 'Salir', guestName: 'Invitado',
 };
 const de: Dict = {
-  title: 'Zugang zu MyRoça', subtitle: 'Melden Sie sich an oder erstellen Sie Ihr Konto, um Ihren Betrieb zu verwalten.',
+  title: 'Zugang zu SpaceAgro', subtitle: 'Melden Sie sich an oder erstellen Sie Ihr Konto, um Ihren Betrieb zu verwalten.',
   tabLogin: 'Anmelden', tabSignup: 'Konto erstellen',
   name: 'Vollständiger Name', email: 'E-Mail', phone: 'Telefon (optional)', farm: 'Name des Betriebs', city: 'Stadt / Bundesstaat',
   password: 'Passwort', password2: 'Passwort wiederholen', passwordHint: 'Mindestens 8 Zeichen, mit Buchstaben und Zahlen.',
   keep: 'Auf diesem Gerät angemeldet bleiben',
-  consent: 'Ich stimme zu, dass MyRoça meine Daten zur Nutzung auf diesem Gerät speichert (LGPD).',
+  consent: 'Ich stimme zu, dass SpaceAgro meine Daten zur Nutzung auf diesem Gerät speichert (LGPD).',
   btnLogin: 'Anmelden', btnSignup: 'Konto erstellen und starten', guest: 'Ohne Konto ausprobieren (Demo)',
   forgot: 'Passwort vergessen', forgotMsg: 'In dieser Demoversion existiert das Konto nur auf diesem Gerät, das Passwort kann daher nicht wiederhergestellt werden. Sie können dieses Konto samt Daten löschen und neu anlegen.',
   forgotDelete: 'Dieses Konto und seine Daten löschen', forgotDone: 'Konto gelöscht. Sie können es neu anlegen.',
@@ -70,12 +70,12 @@ const de: Dict = {
   logout: 'Abmelden', guestName: 'Gast',
 };
 const zh: Dict = {
-  title: '登录 MyRoça', subtitle: '登录或创建账户以管理您的农场。',
+  title: '登录 SpaceAgro', subtitle: '登录或创建账户以管理您的农场。',
   tabLogin: '登录', tabSignup: '创建账户',
   name: '姓名', email: '电子邮箱', phone: '电话（选填）', farm: '农场名称', city: '城市 / 州',
   password: '密码', password2: '再次输入密码', passwordHint: '至少 8 个字符，包含字母和数字。',
   keep: '在此设备上保持登录',
-  consent: '我同意 MyRoça 在此设备上保存我的数据以运行应用（LGPD）。',
+  consent: '我同意 SpaceAgro 在此设备上保存我的数据以运行应用（LGPD）。',
   btnLogin: '登录', btnSignup: '创建账户并进入', guest: '无需账户体验（演示）',
   forgot: '忘记密码', forgotMsg: '演示版本的账户仅保存在此设备上，因此无法找回密码。您可以删除此账户及其数据后重新创建。',
   forgotDelete: '删除此账户及其数据', forgotDone: '账户已删除，可重新创建。',
@@ -87,12 +87,12 @@ const zh: Dict = {
   logout: '退出', guestName: '访客',
 };
 const fr: Dict = {
-  title: 'Accès à MyRoça', subtitle: 'Connectez-vous ou créez votre compte pour gérer votre exploitation.',
+  title: 'Accès à SpaceAgro', subtitle: 'Connectez-vous ou créez votre compte pour gérer votre exploitation.',
   tabLogin: 'Se connecter', tabSignup: 'Créer un compte',
   name: 'Nom complet', email: 'E-mail', phone: 'Téléphone (facultatif)', farm: "Nom de l'exploitation", city: 'Ville / État',
   password: 'Mot de passe', password2: 'Répétez le mot de passe', passwordHint: 'Au moins 8 caractères, avec lettres et chiffres.',
   keep: 'Rester connecté sur cet appareil',
-  consent: "J'accepte que MyRoça enregistre mes données sur cet appareil pour fonctionner (LGPD).",
+  consent: "J'accepte que SpaceAgro enregistre mes données sur cet appareil pour fonctionner (LGPD).",
   btnLogin: 'Se connecter', btnSignup: 'Créer le compte et entrer', guest: 'Découvrir sans compte (démo)',
   forgot: "Mot de passe oublié", forgotMsg: "Dans cette version de démonstration, le compte n'existe que sur cet appareil : le mot de passe ne peut pas être récupéré. Vous pouvez supprimer ce compte et ses données, puis le recréer.",
   forgotDelete: 'Supprimer ce compte et ses données', forgotDone: 'Compte supprimé. Vous pouvez le recréer.',
