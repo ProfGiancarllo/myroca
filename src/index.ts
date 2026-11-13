@@ -6,6 +6,7 @@ import { CoordinateRow, parseCoordinatePair, parsePastedCoordinateText, validate
 import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, addDaysToDate, calculateTalhaoCropStatus, calculateExpectedHarvestDate, checkCropDatesOverlap, getCropColor, DEFAULT_CROP_CYCLES } from './utils/cropCalendar';
 import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
+import { MarketPanel } from './components/MarketPanel';
 import { RotationPlanner } from './components/RotationPlanner';
 import { EstelaChat } from './estela/EstelaChat';
 import { SimpleHome } from './simple/SimpleHome';
@@ -35,6 +36,7 @@ class AgroApp {
   private farmData: FarmData;
   private mapManager!: MapManager;
   private rotationPlanner!: RotationPlanner;
+  private marketPanel!: MarketPanel;
   private estela!: EstelaChat;
   private simpleHome!: SimpleHome;
 
@@ -84,6 +86,7 @@ class AgroApp {
     document.body.appendChild(fab);
     fab.querySelector('#fab-cur')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
     fab.querySelector('#fab-sw')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'switch'));
+    this.marketPanel = new MarketPanel({ getFarm: () => this.farmData, getRefDate: () => this.referenceDate, openRotation: () => this.rotationPlanner.open(undefined, 'switch') });
     this.initMap();
     this.initGameMode();
     this.bindEvents();
@@ -2765,6 +2768,7 @@ class AgroApp {
   // ==========================================
 
   private updateUI(): void {
+    this.marketPanel?.refresh();
     const totalTalhoes = this.farmData.talhoes.length;
     const totalHectares = this.farmData.talhoes.reduce((sum, t) => sum + t.areaHectares, 0);
     const totalWater = this.farmData.waterPoints.length;

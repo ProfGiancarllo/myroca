@@ -28,9 +28,17 @@ export interface CropMarket {
   /** Fonte do preço (quando real). */
   source?: string;
   asOf?: string;
+  /** Histórico de preços (R$/unidade), mensal ou semanal, para o gráfico do painel de mercado. */
+  history?: Array<{ d: string; p: number }>;
+  /** Curva de contratos futuros da bolsa, convertida para R$/unidade (contratos dos próximos ~14 meses). */
+  futures?: Array<{ m: string; label: string; native: number; brl: number; symbol: string }>;
+  /** Preço na unidade da bolsa (ex.: US¢/bu). */
+  native?: { price: number; unit: string };
 }
 
 export interface MarketData {
+  /** Dólar (R$ por US$): último valor e histórico mensal. */
+  fx?: { last: number; asOf: string; history: Array<{ d: string; p: number }> };
   example: boolean;
   source: string;
   asOf: string;
@@ -89,7 +97,7 @@ export function loadMarket(): Promise<MarketData> {
             const base = EXAMPLE_MARKET.crops[k as CropKey];
             if (base && v && typeof v.price === 'number') crops[k as CropKey] = { ...base, ...v, example: v.example === true };
           }
-          loaded = { example: j.example === true, source: String(j.source || ''), asOf: String(j.asOf || ''), crops };
+          loaded = { example: j.example === true, source: String(j.source || ''), asOf: String(j.asOf || ''), crops, fx: j.fx && typeof j.fx.last === 'number' ? j.fx : undefined };
         } else loaded = EXAMPLE_MARKET;
         return loaded;
       })
@@ -130,6 +138,24 @@ export function cropMarket(crop: CropKey): { m: CropMarket; edited: { price: boo
   };
 }
 
+/**
+ * Fator de preço esperado até daqui a `monthsAhead` meses, pela curva de contratos futuros da bolsa (limitado a ±15%).
+ * Devolve null quando a cultura não tem curva (nesse caso usa-se a tendência de 12 meses).
+ */
+export function forwardFactor(crop: CropKey, monthsAhead: number): { factor: number; label: string } | null {
+  const f = currentMarket().crops[crop]?.futures;
+  if (!f || f.length < 2 || !isFinite(monthsAhead)) return null;
+  const now = new Date();
+  const idx = (m: string) => (Number(m.slice(0, 4)) - now.getFullYear()) * 12 + (Number(m.slice(5, 7)) - 1 - now.getMonth());
+  const pts = f.map((x) => ({ k: idx(x.m), v: x.brl, label: x.label })).sort((a, b) => a.k - b.k);
+  const t = Math.max(pts[0].k, Math.min(pts[pts.length - 1].k, monthsAhead));
+  let lo = pts[0], hi = pts[pts.length - 1];
+  for (let i = 0; i < pts.length - 1; i++) if (t >= pts[i].k && t <= pts[i + 1].k) { lo = pts[i]; hi = pts[i + 1]; break; }
+  const v = hi.k === lo.k ? lo.v : lo.v + ((hi.v - lo.v) * (t - lo.k)) / (hi.k - lo.k);
+  const factor = Math.max(0.85, Math.min(1.15, v / pts[0].v));
+  return { factor, label: (Math.abs(hi.k - t) < Math.abs(lo.k - t) ? hi : lo).label };
+}
+
 export type Scenario = 'pess' | 'base' | 'opt';
 export interface SlotMargin {
   crop: CropKey;
@@ -140,6 +166,11 @@ export interface SlotMargin {
   revenue: Record<Scenario, number>;
   cost: number;
   margin: Record<Scenario, number>;
+  /** Base do preço projetado: curva de futuros da bolsa ou tendência de 12 meses. */
+  basis: 'futures' | 'trend';
+  /** Variação do preço projetada até a colheita (%) e contrato usado. */
+  driftPct: number;
+  contract?: string;
 }
 
 export const RISK_YIELD_FACTOR = { low: 1, medium: 0.93, high: 0.85 } as const;
@@ -147,7 +178,7 @@ const YIELD_SCEN: Record<Scenario, number> = { pess: 0.85, base: 1, opt: 1.1 };
 
 /**
  * Margem de uma cultura em uma safra.
- * Preço base = preço atual com metade da tendência de 12 meses (limitada a ±10%) aplicada até a colheita e o teste de estresse.
+ * Preço base = preço atual ajustado até a colheita (pela curva de futuros da bolsa, quando existe; senão, metade da tendência de 12 meses, limitada a ±10%) e pelo teste de estresse.
  * Produtividade = referência do talhão (se houver) ou regional, reduzida pelo risco agronômico/climático da estratégia.
  */
 export function slotMargin(
@@ -155,15 +186,17 @@ export function slotMargin(
   level: 'low' | 'medium' | 'high',
   talhaoYield: number | null,
   stressPct: number,
-  seasons = 1
+  seasons = 1,
+  monthsAhead?: number
 ): SlotMargin | null {
   const cm = cropMarket(crop);
   if (!cm) return null;
   const { m } = cm;
   const y0 = talhaoYield !== null && talhaoYield > 0 ? talhaoYield : m.yieldRef;
   const rf = RISK_YIELD_FACTOR[level];
-  // metade da tendência de 12 meses, limitada a ±10% para não projetar saltos extremos
-  const drift = Math.max(-10, Math.min(10, m.trend12m / 2));
+  // Com curva de futuros: o preço esperado na colheita segue a curva da bolsa. Sem curva: metade da tendência de 12 meses, limitada a ±10%.
+  const fw = monthsAhead !== undefined ? forwardFactor(crop, monthsAhead) : null;
+  const drift = fw ? (fw.factor - 1) * 100 : Math.max(-10, Math.min(10, m.trend12m / 2));
   const basePrice = m.price * (1 + drift / 100) * (1 + stressPct / 100);
   const price: Record<Scenario, number> = {
     pess: basePrice * (1 - m.vol / 100),
@@ -173,6 +206,7 @@ export function slotMargin(
   const out: SlotMargin = {
     crop, yieldUsed: y0 * rf, yieldFromHistory: talhaoYield !== null && talhaoYield > 0, unit: m.unit,
     price, revenue: { pess: 0, base: 0, opt: 0 }, cost: m.cost * seasons, margin: { pess: 0, base: 0, opt: 0 },
+    basis: fw ? 'futures' : 'trend', driftPct: drift, contract: fw?.label,
   };
   (['pess', 'base', 'opt'] as Scenario[]).forEach((s) => {
     out.revenue[s] = y0 * rf * YIELD_SCEN[s] * price[s] * seasons;

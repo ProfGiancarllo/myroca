@@ -4,6 +4,8 @@ import { calculateExpectedHarvestDate, calculateTalhaoCropStatus, diffDays } fro
 import { CropKey, Evaluation, ROTATION_RULES, defaultStrategies, defaultSummerSow, evaluateStrategy } from './rotation';
 import { slotMargin, strategyMargin, StrategyMargin } from './market';
 
+const monthsUntil = (ref: string, iso: string) => (new Date(iso + 'T12:00:00Z').getTime() - new Date(ref + 'T12:00:00Z').getTime()) / (30.44 * 864e5);
+
 export function ensurePlan(t: Talhao, ref: string) {
   if (!t.rotationPlan || !t.rotationPlan.strategies?.length) {
     t.rotationPlan = { summerSow: defaultSummerSow(t, ref), strategies: defaultStrategies(t) };
@@ -22,8 +24,8 @@ export function decide(
   const evals = plan.strategies.map((s) => evaluateStrategy(s, t, plan.summerSow!, ref, names, nasa));
   const margins = evals.map((ev) => {
     const perennial = ROTATION_RULES.perennial.includes(ev.summer.crop);
-    const slots = [slotMargin(ev.summer.crop, ev.level, ev.yields.summer?.value ?? null, stress)];
-    if (ev.second && !perennial) slots.push(slotMargin(ev.second.crop, ev.level, ev.yields.second?.value ?? null, stress));
+    const slots = [slotMargin(ev.summer.crop, ev.level, ev.yields.summer?.value ?? null, stress, 1, monthsUntil(ref, ev.summer.harvest))];
+    if (ev.second && !perennial) slots.push(slotMargin(ev.second.crop, ev.level, ev.yields.second?.value ?? null, stress, 1, monthsUntil(ref, ev.second.harvest)));
     return strategyMargin(slots);
   });
   let bestIdx = -1;

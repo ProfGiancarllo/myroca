@@ -9,6 +9,7 @@ import { assessPlanting } from '../utils/agronomyRules';
 import { fetchNasaSeries, polygonCentroid } from '../utils/nasaPower';
 import { addDaysToDate, calculateTalhaoCropStatus } from '../utils/cropCalendar';
 import { mt } from '../i18n/marketText';
+import { mk2 } from '../i18n/mercadoText';
 import { sf } from '../i18n/safraText';
 import { decide, Decision, focusTalhao } from '../utils/decision';
 import { currentForecast } from '../utils/forecast';
@@ -216,13 +217,17 @@ export class RotationPlanner {
       return `<div class="mk-cell ${k} ${v < 0 ? 'neg' : 'pos'}"><span>${label[k]}</span><strong>${this.money(v)}</strong><em>${this.money(v * area)}</em></div>`;
     }).join('');
     const adj = mg.slots.map((s) => `${this.cropName(s.crop)}: ${mt('yieldAdj', { v: s.yieldUsed.toFixed(s.yieldUsed < 20 ? 1 : 0).replace('.', ','), u: s.unit })}`).join(' • ');
+    const basis = mg.slots.map((s) => {
+      const d = `${s.driftPct >= 0 ? '+' : ''}${s.driftPct.toFixed(1).replace('.', ',')}%`;
+      return `${this.cropName(s.crop)}: ${s.basis === 'futures' ? mk2('basisFut', { c: s.contract || '', p: d }) : mk2('basisTrend', { p: d })}`;
+    }).join(' • ');
     const cover = [ev.summer.crop, ev.second?.crop].includes('cobertura') ? `<div class="mk-cover">${mt('cover')}</div>` : '';
     return `
       <div class="mk-margin ${best ? 'best' : ''}">
         <div class="mk-m-head"><strong>💹 ${mt('margin')}</strong> <span>${mt('perHa')} • <em>${mt('total', { ha: area.toFixed(1).replace('.', ',') })}</em></span>${best ? `<span class="mk-best">🏆 ${mt('best')}</span>` : ''}</div>
         <div class="mk-cells">${cells}</div>
         ${mg.perHa.pess < 0 ? `<div class="mk-loss">⚠️ ${mt('loss')}</div>` : ''}
-        <div class="mk-adj">${esc(adj)}</div>${cover}
+        <div class="mk-adj">${esc(adj)}</div><div class="mk-adj">📈 ${esc(basis)}</div>${cover}
       </div>`;
   }
 
