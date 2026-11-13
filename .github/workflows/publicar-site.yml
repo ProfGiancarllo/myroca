@@ -19,6 +19,8 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - name: Baixar preços de mercado (FRED)
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: node scripts/atualizar-mercado.mjs || echo "Sem dados de mercado agora; o app usa os valores de exemplo."
       - run: npx vite build --base=./
         env:
