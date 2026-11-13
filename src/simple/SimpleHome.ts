@@ -1,4 +1,5 @@
 import { FarmData, Talhao, DiaryEntryType } from '../types';
+import { dj } from '../i18n/diarioText';
 import { EstelaChat } from '../estela/EstelaChat';
 import { sx } from './simpleText';
 import { et } from '../estela/estelaText';
@@ -18,6 +19,7 @@ export interface SimpleHomeOptions {
   getRefDate: () => string;
   getEstela: () => EstelaChat;
   openRotation: (tab?: 'current' | 'switch') => void;
+  openDiary: () => void;
   onShowFull: () => void;
 }
 
@@ -93,6 +95,9 @@ export class SimpleHome {
           </section>
           <section class="sh-card" id="sh-weather"><h2>⛅ ${sx('weather')}</h2><p class="sh-big">…</p></section>
           <section class="sh-card sh-wide" id="sh-nasa"><h2>🛰️ ${sx('nasa')}</h2><p class="sh-muted">${sx('loading')}</p></section>
+          <section class="sh-card sh-wide sh-diary">
+            <button type="button" class="sh-btn sh-primary sh-xl" id="sh-diary">📓 ${esc(dj('btn'))}</button>
+          </section>
           <section class="sh-card sh-wide">
             <h2>📒 ${sx('record')}</h2>
             <div class="sh-rec">
@@ -110,6 +115,7 @@ export class SimpleHome {
     $('#sh-full').onclick = () => this.opts.onShowFull();
     $('#sh-talk').onclick = () => estela.listen();
     $('#sh-plan').onclick = () => this.opts.openRotation('switch');
+    $('#sh-diary').onclick = () => this.opts.openDiary();
     $('#sh-h-cur').onclick = () => this.opts.openRotation('current');
     $('#sh-h-sw').onclick = () => this.opts.openRotation('switch');
     const v = this.root.querySelector<HTMLElement>('#sh-voice');

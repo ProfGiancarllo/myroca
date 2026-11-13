@@ -543,6 +543,9 @@ export class EstelaChat {
     this.continueDiary();
   }
 
+  /** Abre o chat (para registrar o diário por conversa). */
+  public openChat(): void { this.toggle(true); }
+
   /** Abre o chat já fazendo as perguntas pendentes. */
   public askPending(): void {
     this.toggle(true);

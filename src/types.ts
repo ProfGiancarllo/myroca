@@ -75,7 +75,20 @@ export type DiaryEntryType =
   | 'chuva'
   | 'monitoramento'
   | 'colheita'
-  | 'observacao';
+  | 'observacao'
+  | 'preparo'
+  | 'calagem'
+  | 'foliar'
+  | 'ocorrencia'
+  | 'analise_solo';
+
+/** Clima do dia do registro: informado pelo produtor ou preenchido por NASA POWER / Open-Meteo. */
+export interface DiaryWeather {
+  rain: number | null;   // mm no dia
+  tmax: number | null;   // °C
+  tmin: number | null;   // °C
+  src: string;           // 'Produtor' | 'NASA POWER' | 'Open-Meteo'
+}
 
 /** Registro do diário de safra de um talhão. */
 export interface DiaryEntry {
@@ -84,6 +97,13 @@ export interface DiaryEntry {
   type: DiaryEntryType;
   amount?: number;       // kg/ha (adubação), L/ha (aplicação), mm (irrigação/chuva), sc/ha (colheita)
   note?: string;
+  unit?: string;         // unidade da quantidade (kg/ha, L/ha, t/ha, mm, sc/ha...)
+  product?: string;      // produto, cultivar ou implemento
+  category?: string;     // combate: herbicida, fungicida, inseticida, dessecacao, outro
+  target?: string;       // alvo do combate (praga, doença ou planta daninha) ou ocorrência
+  depth?: number;        // profundidade de trabalho (cm) no preparo do solo
+  groupId?: string;      // liga os registros feitos juntos em vários talhões
+  weather?: DiaryWeather; // clima do dia (automático ou do produtor)
 }
 
 export interface Talhao {

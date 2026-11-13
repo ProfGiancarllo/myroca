@@ -6,6 +6,7 @@ import { CoordinateRow, parseCoordinatePair, parsePastedCoordinateText, validate
 import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, addDaysToDate, calculateTalhaoCropStatus, calculateExpectedHarvestDate, checkCropDatesOverlap, getCropColor, DEFAULT_CROP_CYCLES } from './utils/cropCalendar';
 import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
+import { DiaryPanel } from './components/DiaryPanel';
 import { MarketPanel } from './components/MarketPanel';
 import { RotationPlanner } from './components/RotationPlanner';
 import { EstelaChat } from './estela/EstelaChat';
@@ -13,6 +14,7 @@ import { SimpleHome } from './simple/SimpleHome';
 import { playIntro } from './intro/IntroVideo';
 import { rt } from './i18n/rotationText';
 import { sf } from './i18n/safraText';
+import { dj } from './i18n/diarioText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
 import {
@@ -37,6 +39,7 @@ class AgroApp {
   private mapManager!: MapManager;
   private rotationPlanner!: RotationPlanner;
   private marketPanel!: MarketPanel;
+  private diaryPanel!: DiaryPanel;
   private estela!: EstelaChat;
   private simpleHome!: SimpleHome;
 
@@ -82,10 +85,24 @@ class AgroApp {
     this.renderDOM();
     const fab = document.createElement('div');
     fab.id = 'safra-fab';
-    fab.innerHTML = `<button type="button" id="fab-cur">🌾 <span>${sf('fabCur')}</span></button><button type="button" id="fab-sw" class="primary">🔄 <span>${sf('fabSwitch')}</span></button>`;
+    fab.innerHTML = `<button type="button" id="fab-cur">🌾 <span>${sf('fabCur')}</span></button><button type="button" id="fab-sw" class="primary">🔄 <span>${sf('fabSwitch')}</span></button><button type="button" id="fab-dia">📓 <span>${dj('btn')}</span></button>`;
     document.body.appendChild(fab);
     fab.querySelector('#fab-cur')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
     fab.querySelector('#fab-sw')!.addEventListener('click', () => this.rotationPlanner.open(undefined, 'switch'));
+    fab.querySelector('#fab-dia')!.addEventListener('click', () => this.diaryPanel.open());
+    this.diaryPanel = new DiaryPanel({
+      getFarm: () => this.farmData,
+      getRefDate: () => this.referenceDate,
+      onChange: () => {
+        saveFarmData(this.farmData);
+        this.updateUI();
+        this.farmGameView?.updateFarmData(this.farmData, this.referenceDate);
+        this.mapManager.renderTalhoes(this.farmData.talhoes, this.referenceDate);
+        this.estela?.refreshBadge();
+        this.simpleHome?.refresh();
+      },
+      openEstela: () => this.estela.openChat(),
+    });
     this.marketPanel = new MarketPanel({ getFarm: () => this.farmData, getRefDate: () => this.referenceDate, openRotation: () => this.rotationPlanner.open(undefined, 'switch') });
     this.initMap();
     this.initGameMode();
@@ -112,6 +129,7 @@ class AgroApp {
       getRefDate: () => this.referenceDate,
       getEstela: () => this.estela,
       openRotation: (tab) => this.rotationPlanner.open(undefined, tab || 'switch'),
+      openDiary: () => this.diaryPanel.open(),
       onShowFull: () => this.simpleHome.setMode('full'),
     });
 
@@ -159,6 +177,9 @@ class AgroApp {
 
           <button class="btn btn-safra-main" id="btn-rotation" title="${sf('hub')}">
               <span>🌾</span> <span class="btn-text">${sf('hub')}</span>
+            </button>
+          <button class="btn btn-diary-main" id="btn-diary" title="${dj('btn')}">
+              <span>📓</span> <span class="btn-text">${dj('btn')}</span>
             </button>
 
           <!-- Metric Pills -->
@@ -1512,6 +1533,7 @@ class AgroApp {
     });
 
     document.getElementById('btn-rotation')?.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
+    document.getElementById('btn-diary')?.addEventListener('click', () => this.diaryPanel.open());
     document.getElementById('btn-logout')?.addEventListener('click', () => {
       logout();
       window.location.reload();
