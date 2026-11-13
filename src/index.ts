@@ -137,7 +137,7 @@ class AgroApp {
         <header class="top-nav">
           <div class="brand-section">
             <div class="brand-logo-wrapper">
-              <img src="/assets/aistudio/image_5d97730a.png" alt="MyRoça Logo" class="brand-logo-img" />
+              <img src="./assets/aistudio/image_5d97730a.png" alt="MyRoça Logo" class="brand-logo-img" />
             </div>
             <div class="brand-text-group">
               <div class="brand-title">
@@ -901,7 +901,7 @@ class AgroApp {
       <div class="sidebar-drawer" id="sidebar-drawer">
         <div class="drawer-header">
           <div class="drawer-title">
-            <img src="/assets/aistudio/image_5d97730a.png" alt="MyRoça" class="drawer-logo-thumb" />
+            <img src="./assets/aistudio/image_5d97730a.png" alt="MyRoça" class="drawer-logo-thumb" />
             <div>
               <span class="brand-my" style="font-size: 17px;">My</span><span class="brand-roca" style="font-size: 17px;">Roça</span>
               <span style="font-size: 13px; color: #94a3b8; font-weight: 500; margin-left: 6px;" id="lbl-drawer-title">| ${t('farmDashboard')}</span>

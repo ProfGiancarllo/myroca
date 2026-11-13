@@ -21,7 +21,7 @@ const loc = () => LOCALES[getCurrentLanguage()] || 'pt-BR';
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const ICON: Record<string, string> = { soja: '🌱', milho: '🌽', sorgo: '🌾', feijao: '🫘', algodao: '☁️', trigo: '🌾', cana: '🎋', pasto: '🐄' };
 const COLOR: Record<string, string> = { soja: '#22c55e', milho: '#eab308', sorgo: '#f97316', feijao: '#a78bfa', algodao: '#38bdf8', trigo: '#fb923c', cana: '#84cc16', pasto: '#10b981' };
-const ALT: CropKey[] = ['soja', 'milho', 'sorgo', 'algodao', 'trigo', 'feijao'];
+const ALT: CropKey[] = ['soja', 'milho', 'sorgo', 'algodao', 'trigo', 'feijao', 'cana', 'pasto'];
 const HORIZON = 5; // meses até a colheita usados na comparação de margens
 
 const cropLabel = (c: CropKey) => translateCropName(CROP_STANDARD_NAME[c]);
@@ -142,7 +142,7 @@ export class MarketPanel {
     }).join('');
 
     const detail = this.sel ? this.detail(this.sel) : `<p class="mkp-note">${mk2('noData')}</p>`;
-    const alts = list.filter((c) => !inFarm.has(c)).map((c) => `<button type="button" class="mkp-alt ${this.sel === c ? 'on' : ''}" data-crop="${c}">${ICON[c] || '🌱'} ${esc(cropLabel(c))}</button>`).join('');
+    const alts = list.map((c) => `<button type="button" class="mkp-alt ${this.sel === c ? 'on' : ''}" data-crop="${c}">${ICON[c] || '🌱'} ${esc(cropLabel(c))}</button>`).join('');
     const fx = md.fx ? `<div class="mkp-fx"><div class="mkp-fx-h"><strong>💵 ${mk2('fxTitle')}</strong><span>R$ ${num(md.fx.last, 2)}</span></div>${lineChart(md.fx.history.map((h) => ({ x: monthLbl(h.d), y: h.p })), '#60a5fa', { every: 6 })}</div>` : '';
 
     this.overlay.innerHTML = `<div class="mkp-card">
