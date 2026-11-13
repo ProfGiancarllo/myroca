@@ -3194,9 +3194,7 @@ body.mode-simple .estela-fab,body.mode-simple .estela-fab-mic{display:none!impor
 .leaflet-container::before { content: ''; position: absolute; inset: 0; z-index: 450; pointer-events: none;
   background-image: linear-gradient(rgba(94,200,255,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(94,200,255,.08) 1px, transparent 1px);
   background-size: 56px 56px; mix-blend-mode: screen; }
-.leaflet-container::after { content: ''; position: absolute; top: 0; bottom: 0; width: 140px; left: -160px; z-index: 451; pointer-events: none;
-  background: linear-gradient(90deg, rgba(94,200,255,0), rgba(120,220,255,.22), rgba(94,200,255,0)); animation: holo-scan 7s linear infinite; }
-@keyframes holo-scan { to { left: 110%; } }
+
 path.holo-poly { filter: drop-shadow(0 0 5px rgba(94,200,255,.95)); stroke-dasharray: 10 6; animation: holo-dash 2.2s linear infinite; }
 path.holo-glow { filter: blur(4px); }
 @keyframes holo-dash { to { stroke-dashoffset: -32; } }
