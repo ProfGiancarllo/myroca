@@ -1,5 +1,4 @@
-import { DEMO_FIELDS } from './demoFields';
-import { DEMO_BOUNDS } from './farmSnapshot';
+import { CAR_TALHOES, CAR_NASCENTE } from '../data/farmCar';
 import { FarmData, Talhao, WaterPoint, WaterPointType, TALHAO_COLORS } from '../types';
 import { getCropColor } from './cropCalendar';
 import { t, translateCropName, TranslationDictionary } from '../i18n';
@@ -415,27 +414,10 @@ export function exportToKML(farmData: FarmData): string {
  * Rio Verde is a major agricultural hub in Brazil renowned for soybean, corn and cattle farming.
  */
 export function getRioVerdeDemoFarm(): FarmData {
-  const talhao1Coords: [number, number][] = [
-    [-17.80521, -51.09847],
-    [-17.80521, -51.08528],
-    [-17.80803, -51.08489],
-    [-17.81082, -51.08585],
-    [-17.81082, -51.09847],
-  ];
-
-  const talhao2Coords: [number, number][] = [
-    [-17.80131, -51.08375],
-    [-17.80131, -51.07883],
-    [-17.81245, -51.07883],
-    [-17.81245, -51.08375],
-  ];
-
-  const talhao3Coords: [number, number][] = [
-    [-17.81287, -51.09927],
-    [-17.81287, -51.09225],
-    [-17.81984, -51.09225],
-    [-17.81984, -51.09927],
-  ];
+  // Fazenda real (CAR GO-5218805): talhões = divisão da área consolidada pelas estradas internas visíveis na imagem
+  const talhao1Coords: [number, number][] = CAR_TALHOES[0];
+  const talhao2Coords: [number, number][] = CAR_TALHOES[1];
+  const talhao3Coords: [number, number][] = CAR_TALHOES[2];
 
   const demoFarm: FarmData = {
     farmName: 'Fazenda MyRoça - Rio Verde (GO)',
@@ -576,7 +558,7 @@ export function getRioVerdeDemoFarm(): FarmData {
         id: 'elem_demo_sede',
         name: t('demoNameSede'),
         type: 'sede',
-        coordinates: [-17.7947, -51.08387],
+        coordinates: [-17.75215, -51.14415],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Casa principal, alojamento e escritório de gestão rural.',
         isExample: true,
@@ -585,7 +567,7 @@ export function getRioVerdeDemoFarm(): FarmData {
         id: 'elem_demo_silo',
         name: t('demoNameSilo'),
         type: 'silo',
-        coordinates: [-17.7944, -51.08189],
+        coordinates: [-17.75125, -51.14385],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Capacidade estática de 120.000 sacas com secador a lenha.',
         isExample: true,
@@ -594,34 +576,34 @@ export function getRioVerdeDemoFarm(): FarmData {
         id: 'elem_demo_curral',
         name: t('demoNameCurral'),
         type: 'curral',
-        coordinates: [-17.80061, -51.08443],
+        coordinates: [-17.75335, -51.1459],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Brete com balança eletrônica e tronco de contenção.',
-        isExample: true,
-      },
-      {
-        id: 'elem_demo_pivo',
-        name: t('demoNamePivo'),
-        type: 'pivo',
-        coordinates: [-17.80661, -51.07215],
-        createdAt: new Date().toISOString(),
-        notes: '[Exemplo] Pivô de 85 hectares com captação autorizada.',
         isExample: true,
       },
       {
         id: 'elem_demo_estacao',
         name: t('demoNameEstacao'),
         type: 'estacao_meteo',
-        coordinates: [-17.8, -51.0884],
+        coordinates: [-17.75185, -51.1469],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Monitoramento em tempo real de chuva, vento e umidade.',
+        isExample: true,
+      },
+      {
+        id: 'elem_demo_pista',
+        name: t('demoNamePista'),
+        type: 'estrada',
+        coordinates: [-17.7517, -51.1522],
+        createdAt: new Date().toISOString(),
+        notes: '[Exemplo] Pista de pouso de aviões agrícolas no centro da fazenda.',
         isExample: true,
       },
       {
         id: 'elem_demo_estrada',
         name: t('demoNameEstrada'),
         type: 'estrada',
-        coordinates: [-17.79909, -51.09632],
+        coordinates: [-17.7531, -51.1432],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Via cascalhada para escoamento de carretas bitrem e colheitadeiras.',
         isExample: true,
@@ -630,7 +612,7 @@ export function getRioVerdeDemoFarm(): FarmData {
         id: 'elem_demo_reserva',
         name: t('demoNameReserva'),
         type: 'reserva',
-        coordinates: [-17.80863, -51.10368],
+        coordinates: [-17.7494, -51.1526],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Área de Preservação Permanente (APP) averbada no CAR.',
         isExample: true,
@@ -638,19 +620,10 @@ export function getRioVerdeDemoFarm(): FarmData {
 
       // Recursos Hídricos
       {
-        id: 'elem_demo_acude',
-        name: t('demoNameAcude'),
-        type: 'acude',
-        coordinates: [-17.81651, -51.06066],
-        createdAt: new Date().toISOString(),
-        notes: '[Exemplo] Reservatório com lâmina de água de 3,2 ha. Outorga SECIMA.',
-        isExample: true,
-      },
-      {
         id: 'elem_demo_nascente',
         name: t('demoNameNascente'),
         type: 'nascente',
-        coordinates: [-17.81409, -51.08557],
+        coordinates: CAR_NASCENTE,
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Mina protegida com raio de 50 metros preservado.',
         isExample: true,
@@ -659,7 +632,7 @@ export function getRioVerdeDemoFarm(): FarmData {
         id: 'elem_demo_poco',
         name: t('demoNamePoco'),
         type: 'poco',
-        coordinates: [-17.79137, -51.07821],
+        coordinates: [-17.7523, -51.1451],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Profundidade 140 m, vazão 25.000 L/h para uso da sede.',
         isExample: true,
@@ -668,7 +641,7 @@ export function getRioVerdeDemoFarm(): FarmData {
         id: 'elem_demo_rio',
         name: t('demoNameRio'),
         type: 'rio',
-        coordinates: [-17.79894, -51.05868],
+        coordinates: [-17.7568, -51.138],
         createdAt: new Date().toISOString(),
         notes: '[Exemplo] Corpo hídrico na divisa sul da propriedade rural.',
         isExample: true,
@@ -676,17 +649,15 @@ export function getRioVerdeDemoFarm(): FarmData {
     ],
   };
   localizeExampleNames(demoFarm);
-  // Demais lavouras visíveis na imagem aérea embutida (fazenda de demonstração)
-  const [[bs, bw], [bn, be]] = DEMO_BOUNDS;
-  const R = 6378137, mxx = (g: number) => (g * Math.PI * R) / 180, myy = (a: number) => Math.log(Math.tan(Math.PI / 4 + (a * Math.PI) / 360)) * R;
-  const px2ll = (x: number, y: number): [number, number] => {
-    const X = mxx(bw) + (x / 900) * (mxx(be) - mxx(bw)), Y = myy(bn) - (y / 503) * (myy(bn) - myy(bs));
-    return [Math.round(((2 * Math.atan(Math.exp(Y / R)) - Math.PI / 2) * 180 / Math.PI) * 1e5) / 1e5, Math.round((X * 180 / (Math.PI * R)) * 1e5) / 1e5];
-  };
-  DEMO_FIELDS.forEach((f, i) => {
-    const n = i + 4, id = `talhao_demo_${String(n).padStart(2, '0')}`;
-    const coords = f.poly.map(([x, y]) => px2ll(x, y));
-    const pasto = f.crop.startsWith('Pastagem');
+  // Demais talhões da fazenda real (culturas e datas ilustrativas), em rodízio
+  const SPEC: Array<{ crop: 'Soja' | 'Milho' | 'Pastagem de braquiária'; plant: string }> = [
+    { crop: 'Soja', plant: '2026-10-12' }, { crop: 'Milho', plant: '2026-07-12' }, { crop: 'Soja', plant: '2026-10-05' },
+    { crop: 'Milho', plant: '2026-10-02' }, { crop: 'Soja', plant: '2026-10-18' }, { crop: 'Pastagem de braquiária', plant: '' },
+    { crop: 'Soja', plant: '2026-09-28' }, { crop: 'Milho', plant: '2026-07-20' },
+  ];
+  for (let i = 3; i < CAR_TALHOES.length; i++) {
+    const f = SPEC[(i - 3) % SPEC.length], n = i + 1, id = `talhao_demo_${String(n).padStart(2, '0')}`;
+    const coords = CAR_TALHOES[i], pasto = f.crop.startsWith('Pastagem');
     const cycle = pasto ? 0 : f.crop === 'Soja' ? 115 : 120;
     const harvest = f.plant && cycle ? new Date(new Date(f.plant + 'T12:00:00Z').getTime() + cycle * 864e5).toISOString().slice(0, 10) : undefined;
     demoFarm.talhoes.push({
@@ -697,8 +668,8 @@ export function getRioVerdeDemoFarm(): FarmData {
       areaHectares: calculatePolygonAreaHectares(coords), perimeterKm: calculatePerimeterKm(coords), coordinates: coords,
       createdAt: new Date().toISOString(), notes: '[Exemplo]',
     });
-  });
-  demoFarm.demoVersion = 2;
+  }
+  demoFarm.demoVersion = 3;
   return demoFarm;
 }
 
@@ -715,6 +686,7 @@ const EXAMPLE_NAME_KEYS: Record<string, keyof TranslationDictionary> = {
   elem_demo_pivo: 'demoNamePivo',
   elem_demo_estacao: 'demoNameEstacao',
   elem_demo_estrada: 'demoNameEstrada',
+  elem_demo_pista: 'demoNamePista',
   elem_demo_reserva: 'demoNameReserva',
   elem_demo_acude: 'demoNameAcude',
   elem_demo_nascente: 'demoNameNascente',
@@ -751,7 +723,7 @@ export function localizeExampleNames(farm: FarmData): boolean {
   const noteKeys: Record<string, keyof TranslationDictionary> = {
     talhao_demo_01: 'demoNoteTalhao01', talhao_demo_02: 'demoNoteTalhao02', talhao_demo_03: 'demoNoteTalhao03',
     elem_demo_sede: 'demoNoteSede', elem_demo_silo: 'demoNoteSilo', elem_demo_curral: 'demoNoteCurral',
-    elem_demo_pivo: 'demoNotePivo', elem_demo_estacao: 'demoNoteEstacao', elem_demo_estrada: 'demoNoteEstrada',
+    elem_demo_pivo: 'demoNotePivo', elem_demo_estacao: 'demoNoteEstacao', elem_demo_estrada: 'demoNoteEstrada', elem_demo_pista: 'demoNotePista',
     elem_demo_reserva: 'demoNoteReserva', elem_demo_acude: 'demoNoteAcude', elem_demo_nascente: 'demoNoteNascente',
     elem_demo_poco: 'demoNotePoco', elem_demo_rio: 'demoNoteRio',
   };

@@ -11,7 +11,7 @@ export function loadFarmData(): FarmData {
       const parsed = JSON.parse(raw) as FarmData;
       if (parsed && Array.isArray(parsed.talhoes)) {
         // troca a fazenda de exemplo antiga pela nova (só se TODOS os talhões forem de exemplo)
-        if (parsed.talhoes.length > 0 && parsed.talhoes.every((x) => x.isExample) && parsed.demoVersion !== 2) {
+        if (parsed.talhoes.length > 0 && parsed.talhoes.every((x) => x.isExample) && parsed.demoVersion !== 3) {
           const fresh = getRioVerdeDemoFarm(); fresh.simulateTime = parsed.simulateTime; if (parsed.referenceDate) fresh.referenceDate = parsed.referenceDate;
           saveFarmData(fresh);
           return fresh;

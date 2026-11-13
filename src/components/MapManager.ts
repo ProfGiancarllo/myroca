@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import { twinLook, ensurePattern } from '../utils/twinLook';
-import { ensureSnapshot, farmBounds, Snap, DEMO_BOUNDS } from '../utils/farmSnapshot';
+import { ensureSnapshot, farmBounds, Snap } from '../utils/farmSnapshot';
+import { CAR_PROPERTY, CAR_RESERVA, CAR_NATIVA, CAR_APP, CAR_VIEW, CAR_FIT } from '../data/farmCar';
 import { segmentField } from '../utils/segment';
 import { Talhao, WaterPoint, WaterPointType, WATER_POINT_META } from '../types';
 import { calculatePolygonAreaHectares, calculatePerimeterKm, calculatePolygonCenter, formatHectares } from '../utils/geo';
@@ -796,6 +797,7 @@ export class MapManager {
   }
 
   private liveTiles: L.TileLayer[] = [];
+  private snapZoomFn: (() => void) | null = null;
   private snapLayer: L.ImageOverlay | null = null;
   private snapCtl: HTMLElement | null = null;
   private snapUrl = '';
@@ -805,19 +807,12 @@ export class MapManager {
     const pts: [number, number][] = [];
     talhoes.forEach((tl) => tl.coordinates.forEach((c) => pts.push([c[0], c[1]])));
     waterPoints.forEach((w) => pts.push([w.coordinates[0], w.coordinates[1]]));
-    const b = farmBounds(pts);
-    if (!b) return;
-    // fazenda de demonstração: usa a imagem aérea embutida (sem internet, sem depender do satélite)
+    // fazenda de exemplo (real, do CAR): fundo de satélite bem mais largo que a fazenda, para o mapa preencher a tela
     const demo = talhoes.length > 0 && talhoes.every((tl) => tl.isExample);
+    const b = demo ? CAR_VIEW : farmBounds(pts);
+    if (!b) return;
     let snap: Snap | null = null;
-    if (demo) {
-      try {
-        const base = (import.meta as unknown as { env: { BASE_URL: string } }).env.BASE_URL || './';
-        const blob = await (await fetch(base + 'intro/farm.jpg')).blob();
-        snap = { key: 'demo', date: Date.now(), blob, bounds: DEMO_BOUNDS };
-      } catch { snap = null; }
-    }
-    if (!snap) snap = await ensureSnapshot(b, force);
+    snap = await ensureSnapshot(b, force);
     if (!snap) return; // sem foto e sem internet: mantém fundo escuro/ladrilhos ao vivo
     if (!this.map.getPane('snapshot')) { const pn = this.map.createPane('snapshot'); pn.style.zIndex = '250'; }
     if (this.snapUrl) URL.revokeObjectURL(this.snapUrl);
@@ -829,22 +824,57 @@ export class MapManager {
     const lb = L.latLngBounds(snap.bounds as [[number, number], [number, number]]);
     this.snapLayer = L.imageOverlay(this.snapUrl, lb, { pane: 'snapshot', interactive: false }).addTo(this.map);
     this.liveTiles.forEach((tl) => tl.remove());
-    const minZ = this.map.getBoundsZoom(lb, false);
-    this.map.setMinZoom(minZ - 0.15); this.map.setMaxZoom(17.5);
-    this.map.setMaxBounds(lb.pad(0.6));
+    // em zoom alto, com internet, usa a imagem ao vivo (mais nítida) no lugar da foto fixa
+    if (this.snapZoomFn) this.map.off('zoomend', this.snapZoomFn);
+    this.snapZoomFn = () => { const hi = this.map.getZoom() >= 15 && navigator.onLine; this.liveTiles.forEach((tl) => (hi ? tl.addTo(this.map) : tl.remove())); this.snapLayer?.setOpacity(hi ? 0 : 1); };
+    this.map.on('zoomend', this.snapZoomFn);
+    // o menor zoom é aquele em que a imagem ainda preenche toda a tela: sem margens pretas
+    const minZ = this.map.getBoundsZoom(lb, true);
+    this.map.setMinZoom(minZ); this.map.setMaxZoom(17.5);
+    this.map.setMaxBounds(lb); (this.map.options as { maxBoundsViscosity?: number }).maxBoundsViscosity = 1;
+    if (demo) this.drawCarLayers(); else this.carLayer?.remove();
     if (!this.snapCtl) {
       const Ctl = L.Control.extend({ onAdd: () => { const d = L.DomUtil.create('div', 'snap-ctl'); L.DomEvent.disableClickPropagation(d); this.snapCtl = d; return d; } });
       new Ctl({ position: 'bottomleft' }).addTo(this.map);
     }
     if (this.snapCtl) {
       const dt = new Date(snap.date).toLocaleDateString(document.documentElement.lang || undefined);
-      this.snapCtl.innerHTML = demo ? `🛰️ ${document.documentElement.lang?.startsWith('en') ? 'example image' : 'imagem de exemplo'}` : `🛰️ ${dt} <button type="button" title="↻">↻</button>`;
+      this.snapCtl.innerHTML = `🛰️ ${dt} <button type="button" title="↻">↻</button>`;
       const rb = this.snapCtl.querySelector('button') as HTMLButtonElement | null;
       if (rb) rb.onclick = () => { this.snapCtl!.textContent = '🛰️ …'; void this.useFarmSnapshot(talhoes, waterPoints, true); };
     }
     this.map.invalidateSize();
-    if (demo) { this.map.fitBounds(lb, { padding: [0, 0] }); }
+    if (demo) { this.map.fitBounds(L.latLngBounds(CAR_FIT), { padding: [24, 24] }); }
     else this.map.fitBounds(L.latLngBounds(pts.map((p) => L.latLng(p[0], p[1]))), { padding: [60, 60], maxZoom: 16 });
+  }
+
+  // ---- Fazenda real de exemplo: limite do imóvel, Reserva Legal (mata nativa) e APP, do CAR ----
+  private carLayer: L.LayerGroup | null = null;
+  private static CARTXT: Record<string, [string, string, string]> = {
+    pt: ['Reserva Legal', 'APP (área de preservação)', 'Limite do imóvel'],
+    en: ['Legal Reserve', 'APP (protected area)', 'Property boundary'],
+    es: ['Reserva Legal', 'APP (área protegida)', 'Límite del inmueble'],
+    de: ['Gesetzliches Schutzgebiet', 'APP (Schutzzone)', 'Grundstücksgrenze'],
+    zh: ['法定保护区', 'APP（保护区）', '地产边界'],
+    fr: ['Réserve légale', 'APP (zone protégée)', 'Limite de la propriété'],
+  };
+  private drawCarLayers(): void {
+    this.carLayer?.remove();
+    if (!this.map.getPane('car')) { const pn = this.map.createPane('car'); pn.style.zIndex = '380'; pn.style.pointerEvents = 'none'; }
+    const l = (document.documentElement.lang || 'pt').slice(0, 2), tx = MapManager.CARTXT[l] || MapManager.CARTXT.pt;
+    const g = L.layerGroup();
+    CAR_NATIVA.forEach((r) => L.polygon(r, { pane: 'car', interactive: false, color: '#4d7c0f', weight: 0.8, fillColor: '#84cc16', fillOpacity: 0.22 }).addTo(g));
+    CAR_RESERVA.forEach((r) => L.polygon(r, { pane: 'car', interactive: false, color: '#14532d', weight: 1.4, fillColor: '#15803d', fillOpacity: 0.42 }).addTo(g));
+    CAR_APP.forEach((r) => L.polygon(r, { pane: 'car', interactive: false, color: '#1d4ed8', weight: 1, fillColor: '#3b82f6', fillOpacity: 0.4 }).addTo(g));
+    L.polygon(CAR_PROPERTY, { pane: 'car', interactive: false, color: '#f59e0b', weight: 3, dashArray: '8 6', fill: false }).addTo(g);
+    // rótulos "Reserva Legal" nas maiores matas
+    const box = (r: [number, number][]) => { const b = L.latLngBounds(r.map((c) => L.latLng(c[0], c[1]))); return { b, a: (b.getNorth() - b.getSouth()) * (b.getEast() - b.getWest()) }; };
+    CAR_RESERVA.map((r) => ({ r, ...box(r) })).sort((x, y) => y.a - x.a).slice(0, 6).forEach(({ r }) => {
+      let sy = 0, sx = 0; r.forEach((c) => { sy += c[0]; sx += c[1]; });
+      L.marker([sy / r.length, sx / r.length], { pane: 'car', interactive: false, keyboard: false, icon: L.divIcon({ className: 'car-label', html: `<span>🌳 ${tx[0]}</span>`, iconSize: [0, 0] }) }).addTo(g);
+    });
+    g.addTo(this.map);
+    this.carLayer = g;
   }
 
   // ---- Ajustar talhões: arrastar os cantos até a borda da lavoura na imagem ----
@@ -891,7 +921,7 @@ export class MapManager {
     if (!this.snapUrl) return;
     const im = new Image(); im.src = this.snapUrl;
     try { await im.decode(); } catch { return; }
-    const sc = Math.min(1, 900 / im.naturalWidth), c = document.createElement('canvas');
+    const sc = Math.min(1, 1800 / im.naturalWidth), c = document.createElement('canvas');
     c.width = Math.round(im.naturalWidth * sc); c.height = Math.round(im.naturalHeight * sc);
     const g = c.getContext('2d', { willReadFrequently: true })!; g.drawImage(im, 0, 0, c.width, c.height);
     try { this.snapData = g.getImageData(0, 0, c.width, c.height); } catch { this.snapData = null; }

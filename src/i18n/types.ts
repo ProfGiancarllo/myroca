@@ -536,6 +536,7 @@ export interface TranslationDictionary {
   demoNotePivo: string;
   demoNoteEstacao: string;
   demoNoteEstrada: string;
+  demoNotePista: string;
   demoNoteReserva: string;
   demoNoteAcude: string;
   demoNoteNascente: string;
@@ -593,6 +594,7 @@ export interface TranslationDictionary {
   demoNamePivo: string;
   demoNameEstacao: string;
   demoNameEstrada: string;
+  demoNamePista: string;
   demoNameReserva: string;
   demoNameAcude: string;
   demoNameNascente: string;
