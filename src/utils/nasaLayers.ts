@@ -7,19 +7,20 @@ export type NasaLayerId = 'ndvi' | 'rain' | 'smap' | 'lst';
 export interface NasaLayerDef {
   id: NasaLayerId;
   layer: string;
-  matrix: string;
-  maxNative: number;
+  /** Conjuntos de matriz de tiles a tentar, em ordem (o primeiro que responder é mantido). */
+  matrices: string[];
   ext: 'png' | 'jpg';
   gradient: string; // legenda: do valor baixo ao alto
   res: string;
 }
 
 export const NASA_LAYERS: NasaLayerDef[] = [
-  { id: 'ndvi', layer: 'MODIS_Terra_NDVI_8Day', matrix: 'GoogleMapsCompatible_Level9', maxNative: 9, ext: 'png', gradient: 'linear-gradient(90deg,#8c510a,#d8b365,#f6e8c3,#a6d96a,#1a9850,#00441b)', res: '250 m · 8 dias' },
-  { id: 'rain', layer: 'IMERG_Precipitation_Rate', matrix: 'GoogleMapsCompatible_Level6', maxNative: 6, ext: 'png', gradient: 'linear-gradient(90deg,#c6dbef,#6baed6,#2171b5,#6a51a3,#ae017e)', res: '10 km · 30 min' },
-  { id: 'smap', layer: 'SMAP_L3_Passive_Enhanced_Day_Soil_Moisture', matrix: 'GoogleMapsCompatible_Level6', maxNative: 6, ext: 'png', gradient: 'linear-gradient(90deg,#fff5e6,#e6c27a,#7fcdbb,#2c7fb8,#08306b)', res: '9 km · 2 a 3 dias' },
-  { id: 'lst', layer: 'MODIS_Terra_L3_Land_Surface_Temp_Daily_Day', matrix: 'GoogleMapsCompatible_Level7', maxNative: 7, ext: 'png', gradient: 'linear-gradient(90deg,#313695,#74add1,#ffffbf,#f46d43,#a50026)', res: '1 km · diário' },
+  { id: 'ndvi', layer: 'MODIS_Terra_NDVI_8Day', matrices: ['GoogleMapsCompatible_Level9', 'GoogleMapsCompatible_Level8'], ext: 'png', gradient: 'linear-gradient(90deg,#8c510a,#d8b365,#f6e8c3,#a6d96a,#1a9850,#00441b)', res: '250 m · 8 dias' },
+  { id: 'rain', layer: 'IMERG_Precipitation_Rate', matrices: ['GoogleMapsCompatible_Level6', 'GoogleMapsCompatible_Level7'], ext: 'png', gradient: 'linear-gradient(90deg,#c6dbef,#6baed6,#2171b5,#6a51a3,#ae017e)', res: '10 km · 30 min' },
+  { id: 'smap', layer: 'SMAP_L3_Passive_Enhanced_Day_Soil_Moisture', matrices: ['GoogleMapsCompatible_Level6', 'GoogleMapsCompatible_Level7'], ext: 'png', gradient: 'linear-gradient(90deg,#fff5e6,#e6c27a,#7fcdbb,#2c7fb8,#08306b)', res: '9 km · 2 a 3 dias' },
+  { id: 'lst', layer: 'MODIS_Terra_L3_Land_Surface_Temp_Daily_Day', matrices: ['GoogleMapsCompatible_Level7', 'GoogleMapsCompatible_Level6'], ext: 'png', gradient: 'linear-gradient(90deg,#313695,#74add1,#ffffbf,#f46d43,#a50026)', res: '1 km · diário' },
 ];
 
-export const nasaTileUrl = (d: NasaLayerDef): string =>
-  `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${d.layer}/default/${d.matrix}/{z}/{y}/{x}.${d.ext}`;
+export const matrixZoom = (m: string): number => Number(m.replace(/\D/g, '')) || 6;
+export const nasaTileUrl = (d: NasaLayerDef, matrix: string): string =>
+  `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${d.layer}/default/${matrix}/{z}/{y}/{x}.${d.ext}`;

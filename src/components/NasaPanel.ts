@@ -106,7 +106,7 @@ export class NasaPanel {
       const w = val(t);
       if (w === 'loading' || w === undefined) return `<tr><td>${esc(t.name)}</td><td colspan="6">${esc(nn('loadingW'))}</td></tr>`;
       if (!w) return `<tr><td>${esc(t.name)}</td><td colspan="6">${esc(nn('failW'))}</td></tr>`;
-      return `<tr><td>${esc(t.name)}</td><td>${fx(w.rain30)}</td><td>${fx(w.et0)}</td><td>${fx(w.balance)}</td><td>${w.soil === null ? '–' : fx(w.soil * 100) + '%'}</td><td>${fx(w.rainNext3)}</td><td class="nx-risk ${w.level}">${esc(nn(w.level))}</td></tr>`;
+      return `<tr><td>${esc(t.name)}</td><td title="${esc(w.rainSrc)}">${fx(w.rain30)}</td><td>${fx(w.et0)}</td><td>${fx(w.balance)}</td><td>${w.soil === null ? '–' : fx(w.soil * 100) + '%'}</td><td>${fx(w.rainNext3)}</td><td class="nx-risk ${w.level}">${esc(nn(w.level))}</td></tr>`;
     }).join('');
     return `<p class="nx-intro">${esc(nn('waterIntro'))}</p><div class="nx-scroll"><table class="nx-table"><thead><tr><th>${esc(nn('field'))}</th><th>${esc(nn('rain30'))}</th><th>${esc(nn('et0'))}</th><th>${esc(nn('bal'))}</th><th>${esc(nn('soil'))}</th><th>${esc(nn('next3'))}</th><th>${esc(nn('risk'))}</th></tr></thead><tbody>${rows}</tbody></table></div><p class="nx-note">${esc(nn('waterNote'))}</p>`;
   }
