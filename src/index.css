@@ -3958,7 +3958,6 @@ body.estela-docked .estela-panel { position: relative; }
   .ei-start { padding: 9px 12px; }
 }
 
-<<<<<<< HEAD
 /* ========================================================
    ADMINISTRAÇÃO (super admin)
    ======================================================== */
@@ -4005,7 +4004,6 @@ body.estela-docked .estela-panel { position: relative; }
   .adm-grid { grid-template-columns: 1fr; }
   .adm-row { flex-direction: column; }
 }
-=======
 /* Dados NASA */
 .nx-card { width: min(920px, 100%); }
 .nx-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; border-bottom: 1px solid #dfe6e1; }
@@ -4030,4 +4028,3 @@ body.estela-docked .estela-panel { position: relative; }
 .nx-risk.high { font-weight: 700; color: #9b2c1f; } .nx-risk.medium { font-weight: 700; color: #8a5a0b; } .nx-risk.low { color: #245b43; }
 .nx-note { margin: 10px 0 0; font-size: 12px; color: #65756e; }
 .nx-card ul { margin: 0 0 6px; padding-left: 18px; font-size: 14px; color: #3d5249; } .nx-card li { margin: 3px 0; }
->>>>>>> 53cc34ac8cbccc7b1e0c4b340e5a30198dd8862e

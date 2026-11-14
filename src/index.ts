@@ -6,12 +6,9 @@ import { CoordinateRow, parseCoordinatePair, parsePastedCoordinateText, validate
 import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, addDaysToDate, calculateTalhaoCropStatus, calculateExpectedHarvestDate, checkCropDatesOverlap, getCropColor, DEFAULT_CROP_CYCLES } from './utils/cropCalendar';
 import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
-<<<<<<< HEAD
 import { AdminPanel, openAdminSetup } from './admin/AdminPanel';
 import { hasSuperAdmin, isSuperAdmin } from './auth/auth';
-=======
 import { NasaPanel } from './components/NasaPanel';
->>>>>>> 53cc34ac8cbccc7b1e0c4b340e5a30198dd8862e
 import { DiaryPanel } from './components/DiaryPanel';
 import { MarketPanel } from './components/MarketPanel';
 import { RotationPlanner } from './components/RotationPlanner';
