@@ -2,6 +2,8 @@
  * Risco hídrico por talhão: balanço dos últimos 30 dias (chuva − evapotranspiração de referência)
  * e umidade do solo estimada pelo ERA5-Land (via Open-Meteo, reanálise com assimilação de satélite).
  */
+import { fetchNasaSeries } from './nasaPower';
+
 export type WaterLevel = 'low' | 'medium' | 'high';
 export interface WaterInfo {
   rain30: number; et0: number; balance: number;
@@ -9,6 +11,7 @@ export interface WaterInfo {
   rainNext3: number;
   level: WaterLevel;
   src: string;
+  rainSrc: 'NASA POWER' | 'Open-Meteo';
 }
 
 const mem = new Map<string, Promise<WaterInfo | null>>();
@@ -45,8 +48,15 @@ async function load(lat: number, lng: number): Promise<WaterInfo | null> {
         if (a.length) { soil = a.reduce((s, v) => s + v, 0) / a.length; break; }
       }
     }
-    const balance = rain30 - et0;
-    return { rain30, et0, balance, soil, rainNext3: sum(next.map(rain)), level: classifyWater(balance, soil), src: 'Open-Meteo (ERA5-Land)' };
+    // Chuva de 30 dias: NASA POWER quando há dados suficientes; senão, Open-Meteo.
+    let rainFinal = rain30, rainSrc: WaterInfo['rainSrc'] = 'Open-Meteo';
+    try {
+      const sr = await fetchNasaSeries(Math.round(lat * 10) / 10, Math.round(lng * 10) / 10, today, 30);
+      const valid = sr.days.filter((d) => d.rain !== null);
+      if (valid.length >= 24) { rainFinal = valid.reduce((a, d) => a + (d.rain as number), 0) * (30 / valid.length); rainSrc = 'NASA POWER'; }
+    } catch { /* sem NASA POWER: fica a chuva do Open-Meteo */ }
+    const balance = rainFinal - et0;
+    return { rain30: rainFinal, et0, balance, soil, rainNext3: sum(next.map(rain)), level: classifyWater(balance, soil), src: 'Open-Meteo (ERA5-Land)', rainSrc };
   } catch { return null; } finally { clearTimeout(timer); }
 }
 
