@@ -7,6 +7,7 @@ import {
 } from '../utils/rotation';
 import { assessPlanting } from '../utils/agronomyRules';
 import { fetchNasaSeries, polygonCentroid } from '../utils/nasaPower';
+import { waterForPoint } from '../utils/waterRisk';
 import { addDaysToDate, calculateTalhaoCropStatus } from '../utils/cropCalendar';
 import { mt } from '../i18n/marketText';
 import { mk2 } from '../i18n/mercadoText';
@@ -123,6 +124,13 @@ export class RotationPlanner {
         this.nasa = { level: a.level, rain15: a.rain15 };
         this.nasaState = 'ok';
         this.render();
+        // Balanço hídrico de 30 dias + umidade do solo (ERA5-Land): risco hídrico alto sobe o risco em um nível.
+        void waterForPoint(c.lat, c.lng).then((w) => {
+          if (token !== this.nasaToken || !w || w.level !== 'high' || !this.nasa) return;
+          const steps = ['low', 'medium', 'high'] as const;
+          this.nasa = { ...this.nasa, level: steps[Math.min(2, steps.indexOf(this.nasa.level) + 1)] };
+          this.render();
+        });
       })
       .catch(() => {
         if (token !== this.nasaToken) return;

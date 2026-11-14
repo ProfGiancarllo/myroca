@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import { twinLook, ensurePattern } from '../utils/twinLook';
+import { NASA_LAYERS, NasaLayerId, nasaTileUrl } from '../utils/nasaLayers';
 import { ensureSnapshot, farmBounds, Snap } from '../utils/farmSnapshot';
 import { CAR_PROPERTY, CAR_RESERVA, CAR_NATIVA, CAR_APP, CAR_VIEW, CAR_FIT } from '../data/farmCar';
 import { segmentField } from '../utils/segment';
@@ -1024,6 +1025,26 @@ export class MapManager {
       });
     });
     const tip = this.adjText(2); const c = this.map.getContainer(); c.setAttribute('data-adjust-tip', tip);
+  }
+
+  /* ---------- camadas de satélite da NASA (GIBS) ---------- */
+  private nasaLayers = new Map<NasaLayerId, L.TileLayer>();
+  private nasaStatus = new Map<NasaLayerId, { ok: number; err: number }>();
+  public nasaLayerOn(id: NasaLayerId): boolean { return this.nasaLayers.has(id); }
+  public nasaLayerFailed(id: NasaLayerId): boolean { const s = this.nasaStatus.get(id); return !!s && s.err > 0 && s.ok === 0; }
+  public setNasaLayer(id: NasaLayerId, on: boolean): void {
+    const cur = this.nasaLayers.get(id);
+    if (!on) { cur?.remove(); this.nasaLayers.delete(id); return; }
+    if (cur) return;
+    const d = NASA_LAYERS.find((x) => x.id === id);
+    if (!d) return;
+    if (!this.map.getPane('nasa')) { const pn = this.map.createPane('nasa'); pn.style.zIndex = '270'; pn.style.pointerEvents = 'none'; }
+    const st = { ok: 0, err: 0 }; this.nasaStatus.set(id, st);
+    const tl = L.tileLayer(nasaTileUrl(d), { pane: 'nasa', opacity: 0.7, maxNativeZoom: d.maxNative, maxZoom: 19, attribution: 'NASA GIBS' });
+    tl.on('tileload', () => { st.ok++; });
+    tl.on('tileerror', () => { st.err++; });
+    tl.addTo(this.map);
+    this.nasaLayers.set(id, tl);
   }
 
   public invalidateSize(): void {

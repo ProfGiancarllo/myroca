@@ -3958,6 +3958,7 @@ body.estela-docked .estela-panel { position: relative; }
   .ei-start { padding: 9px 12px; }
 }
 
+<<<<<<< HEAD
 /* ========================================================
    ADMINISTRAÇÃO (super admin)
    ======================================================== */
@@ -4004,3 +4005,29 @@ body.estela-docked .estela-panel { position: relative; }
   .adm-grid { grid-template-columns: 1fr; }
   .adm-row { flex-direction: column; }
 }
+=======
+/* Dados NASA */
+.nx-card { width: min(920px, 100%); }
+.nx-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; border-bottom: 1px solid #dfe6e1; }
+.nx-tab { min-height: 40px; padding: 0 14px; border: 0; border-bottom: 3px solid transparent; background: none; color: #65756e; font-size: 14px; cursor: pointer; }
+.nx-tab.on { color: #182b25; font-weight: 700; border-bottom-color: #245b43; }
+.nx-tab:focus-visible, .nx-layer input:focus-visible { outline: 2px solid #245b43; outline-offset: 2px; }
+.nx-intro { margin: 0 0 12px; font-size: 14px; color: #3d5249; }
+.nx-layers { display: flex; flex-direction: column; gap: 8px; }
+.nx-layer { display: flex; align-items: flex-start; gap: 12px; padding: 10px 12px; border: 1px solid #dfe6e1; border-radius: 9px; background: #fff; cursor: pointer; }
+.nx-layer input { width: 20px; height: 20px; margin-top: 2px; accent-color: #245b43; flex: none; }
+.nx-lt { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.nx-lt b { font-size: 14px; color: #182b25; } .nx-lt small { font-size: 12px; color: #65756e; }
+.nx-leg { display: grid; grid-template-columns: 1fr 1fr; max-width: 320px; }
+.nx-leg i { grid-column: 1 / -1; height: 8px; border-radius: 4px; }
+.nx-leg em { font-style: normal; font-size: 11px; color: #65756e; } .nx-leg em:last-child { text-align: right; }
+.nx-warn { font-size: 12px; color: #8a5a0b; }
+.nx-scroll { overflow-x: auto; }
+.nx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.nx-table th, .nx-table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid #dfe6e1; white-space: nowrap; }
+.nx-table th:first-child, .nx-table td:first-child { text-align: left; }
+.nx-table th { color: #65756e; font-weight: 600; font-size: 12px; }
+.nx-risk.high { font-weight: 700; color: #9b2c1f; } .nx-risk.medium { font-weight: 700; color: #8a5a0b; } .nx-risk.low { color: #245b43; }
+.nx-note { margin: 10px 0 0; font-size: 12px; color: #65756e; }
+.nx-card ul { margin: 0 0 6px; padding-left: 18px; font-size: 14px; color: #3d5249; } .nx-card li { margin: 3px 0; }
+>>>>>>> 53cc34ac8cbccc7b1e0c4b340e5a30198dd8862e

@@ -6,8 +6,12 @@ import { CoordinateRow, parseCoordinatePair, parsePastedCoordinateText, validate
 import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, addDaysToDate, calculateTalhaoCropStatus, calculateExpectedHarvestDate, checkCropDatesOverlap, getCropColor, DEFAULT_CROP_CYCLES } from './utils/cropCalendar';
 import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
+<<<<<<< HEAD
 import { AdminPanel, openAdminSetup } from './admin/AdminPanel';
 import { hasSuperAdmin, isSuperAdmin } from './auth/auth';
+=======
+import { NasaPanel } from './components/NasaPanel';
+>>>>>>> 53cc34ac8cbccc7b1e0c4b340e5a30198dd8862e
 import { DiaryPanel } from './components/DiaryPanel';
 import { MarketPanel } from './components/MarketPanel';
 import { RotationPlanner } from './components/RotationPlanner';
@@ -18,6 +22,7 @@ import { rt } from './i18n/rotationText';
 import { sf } from './i18n/safraText';
 import { HomeSide } from './components/HomeSide';
 import { ht } from './i18n/homeText';
+import { nn } from './i18n/nasaText';
 import { dj } from './i18n/diarioText';
 import { currentUser, logout } from './auth/auth';
 import { at } from './auth/authText';
@@ -46,6 +51,7 @@ class AgroApp {
   private homeSide?: HomeSide;
   private adminPanel = new AdminPanel();
   private diaryPanel!: DiaryPanel;
+  private nasaPanel!: NasaPanel;
   private estela!: EstelaChat;
   private simpleHome!: SimpleHome;
 
@@ -112,6 +118,12 @@ class AgroApp {
       openEstela: () => this.estela.openChat(),
     });
     this.homeSide = new HomeSide({ getFarm: () => this.farmData, getRefDate: () => this.referenceDate });
+    this.nasaPanel = new NasaPanel({
+      getFarm: () => this.farmData,
+      isLayerOn: (id) => this.mapManager.nasaLayerOn(id),
+      layerFailed: (id) => this.mapManager.nasaLayerFailed(id),
+      setLayer: (id, on) => this.mapManager.setNasaLayer(id, on),
+    });
     this.marketPanel = new MarketPanel({ getFarm: () => this.farmData, getRefDate: () => this.referenceDate, openRotation: () => this.rotationPlanner.open(undefined, 'switch') });
     this.initMap();
     this.initGameMode();
@@ -185,6 +197,8 @@ class AgroApp {
               <button class="dropdown-item" id="btn-rotation-switch">${sf('fabSwitch')}</button>
               <div class="menu-head">${ht('secRecords')}</div>
               <button class="dropdown-item" id="btn-diary">${dj('btn')}</button>
+              <div class="menu-head">${nn('btn')}</div>
+              <button class="dropdown-item" id="btn-nasa">${nn('btn')}</button>
             </div>
           </div>
 
@@ -1588,6 +1602,7 @@ ${isSuperAdmin() ? `<div class="menu-head">Sistema</div>
       document.querySelectorAll('.top-nav .dropdown-menu.show').forEach((m) => { if (m !== own) m.classList.remove('show'); });
     }, true);
     document.getElementById('btn-diary')?.addEventListener('click', () => this.diaryPanel.open());
+    document.getElementById('btn-nasa')?.addEventListener('click', () => this.nasaPanel.open());
     document.getElementById('btn-logout')?.addEventListener('click', () => {
       logout();
       window.location.reload();
