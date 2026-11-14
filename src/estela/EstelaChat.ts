@@ -2,6 +2,7 @@ import { FarmData, Talhao, DiaryEntry, DiaryEntryType } from '../types';
 import { getCurrentLanguage, t, translateCropName } from '../i18n';
 import { et } from './estelaText';
 import { playEstelaIntro, shouldShowIntro } from './EstelaIntro';
+import { estelaBaseUrl } from '../admin/server';
 import { calculateTalhaoCropStatus, addDaysToDate } from '../utils/cropCalendar';
 import { fetchNasaSeries, polygonCentroid } from '../utils/nasaPower';
 import { assessPlanting } from '../utils/agronomyRules';
@@ -38,10 +39,10 @@ const DIARY_RULES: [DiaryEntryType, RegExp, string | null][] = [
   ['monitoramento', /monitor|vistori|scout|inspec|巡查/, null],
   ['observacao', /observa|anota|nota\b|note\b|remarque|notiz|备注/, null],
 ];
-/** Endereço da voz natural: a rota /tts do mesmo Worker da Estrela (VITE_ESTELA_URL). */
+/** Endereço da voz natural: a rota /tts do mesmo servidor da Estrela (definido no painel de administração ou em VITE_ESTELA_URL). */
 function voiceUrl(): string | null {
-  const base = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESTELA_URL;
-  return base ? base.replace(/\/+$/, '') + '/tts' : null;
+  const base = estelaBaseUrl();
+  return base ? base + '/tts' : null;
 }
 
 const CANCEL_RE = /cancel|desist|anula|abbrech|annul|取消/;
@@ -727,7 +728,7 @@ export class EstelaChat {
 
   // ---------------- IA externa (opcional)
   private async askExternal(text: string): Promise<void> {
-    const url = (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ESTELA_URL;
+    const url = estelaBaseUrl();
     if (!url) return void this.say(esc(et('fallbackLocal')));
     this.say(esc(et('thinking')));
     const farm = this.opts.getFarm();

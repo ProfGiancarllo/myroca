@@ -17,6 +17,8 @@ export interface UserProfile {
   hash: string;
   createdAt: string;
   consentAt: string;
+  /** 'superadmin' libera o painel de administração neste aparelho. Ações no servidor exigem também a senha de administração. */
+  role?: 'superadmin';
 }
 
 export type AuthErrorKey = 'errRequired' | 'errEmail' | 'errPwShort' | 'errPwMismatch' | 'errConsent' | 'errExists' | 'errBadLogin' | 'errLocked' | 'errCrypto';
@@ -143,6 +145,41 @@ export async function login(emailRaw: string, password: string, keep: boolean): 
   delete fails[email];
   writeJson(localStorage, FAIL_KEY, fails);
   startSession(user.id, keep);
+  return user;
+}
+
+// ---- Super admin ----
+export interface SuperAdminInput { name: string; email: string; password: string; password2: string }
+
+export function hasSuperAdmin(): boolean {
+  return users().some((u) => u.role === 'superadmin');
+}
+
+export function isSuperAdmin(): boolean {
+  const u = currentUser();
+  return !!u && u.id !== GUEST_ID && (u as UserProfile).role === 'superadmin';
+}
+
+/** Cria a conta de super admin deste aparelho (só depois de o painel confirmar a senha do servidor). */
+export async function createSuperAdmin(input: SuperAdminInput): Promise<UserProfile> {
+  const name = input.name.trim();
+  const email = input.email.trim().toLowerCase();
+  if (!name || !email || !input.password) throw new AuthError('errRequired');
+  if (!EMAIL_RE.test(email)) throw new AuthError('errEmail');
+  if (input.password.length < 10 || !/[A-Za-z]/.test(input.password) || !/\d/.test(input.password)) throw new AuthError('errPwShort');
+  if (input.password !== input.password2) throw new AuthError('errPwMismatch');
+  const all = users();
+  if (all.some((u) => u.email === email)) throw new AuthError('errExists');
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const now = new Date().toISOString();
+  const user: UserProfile = {
+    id: 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    name, email, farmName: 'SpaceAgro', city: 'Rio Verde (GO)',
+    salt: b64(salt), hash: await hashPassword(input.password, salt),
+    createdAt: now, consentAt: now, role: 'superadmin',
+  };
+  writeJson(localStorage, USERS_KEY, [...all, user]);
+  startSession(user.id, false);
   return user;
 }
 

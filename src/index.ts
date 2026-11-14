@@ -6,6 +6,8 @@ import { CoordinateRow, parseCoordinatePair, parsePastedCoordinateText, validate
 import { DEFAULT_REFERENCE_DATE, formatBrDateWithWeekday, formatBrDateShort, addDaysToDate, calculateTalhaoCropStatus, calculateExpectedHarvestDate, checkCropDatesOverlap, getCropColor, DEFAULT_CROP_CYCLES } from './utils/cropCalendar';
 import { FarmGameView } from './components/FarmGameView';
 import { requireAuth } from './auth/loginScreen';
+import { AdminPanel, openAdminSetup } from './admin/AdminPanel';
+import { hasSuperAdmin, isSuperAdmin } from './auth/auth';
 import { DiaryPanel } from './components/DiaryPanel';
 import { MarketPanel } from './components/MarketPanel';
 import { RotationPlanner } from './components/RotationPlanner';
@@ -42,6 +44,7 @@ class AgroApp {
   private rotationPlanner!: RotationPlanner;
   private marketPanel!: MarketPanel;
   private homeSide?: HomeSide;
+  private adminPanel = new AdminPanel();
   private diaryPanel!: DiaryPanel;
   private estela!: EstelaChat;
   private simpleHome!: SimpleHome;
@@ -258,6 +261,8 @@ class AgroApp {
                 <button class="dropdown-item" id="btn-toggle-drawer" title="${t('farmDashboard')}">
                   <span></span> <span id="lbl-opt-drawer">${t('farmDashboard')}</span>
                 </button>
+${isSuperAdmin() ? `<div class="menu-head">Sistema</div>
+                <button class="dropdown-item" id="btn-open-admin">Administração</button>` : ''}
                 <button class="dropdown-item" id="btn-center-farm" title="${t('centerMap')}">
                   <span></span> <span id="lbl-opt-center">${t('centerMap')}</span>
                 </button>
@@ -1565,6 +1570,7 @@ class AgroApp {
     });
 
     document.getElementById('btn-rotation')?.addEventListener('click', () => this.rotationPlanner.open(undefined, 'current'));
+    document.getElementById('btn-open-admin')?.addEventListener('click', () => this.openAdmin());
     document.getElementById('btn-rotation-switch')?.addEventListener('click', () => this.rotationPlanner.open(undefined, 'switch'));
     // Menu Safra
     const safraMenu = document.getElementById('safra-menu');
@@ -3081,6 +3087,12 @@ class AgroApp {
     }
   }
 
+  /** Abre o painel de administração (só para o super admin deste aparelho). */
+  public openAdmin(): void {
+    if (isSuperAdmin()) this.adminPanel.open();
+    else this.showToast('Acesso restrito: entre com a conta de super admin.');
+  }
+
   private showToast(message: string): void {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -3100,5 +3112,10 @@ class AgroApp {
 
 // Initialise application on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-  playIntro().then(() => requireAuth()).then(() => new AgroApp());
+  // ?admin abre a administração; se ainda não houver super admin neste aparelho, primeiro vem a tela de criação
+  const wantAdmin = new URLSearchParams(location.search).has('admin');
+  playIntro()
+    .then(async () => { if (wantAdmin && !hasSuperAdmin()) await openAdminSetup(); })
+    .then(() => requireAuth())
+    .then(() => { const app = new AgroApp(); if (wantAdmin) app.openAdmin(); });
 });
