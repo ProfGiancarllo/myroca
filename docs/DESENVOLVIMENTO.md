@@ -155,3 +155,8 @@ Os testes simulam NASA, Open-Meteo, Esri e `data/mercado.json` com `page.route`.
 4. Integrar estações meteorológicas (INMET e redes locais) ao clima do diário, com seleção da estação mais próxima.
 5. Preços locais de Rio Verde (Cepea/Esalq, Conab) para substituir paridade de bolsa.
 6. Testes automatizados no CI e remoção de dependências não usadas.
+
+## Dados NASA (branch wesley)
+- `src/utils/waterRisk.ts`: balanço de 30 dias (chuva − ET0) e umidade do solo (ERA5-Land via Open-Meteo) por talhão; risco alto sobe um nível no risco do `RotationPlanner`.
+- `src/utils/nasaLayers.ts` + `MapManager.setNasaLayer`: camadas GIBS (NDVI, IMERG, SMAP, temperatura) sobre o mapa; os nomes das camadas e as matrizes de tiles foram definidos pela documentação e só podem ser confirmados com rede aberta (a camada indisponível mostra aviso no painel).
+- `src/components/NasaPanel.ts` (menu Safra > Dados NASA): camadas, água por talhão, fontes e método. Textos em `src/i18n/nasaText.ts` (pt, en e es completos; de, zh e fr só rótulos curtos).
