@@ -1,0 +1,25 @@
+{
+  "example": false,
+  "source": "NOME DA FONTE (ex.: Cepea/Esalq, Conab, Banco Mundial)",
+  "asOf": "AAAA-MM-DD",
+  "crops": {
+    "soja": {
+      "unit": "sc",
+      "price": 0,
+      "trend12m": 0,
+      "vol": 14,
+      "yieldRef": 62,
+      "cost": 5000,
+      "series": []
+    },
+    "milho": {
+      "unit": "sc",
+      "price": 0,
+      "trend12m": 0,
+      "vol": 18,
+      "yieldRef": 100,
+      "cost": 3600,
+      "series": []
+    }
+  }
+}

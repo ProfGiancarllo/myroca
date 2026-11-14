@@ -1,0 +1,572 @@
+[
+  {
+    "termo_pt": "Talhão",
+    "definicao_pt": "Unidade mínima de manejo agrícola delimitada na fazenda.",
+    "traducoes": {
+      "es": "Parcela",
+      "en": "Field",
+      "de": "Schlag",
+      "zh": "地块",
+      "fr": "Parcelle"
+    },
+    "nota": "Schlag é o termo técnico agronômico oficial em alemão para talhão; em inglês 'Field' para unidade de manejo e 'Plot' para sub-área experimental.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Safra",
+    "definicao_pt": "Temporada de cultivo ou período de produção agrícola.",
+    "traducoes": {
+      "es": "Campaña agrícola",
+      "en": "Crop season",
+      "de": "Anbausaison",
+      "zh": "农季",
+      "fr": "Campagne agricole"
+    },
+    "nota": "Campaña agrícola em espanhol e francês refere-se ao ano/temporada de cultivo completo.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Safrinha (segunda safra)",
+    "definicao_pt": "Segunda safra de cultivo no mesmo ano agrícola, típica após a colheita da soja precoce.",
+    "traducoes": {
+      "es": "Segunda cosecha (Zafriña)",
+      "en": "Second crop (Safrinha)",
+      "de": "Zweitfrucht",
+      "zh": "二茬作物",
+      "fr": "Deuxième récolte"
+    },
+    "nota": "Termo agroclimático brasileiro; internacionalmente compreendido como second crop ou double cropping; 'Zweitfrucht' em alemão.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Safra de verão",
+    "definicao_pt": "Safra principal de primavera-verão no Cerrado brasileiro.",
+    "traducoes": {
+      "es": "Campaña de verano",
+      "en": "Main summer crop",
+      "de": "Sommerhauptfrucht",
+      "zh": "夏播主季作物",
+      "fr": "Campagne d'été"
+    },
+    "nota": "Temporada de cultivo primária em climas subtropicais e tropicais.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Pousio",
+    "definicao_pt": "Período de descanso do solo sem cultivo econômico para recuperação.",
+    "traducoes": {
+      "es": "Barbecho",
+      "en": "Fallow",
+      "de": "Brache",
+      "zh": "休耕",
+      "fr": "Jachère"
+    },
+    "nota": "Terminologia internacional clássica e consensual em agronomia.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Preparo do solo",
+    "definicao_pt": "Práticas mecânicas para descompactação, aeração e acondicionamento da sementeira.",
+    "traducoes": {
+      "es": "Preparación del suelo",
+      "en": "Soil tillage",
+      "de": "Bodenbearbeitung",
+      "zh": "整地",
+      "fr": "Travail du sol"
+    },
+    "nota": "Soil tillage / seedbed preparation no contexto mecanizado.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Calagem",
+    "definicao_pt": "Aplicação de calcário agrícola para correção da acidez e elevação da saturação por bases.",
+    "traducoes": {
+      "es": "Encalado",
+      "en": "Liming",
+      "de": "Kalkung",
+      "zh": "施石灰",
+      "fr": "Chaulage"
+    },
+    "nota": "Processo de neutralização de alumínio tóxico e aporte de Ca/Mg.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Dessecação",
+    "definicao_pt": "Aplicação de defensivos pré-plantio ou pré-colheita para secagem uniforme da vegetação.",
+    "traducoes": {
+      "es": "Desecación",
+      "en": "Desiccation",
+      "de": "Sikkation",
+      "zh": "催枯处理",
+      "fr": "Défanage"
+    },
+    "nota": "Na China, o termo '催枯处理' (cuīkū chǔlǐ) é empregado para desfolhação/secagem química pré-colheita; défanage em francês é específico para culturas anuais.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "media",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Plantio direto",
+    "definicao_pt": "Sistema de cultivo sem aração/gradagem, sobre a palhada da cultura anterior.",
+    "traducoes": {
+      "es": "Siembra directa",
+      "en": "No-till farming",
+      "de": "Direktsaat",
+      "zh": "免耕播种",
+      "fr": "Semis direct"
+    },
+    "nota": "Pilar da conservação de solos no Cerrado brasileiro e bacia do Prata.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Estágios fenológicos da soja (R3 a R6, enchimento de grãos)",
+    "definicao_pt": "Fase reprodutiva de formação e expansão das sementes dentro dos legumes.",
+    "traducoes": {
+      "es": "Llenado de grano (R3 a R6)",
+      "en": "Grain/pod filling (R3 to R6)",
+      "de": "Kornfüllung (R3 bis R6)",
+      "zh": "鼓粒期 (R3至R6)",
+      "fr": "Remplissage des grains (R3 à R6)"
+    },
+    "nota": "Escala de Fehr e Caviness internacionalmente adotada.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Floração",
+    "definicao_pt": "Abertura das flores (estágios R1 e R2 na soja).",
+    "traducoes": {
+      "es": "Floración",
+      "en": "Flowering",
+      "de": "Blüte",
+      "zh": "开花期",
+      "fr": "Floraison"
+    },
+    "nota": "Fase crítica de suscetibilidade a estresse hídrico.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Crescimento vegetativo",
+    "definicao_pt": "Desenvolvimento de folhas, nós e ramificações (estágios V).",
+    "traducoes": {
+      "es": "Crecimiento vegetativo",
+      "en": "Vegetative stage",
+      "de": "Vegetatives Wachstum",
+      "zh": "营养生长期",
+      "fr": "Croissance végétative"
+    },
+    "nota": "Período da emergência até a primeira flor aberta.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Colheita",
+    "definicao_pt": "Recolhimento dos grãos/biomassa na maturação fisiológica comercial.",
+    "traducoes": {
+      "es": "Cosecha",
+      "en": "Harvest",
+      "de": "Ernte",
+      "zh": "收获",
+      "fr": "Récolte"
+    },
+    "nota": "Operação final com colhedoras automotrizes.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Adubação foliar",
+    "definicao_pt": "Aplicação de micronutrientes e bioestimulantes diretamente nas folhas.",
+    "traducoes": {
+      "es": "Fertilización foliar",
+      "en": "Foliar fertilization",
+      "de": "Blattdüngung",
+      "zh": "叶面施肥",
+      "fr": "Fertilisation foliaire"
+    },
+    "nota": "Complemento nutricional de rápida absorção estomática.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Controle biológico",
+    "definicao_pt": "Uso de inimigos naturais (parasitoides, predadores e microrganismos) contra pragas.",
+    "traducoes": {
+      "es": "Control biológico",
+      "en": "Biological control",
+      "de": "Biologische Schädlingsbekämpfung",
+      "zh": "生物防治",
+      "fr": "Lutte biologique"
+    },
+    "nota": "Prática sustentável do Manejo Integrado de Pragas (MIP).",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Pastagem de braquiária",
+    "definicao_pt": "Gramínea forrageira tropical do gênero Urochloa/Brachiaria amplamente usada no Brasil.",
+    "traducoes": {
+      "es": "Pastura de braquiaria",
+      "en": "Brachiaria pasture",
+      "de": "Brachiaria-Weide",
+      "zh": "臂形草牧草",
+      "fr": "Pâturage de brachiaria"
+    },
+    "nota": "Gramínea tropical com pouca presença na agricultura europeia; no alemão usa-se o nome científico Brachiaria ou Signalgras; no chinês 臂形草.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "media",
+      "zh": "media",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Pastagem perene",
+    "definicao_pt": "Forragem que permanece no campo por múltiplos anos sem ressemeadura anual.",
+    "traducoes": {
+      "es": "Pastura perenne",
+      "en": "Perennial pasture",
+      "de": "Dauergrünland",
+      "zh": "多年生牧草",
+      "fr": "Prairie permanente"
+    },
+    "nota": "Dauergrünland / Dauerweide é a categoria agroambiental alemã consagrada.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Pivô central",
+    "definicao_pt": "Sistema de aspersão circular mecanizado e automatizado de irrigação.",
+    "traducoes": {
+      "es": "Pivote central",
+      "en": "Center pivot",
+      "de": "Kreisberegnung (Center-Pivot)",
+      "zh": "中心支轴式喷灌机",
+      "fr": "Pivot central d'irrigation"
+    },
+    "nota": "Equipamento móvel circular de irrigação de alta capacidade.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Açude",
+    "definicao_pt": "Estrutura de retenção de água superficial ou barragem de terra na propriedade rural.",
+    "traducoes": {
+      "es": "Embalse / Represa",
+      "en": "Farm pond / Reservoir",
+      "de": "Speicherteich",
+      "zh": "农用蓄水池",
+      "fr": "Retenue collinaire"
+    },
+    "nota": "Retenue collinaire é o termo técnico francês específico para açudes e reservatórios agrícolas de bacia.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Nascente",
+    "definicao_pt": "Ponto de afloramento do lençol freático na superfície do solo.",
+    "traducoes": {
+      "es": "Manantial",
+      "en": "Water spring",
+      "de": "Quelle",
+      "zh": "泉源",
+      "fr": "Source naturelle"
+    },
+    "nota": "Área de Preservação Permanente (APP) hidrológica.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Poço artesiano",
+    "definicao_pt": "Perfuração tubular profunda captando aquífero confinado sob pressão piezométrica.",
+    "traducoes": {
+      "es": "Pozo artesiano",
+      "en": "Artesian well",
+      "de": "Artesischer Brunnen",
+      "zh": "自流井",
+      "fr": "Puits artésien"
+    },
+    "nota": "Fonte hídrica subterrânea profunda de alta vazão para fazendas.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Mata ciliar",
+    "definicao_pt": "Vegetação florestal nativa que protege as margens de rios, córregos e nascentes.",
+    "traducoes": {
+      "es": "Bosque de ribera",
+      "en": "Riparian buffer forest",
+      "de": "Uferwald",
+      "zh": "河岸防护林",
+      "fr": "Ripisylve"
+    },
+    "nota": "Ripisylve é o termo científico francês exato para a mata ripária protetora de cursos hídricos.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Reserva legal",
+    "definicao_pt": "Percentual da propriedade rural que deve ser mantido com cobertura vegetal nativa por lei.",
+    "traducoes": {
+      "es": "Reserva legal de conservación",
+      "en": "Legal conservation reserve",
+      "de": "Gesetzliches Schutzgebiet",
+      "zh": "法定生态保护区",
+      "fr": "Réserve légale de conservation"
+    },
+    "nota": "Conceito do Código Florestal Brasileiro (Lei 12.651); na Alemanha e China não há instituto idêntico, traduz-se pelo conceito de reserva ecológica legal obrigatória.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "media",
+      "zh": "media",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Curral",
+    "definicao_pt": "Instalação rústica cercada para contenção, manejo, vacinação e apartação de gado bovino.",
+    "traducoes": {
+      "es": "Corral de manejo",
+      "en": "Cattle pen / Corral",
+      "de": "Viehpferch",
+      "zh": "畜栏",
+      "fr": "Enclos à bétail"
+    },
+    "nota": "Infraestrutura essencial para pecuária de corte e leite.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Silo",
+    "definicao_pt": "Estrutura cilíndrica metálica ou de concreto para armazenamento a granel de grãos limpos e secos.",
+    "traducoes": {
+      "es": "Silo de granos",
+      "en": "Grain silo",
+      "de": "Getreidesilo",
+      "zh": "谷物筒仓",
+      "fr": "Silo à grains"
+    },
+    "nota": "Instalação pós-colheita dotada de aeração e termometria.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Moega",
+    "definicao_pt": "Tremonha ou funil subterrâneo para descarga rápida de caminhões graneleiros na unidade de recepção.",
+    "traducoes": {
+      "es": "Tolva de recepción",
+      "en": "Grain intake hopper",
+      "de": "Getreideannahmegosse",
+      "zh": "卸粮进料斗",
+      "fr": "Fosse de réception"
+    },
+    "nota": "Annahmegosse em alemão e fosse de réception em francês descrevem exatamente a moega de descarga agrícola.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Estação meteorológica",
+    "definicao_pt": "Conjunto de sensores para medição de chuva, temperatura, radiação, umidade e vento.",
+    "traducoes": {
+      "es": "Estación meteorológica",
+      "en": "Weather station",
+      "de": "Agrarwetterstation",
+      "zh": "农业气象站",
+      "fr": "Station météo agricole"
+    },
+    "nota": "Fornece dados microclimáticos para tomada de decisão no manejo fitossanitário.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Cultivar",
+    "definicao_pt": "Variedade botânica cultivada homogênea e estável registrada oficialmente.",
+    "traducoes": {
+      "es": "Cultivar / Variedad",
+      "en": "Cultivar / Variety",
+      "de": "Sorte",
+      "zh": "品种",
+      "fr": "Cultivar / Variété"
+    },
+    "nota": "Sorte é o termo usual legal na Alemanha; 品种 na China.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Ciclo da cultura",
+    "definicao_pt": "Duração em dias da emergência das plântulas até a maturidade de colheita.",
+    "traducoes": {
+      "es": "Ciclo del cultivo",
+      "en": "Growing cycle",
+      "de": "Vegetationszeit",
+      "zh": "作物生育期",
+      "fr": "Cycle cultural"
+    },
+    "nota": "Varia com o grupo de maturação e época de semeadura.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  },
+  {
+    "termo_pt": "Umidade do solo",
+    "definicao_pt": "Teor volumétrico ou gravimétrico de água retida nos microporos do solo.",
+    "traducoes": {
+      "es": "Humedad del suelo",
+      "en": "Soil moisture",
+      "de": "Bodenfeuchte",
+      "zh": "土壤湿度",
+      "fr": "Humidité du sol"
+    },
+    "nota": "Parâmetro crítico para semeadura e manejo de irrigação.",
+    "confianca": {
+      "es": "alta",
+      "en": "alta",
+      "de": "alta",
+      "zh": "alta",
+      "fr": "alta"
+    }
+  }
+]
